@@ -1,0 +1,15 @@
+RewriteEngine On
+
+# Explicitly skip rewriting for CSS files
+RewriteRule ^css/.+\.css$ - [L]
+
+# Explicitly skip rewriting for JS files
+RewriteRule ^js/.+\.js$ - [L]
+
+# Explicitly skip rewriting for image files
+RewriteRule ^images/.+\.(jpg|jpeg|png|gif|svg)$ - [L]
+
+# Everything else goes to index.php
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ index.php?url=$1 [L,QSA]

@@ -1,0 +1,167 @@
+/* Mobile Responsive Style */
+
+@media (max-width: 768px) {
+    .hamburger {
+        display: flex;
+    }
+    
+    .navwrap {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background-color: #2d5016;
+        flex-direction: column;
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.3s ease;
+    }
+    
+    .navwrap.active {
+        max-height: 400px;
+    }
+    
+    .navbarbtn {
+        width: 90%;
+        margin: 10px auto;
+        text-align: center;
+    }
+    
+    .logo {
+        margin-left: 10px;
+    }
+    
+    .logo img {
+        width: 60px;
+        height: 60px;
+    }
+    
+    .name-title h1 {
+        font-size: 1.4rem;
+    }
+    
+    .hamburger.active span:nth-child(1) {
+        transform: rotate(-45deg) translate(-5px, 6px);
+    }
+    
+    .hamburger.active span:nth-child(2) {
+        opacity: 0;
+    }
+    
+    .hamburger.active span:nth-child(3) {
+        transform: rotate(45deg) translate(-5px, -6px);
+    }
+
+    /* Main Content Responsive */
+    .welcomeinfo h1 {
+        font-size: 1.8rem;
+    }
+
+    .welcomeinfo p {
+        font-size: 1rem;
+    }
+
+    /* Landing Buttons - Equal size and columned layout */
+    .landing-btn1,
+    .landing-btn2 {
+        width: 100%;
+        max-width: 300px;
+        display: block;
+        margin: 10px auto;
+        padding: 15px 35px;
+    }
+
+    .subcontainer {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .subcontents {
+        width: 100%;
+    }
+
+    .card img {
+        height: 300px;
+    }
+
+    .slider-btn {
+        width: 40px;
+        height: 40px;
+        font-size: 1.2rem;
+    }
+
+    .prev-btn {
+        left: 5px;
+    }
+
+    .next-btn {
+        right: 5px;
+    }
+
+    .slider-wrap {
+        padding: 0 45px;
+    }
+
+    /* Footer Responsive */
+    footer {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        padding: 30px 20px;
+        border-radius: 20px 20px 0 0;
+    }
+
+    .left-wrap {
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 20px;
+    }
+
+    .right-wrap {
+        flex-direction: row;
+        justify-content: center;
+        width: 100%;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .ftr-btn {
+        padding: 8px 12px;
+        font-size: 0.8rem;
+        flex: 0 1 auto;
+    }
+
+    footer hr {
+        width: 100%;
+    }
+
+    /* Marketplace Top Navbar - Solution 3: Make everything smaller */
+    .search-container {
+        padding: 6px 12px;
+        max-width: 160px;
+        flex-shrink: 2;
+    }
+
+    .search-input {
+        font-size: 0.85rem;
+    }
+
+    .nav-btn {
+        padding: 6px 10px;
+        font-size: 0.75rem;
+    }
+
+    .message-btn,
+    .cart-btn {
+        font-size: 1.1rem;
+        padding: 6px 8px;
+    }
+
+    .badge {
+        font-size: 0.6rem;
+        padding: 2px 5px;
+        top: -3px;
+        right: -3px;
+    }
+}
