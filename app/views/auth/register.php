@@ -1,6 +1,10 @@
 <?php
+// app/views/auth/register.php
+// Auto-login after registration and redirect to marketplace
 
 require_once BASE_PATH . '/app/controllers/AuthController.php';
+require_once BASE_PATH . '/app/helpers/csrf.php';
+require_once BASE_PATH . '/app/helpers/RateLimiter.php';
 
 $authController = new AuthController();
 $error = '';
@@ -8,15 +12,27 @@ $success = '';
 
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $email = trim($_POST['email'] ?? '');
-    $password = $_POST['password'] ?? '';
-    $confirmPassword = $_POST['confirm_password'] ?? '';
-    $fullName = trim($_POST['full_name'] ?? '');
-    
-    // Validate passwords match
-    if ($password !== $confirmPassword) {
-        $error = 'Passwords do not match';
+    // Check rate limit FIRST before any validation
+    $rateLimitCheck = RateLimiter::checkRegistrationAttempts();
+    if (!$rateLimitCheck['allowed']) {
+        $error = "Too many registration attempts. Please try again in {$rateLimitCheck['retry_after']} minutes.";
     } else {
+        $email = trim($_POST['email'] ?? '');
+        $password = $_POST['password'] ?? '';
+        $confirmPassword = $_POST['confirm_password'] ?? '';
+        $fullName = trim($_POST['full_name'] ?? '');
+    
+    // Server-side validation
+    if (empty($fullName) || empty($email) || empty($password) || empty($confirmPassword)) {
+        $error = 'All fields are required';
+    } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        $error = 'Please enter a valid email address';
+    } elseif ($password !== $confirmPassword) {
+        $error = 'Passwords do not match';
+    } elseif (strlen($password) < 8) {
+        $error = 'Password must be at least 8 characters long';
+    } else {
+        // Prepare data for registration
         $data = [
             'email' => $email,
             'password' => $password,
@@ -24,15 +40,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'full_name' => $fullName
         ];
         
+        // Attempt registration
         $result = $authController->register($data);
         
         if ($result['success']) {
-            $success = $result['message'];
-            // Redirect to login after 2 seconds
-            header("refresh:2;url=/agri_system/public/auth/login");
+            // Registration successful - now auto-login
+            $loginResult = $authController->login($email, $password);
+            
+            if ($loginResult['success']) {
+                // Auto-login successful - redirect directly to marketplace
+                header('Location: /agri_system/public/marketplace');
+                exit;
+            } else {
+                // If auto-login fails (shouldn't happen), redirect to login page
+                $_SESSION['registration_success'] = true;
+                $_SESSION['success_message'] = 'Registration successful! Please log in.';
+                header('Location: /agri_system/public/auth/login');
+                exit;
+            }
         } else {
+            // Registration failed - show error
             $error = $result['message'];
         }
+    }
     }
 }
 ?>
@@ -54,44 +84,66 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <h2>Sign Up</h2>
 
         <?php if ($error): ?>
-        <div class="error-message" style="display: block;">
+        <div class="error-message" style="display: block; background: #f8d7da; color: #721c24; padding: 12px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #f5c6cb;">
             <?php echo htmlspecialchars($error); ?>
         </div>
         <?php endif; ?>
 
         <?php if ($success): ?>
-        <div class="success-message" style="display: block; background: #d4edda; color: #155724; padding: 12px; border-radius: 8px; margin-bottom: 20px;">
+        <div class="success-message" style="display: block; background: #d4edda; color: #155724; padding: 12px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #c3e6cb;">
             <?php echo htmlspecialchars($success); ?>
-            <br><small>Redirecting to login...</small>
         </div>
         <?php endif; ?>
 
         <form action="/agri_system/public/auth/register" method="POST" id="signupForm">
+            <?php echo CSRF::getTokenField(); ?>
+            
             <div class="input-group">
-                <label for="full_name">Full Name</label>
-                <input type="text" id="full_name" name="full_name" placeholder="Juan Dela Cruz" required 
+                <label for="full_name">Full Name *</label>
+                <input type="text" 
+                       id="full_name" 
+                       name="full_name" 
+                       placeholder="Juan Dela Cruz" 
+                       required 
                        value="<?php echo isset($_POST['full_name']) ? htmlspecialchars($_POST['full_name']) : ''; ?>">
             </div>
 
             <div class="input-group">
-                <label for="email">Email</label>
-                <input type="email" id="email" name="email" placeholder="Example@gmail.com" required
+                <label for="email">Email *</label>
+                <input type="email" 
+                       id="email" 
+                       name="email" 
+                       placeholder="example@gmail.com" 
+                       required
                        value="<?php echo isset($_POST['email']) ? htmlspecialchars($_POST['email']) : ''; ?>">
             </div>
 
             <div class="input-group">
-                <label for="password">Password</label>
+                <label for="password">Password *</label>
                 <div class="password-wrapper">
-                    <input type="password" id="password" name="password" placeholder="••••••••••" required minlength="8">
+                    <input type="password" 
+                           id="password" 
+                           name="password" 
+                           placeholder="••••••••••" 
+                           required 
+                           minlength="8"
+                           autocomplete="new-password"
+                           data-form-type="password">
                     <span class="toggle-password" onclick="togglePassword('password')">👁️</span>
                 </div>
                 <small style="color: #666; font-size: 12px;">Minimum 8 characters</small>
             </div>
 
             <div class="input-group">
-                <label for="confirm_password">Confirm Password</label>
+                <label for="confirm_password">Confirm Password *</label>
                 <div class="password-wrapper">
-                    <input type="password" id="confirm_password" name="confirm_password" placeholder="••••••••••" required>
+                    <input type="password" 
+                           id="confirm_password" 
+                           name="confirm_password" 
+                           placeholder="••••••••••" 
+                           required
+                           autocomplete="new-password"
+                           data-form-type="password">
                     <span class="toggle-password" onclick="togglePassword('confirm_password')">👁️</span>
                 </div>
             </div>

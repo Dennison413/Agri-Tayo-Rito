@@ -87,57 +87,66 @@ class User
         return $stmt->fetch(PDO::FETCH_ASSOC) !== false;
     }
 
-    // UPDATED: Create user with optional phone field
-    public function createUser($data) 
-    {
-        // Check if email already exists
-        if ($this->emailExists($data['email'])) {
-            return [
-                'success' => false,
-                'message' => 'Email already exists'
-            ];
-        }
+   // UPDATED: Create user with optional phone field (CLEAN VERSION)
+public function createUser($data) 
+{
+    // Check if email already exists
+    if ($this->emailExists($data['email'])) {
+        return [
+            'success' => false,
+            'message' => 'Email already exists'
+        ];
+    }
 
-        // Phone is now optional - only include if provided
-        if (!empty($data['phone'])) {
-            $query = "INSERT INTO " . $this->table . " 
-                      (email, password_hash, full_name, phone, role) 
-                      VALUES (:email, :password_hash, :full_name, :phone, :role)";
-        } else {
-            $query = "INSERT INTO " . $this->table . " 
-                      (email, password_hash, full_name, role) 
-                      VALUES (:email, :password_hash, :full_name, :role)";
+    // Build query dynamically based on whether phone is provided
+    $hasPhone = !empty($data['phone']);
+    
+    if ($hasPhone) {
+        $query = "INSERT INTO " . $this->table . " 
+                  (email, password_hash, full_name, phone, role) 
+                  VALUES (:email, :password_hash, :full_name, :phone, :role)";
+    } else {
+        $query = "INSERT INTO " . $this->table . " 
+                  (email, password_hash, full_name, role) 
+                  VALUES (:email, :password_hash, :full_name, :role)";
+    }
+    
+    try {
+        $stmt = $this->conn->prepare($query);
+        
+        // Bind common parameters
+        $stmt->bindParam(':email', $data['email']);
+        $stmt->bindParam(':password_hash', $data['password_hash']);
+        $stmt->bindParam(':full_name', $data['full_name']);
+        $stmt->bindParam(':role', $data['role']);
+        
+        // Only bind phone if query includes it
+        if ($hasPhone) {
+            $stmt->bindParam(':phone', $data['phone']);
         }
         
-        try {
-            $stmt = $this->conn->prepare($query);
-            
-            $stmt->bindParam(':email', $data['email']);
-            $stmt->bindParam(':password_hash', $data['password_hash']);
-            $stmt->bindParam(':full_name', $data['full_name']);
-            $stmt->bindParam(':role', $data['role']);
-            
-            // Only bind phone if provided
-            if (!empty($data['phone'])) {
-                $stmt->bindParam(':phone', $data['phone']);
-            }
-            
-            if ($stmt->execute()) {
-                return [
-                    'success' => true,
-                    'message' => 'User created successfully',
-                    'userID' => $this->conn->lastInsertId()
-                ];
-            }
-        } catch (PDOException $e) {
-            error_log("Create user error: " . $e->getMessage());
+        if ($stmt->execute()) {
+            $userID = $this->conn->lastInsertId();
+            return [
+                'success' => true,
+                'message' => 'User created successfully',
+                'userID' => $userID
+            ];
         }
-
+        
         return [
             'success' => false,
             'message' => 'Failed to create user'
         ];
+        
+    } catch (PDOException $e) {
+        error_log("Create user error: " . $e->getMessage());
+        return [
+            'success' => false,
+            'message' => 'Database error occurred'
+        ];
     }
+}
 
     // UPDATED: Update user - phone is optional
     public function updateUser($userID, $data) 

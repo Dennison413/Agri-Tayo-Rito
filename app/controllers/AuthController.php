@@ -15,92 +15,7 @@ class AuthController
         $this->userModel = new User();
     }
 
-    // User login with CSRF + Rate Limiting
-    public function login($email, $password) 
-    {
-        // Validate input
-        if (empty($email) || empty($password)) {
-            return [
-                'success' => false,
-                'message' => 'Email and password are required'
-            ];
-        }
-
-        // Check rate limiting
-        $rateLimitCheck = RateLimiter::checkLoginAttempts($email);
-        if (!$rateLimitCheck['allowed']) {
-            return [
-                'success' => false,
-                'message' => "Too many login attempts. Please try again in {$rateLimitCheck['retry_after']} minutes."
-            ];
-        }
-
-        // Get user from database
-        $user = $this->userModel->getUserByEmail($email);
-
-        if (!$user) {
-            RateLimiter::recordFailedLogin($email);
-            return [
-                'success' => false,
-                'message' => 'Invalid email or password'
-            ];
-        }
-
-        // Check if account is active
-        if (!$user['is_active']) {
-            return [
-                'success' => false,
-                'message' => 'Your account has been deactivated. Please contact support.'
-            ];
-        }
-
-        // Verify password
-        if (!password_verify($password, $user['password_hash'])) {
-            RateLimiter::recordFailedLogin($email);
-            return [
-                'success' => false,
-                'message' => 'Invalid email or password'
-            ];
-        }
-
-        // SUCCESS: Reset rate limiter
-        RateLimiter::resetLoginAttempts($email);
-
-        // Regenerate session ID to prevent session fixation
-        SessionSecurity::regenerate();
-
-        // Set session variables
-        $_SESSION['user_id'] = $user['userID'];
-        $_SESSION['email'] = $user['email'];
-        $_SESSION['username'] = $user['full_name'];
-        $_SESSION['user_role'] = $user['role'];
-        $_SESSION['logged_in'] = true;
-        $_SESSION['login_time'] = time();
-
-        // Store additional user info
-        $_SESSION['phone'] = $user['phone'];
-        $_SESSION['avatar'] = $user['avatar'];
-
-        // Regenerate CSRF token after login
-        CSRF::regenerateToken();
-
-        // Log login activity
-        error_log("User logged in: UserID={$user['userID']}, Role={$user['role']}, IP={$_SERVER['REMOTE_ADDR']}");
-
-        return [
-            'success' => true,
-            'message' => 'Login successful',
-            'role' => $user['role'],
-            'user' => [
-                'userID' => $user['userID'],
-                'email' => $user['email'],
-                'full_name' => $user['full_name'],
-                'role' => $user['role']
-            ]
-        ];
-    }
-
-    // UPDATED: Simplified registration - only requires name, email, password
+    // UPDATED: Registration without CSRF check (for new users who don't have a session yet)
     public function register($data) 
     {
         // Check registration rate limit
@@ -147,17 +62,6 @@ class AuthController
             ];
         }
 
-        // Optional: Validate phone number if provided
-        if (!empty($data['phone'])) {
-            $phone = preg_replace('/[^0-9]/', '', $data['phone']);
-            if (strlen($phone) !== 11 || substr($phone, 0, 2) !== '09') {
-                return [
-                    'success' => false,
-                    'message' => 'Invalid phone number. Please use format: 09XXXXXXXXX'
-                ];
-            }
-        }
-
         // Hash password
         $data['password_hash'] = password_hash($data['password'], PASSWORD_DEFAULT);
         
@@ -194,23 +98,88 @@ class AuthController
             ];
         }
     }
+    
+    public function login($email, $password) 
+    {
+        if (empty($email) || empty($password)) {
+            return [
+                'success' => false,
+                'message' => 'Email and password are required'
+            ];
+        }
 
-    // User logout
+        $rateLimitCheck = RateLimiter::checkLoginAttempts($email);
+        if (!$rateLimitCheck['allowed']) {
+            return [
+                'success' => false,
+                'message' => "Too many login attempts. Please try again in {$rateLimitCheck['retry_after']} minutes."
+            ];
+        }
+
+        $user = $this->userModel->getUserByEmail($email);
+
+        if (!$user) {
+            RateLimiter::recordFailedLogin($email);
+            return [
+                'success' => false,
+                'message' => 'Invalid email or password'
+            ];
+        }
+
+        if (!$user['is_active']) {
+            return [
+                'success' => false,
+                'message' => 'Your account has been deactivated. Please contact support.'
+            ];
+        }
+
+        if (!password_verify($password, $user['password_hash'])) {
+            RateLimiter::recordFailedLogin($email);
+            return [
+                'success' => false,
+                'message' => 'Invalid email or password'
+            ];
+        }
+
+        RateLimiter::resetLoginAttempts($email);
+        SessionSecurity::regenerate();
+
+        $_SESSION['user_id'] = $user['userID'];
+        $_SESSION['email'] = $user['email'];
+        $_SESSION['username'] = $user['full_name'];
+        $_SESSION['user_role'] = $user['role'];
+        $_SESSION['logged_in'] = true;
+        $_SESSION['login_time'] = time();
+        $_SESSION['phone'] = $user['phone'];
+        $_SESSION['avatar'] = $user['avatar'];
+
+        CSRF::regenerateToken();
+
+        error_log("User logged in: UserID={$user['userID']}, Role={$user['role']}, IP={$_SERVER['REMOTE_ADDR']}");
+
+        return [
+            'success' => true,
+            'message' => 'Login successful',
+            'role' => $user['role'],
+            'user' => [
+                'userID' => $user['userID'],
+                'email' => $user['email'],
+                'full_name' => $user['full_name'],
+                'role' => $user['role']
+            ]
+        ];
+    }
+
     public function logout() 
     {
-        // Log logout activity
         if (isset($_SESSION['user_id'])) {
             error_log("User logged out: UserID={$_SESSION['user_id']}, IP={$_SERVER['REMOTE_ADDR']}");
         }
-
-        // Destroy session securely
         SessionSecurity::destroy();
-
         header('Location: /agri_system/public/auth/login');
         exit;
     }
 
-    // Check if user is logged in
     public function isLoggedIn() 
     {
         return isset($_SESSION['user_id']) && 
@@ -218,7 +187,6 @@ class AuthController
                $_SESSION['logged_in'] === true;
     }
 
-    // Get current logged-in user details
     public function getCurrentUser() 
     {
         if ($this->isLoggedIn()) {
@@ -227,7 +195,6 @@ class AuthController
         return null;
     }
 
-    // Require user to be logged in
     public function requireLogin() 
     {
         if (!$this->isLoggedIn()) {
@@ -237,7 +204,6 @@ class AuthController
         }
     }
 
-    // Require specific role(s)
     public function requireRole($allowedRoles) 
     {
         $this->requireLogin();
@@ -263,10 +229,8 @@ class AuthController
         }
     }
 
-    // Change password with CSRF validation
     public function changePassword($userID, $currentPassword, $newPassword) 
     {
-        // Validate new password length
         if (strlen($newPassword) < 8) {
             return [
                 'success' => false,
@@ -274,7 +238,6 @@ class AuthController
             ];
         }
 
-        // Get user
         $user = $this->userModel->getUserById($userID);
         
         if (!$user) {
@@ -284,7 +247,6 @@ class AuthController
             ];
         }
 
-        // Verify current password
         if (!password_verify($currentPassword, $user['password_hash'])) {
             return [
                 'success' => false,
@@ -292,15 +254,10 @@ class AuthController
             ];
         }
 
-        // Hash new password
         $newPasswordHash = password_hash($newPassword, PASSWORD_DEFAULT);
 
-        // Update password
         if ($this->userModel->updatePassword($userID, $newPasswordHash)) {
-            // Log password change
             error_log("Password changed: UserID={$userID}, IP={$_SERVER['REMOTE_ADDR']}");
-
-            // Regenerate session after password change
             SessionSecurity::regenerate();
 
             return [
@@ -315,10 +272,8 @@ class AuthController
         ];
     }
 
-    // Redirect after login based on user role
     public function redirectAfterLogin() 
     {
-        // Check if there's a stored redirect URL
         if (isset($_SESSION['redirect_after_login'])) {
             $redirect = $_SESSION['redirect_after_login'];
             unset($_SESSION['redirect_after_login']);
@@ -326,7 +281,6 @@ class AuthController
             exit;
         }
 
-        // Default redirects based on role
         switch ($_SESSION['user_role']) {
             case 'admin':
                 header('Location: /agri_system/public/profile/admin/dashboard');
@@ -342,23 +296,19 @@ class AuthController
         exit;
     }
 
-    // Check if user has active session on page load
     public function validateSession() 
     {
         if (!$this->isLoggedIn()) {
             return false;
         }
 
-        // Verify user still exists and is active
         $user = $this->userModel->getUserById($_SESSION['user_id']);
         
         if (!$user || !$user['is_active']) {
-            // User was deleted or deactivated, destroy session
             $this->logout();
             return false;
         }
 
-        // Update session data if user info changed
         $_SESSION['username'] = $user['full_name'];
         $_SESSION['user_role'] = $user['role'];
         $_SESSION['email'] = $user['email'];
@@ -367,7 +317,6 @@ class AuthController
         return true;
     }
 
-    // Request account deletion with CSRF
     public function requestAccountDeletion($userID, $reason = null) 
     {
         try {
@@ -414,7 +363,6 @@ class AuthController
         }
     }
 
-    // Helper methods
     public function getRoleDisplayName($role) 
     {
         $roleNames = [

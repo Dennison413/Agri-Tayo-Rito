@@ -33,18 +33,28 @@ function togglePassword(fieldId) {
 
 // Helper function to show error messages
 function showError(message) {
-    const errorMessage = document.getElementById('errorMessage');
-    if (errorMessage) {
-        errorMessage.textContent = message;
-        errorMessage.classList.add('show');
+    // Create error message if it doesn't exist
+    let errorMessage = document.getElementById('errorMessage');
+    if (!errorMessage) {
+        errorMessage = document.createElement('div');
+        errorMessage.id = 'errorMessage';
+        errorMessage.className = 'error-message';
+        errorMessage.style.cssText = 'display: block; background: #f8d7da; color: #721c24; padding: 12px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #f5c6cb;';
+        
+        const form = document.querySelector('form');
+        if (form) {
+            form.parentNode.insertBefore(errorMessage, form);
+        }
     }
+    errorMessage.textContent = message;
+    errorMessage.style.display = 'block';
 }
 
 // Helper function to hide error messages
 function hideError() {
     const errorMessage = document.getElementById('errorMessage');
     if (errorMessage) {
-        errorMessage.classList.remove('show');
+        errorMessage.style.display = 'none';
     }
 }
 
@@ -54,26 +64,8 @@ function isValidEmail(email) {
     return emailRegex.test(email);
 }
 
-// Password strength checker
-// Returns true if password contains at least one letter and one number
-function isPasswordStrong(password) {
-    const hasLetter = /[a-zA-Z]/.test(password);
-    const hasNumber = /[0-9]/.test(password);
-    return hasLetter && hasNumber;
-}
-
-// Google OAuth login
-// Directs to: Google OAuth authentication flow
-// TODO: Replace with actual backend OAuth endpoint
-function loginWithGoogle() {
-    alert('Google OAuth integration needed. This would redirect to Google login.');
-    // In production, uncomment and configure:
-    // window.location.href = '/auth/google-oauth.php';
-}
-
 // ========================================
 // LOGIN FORM VALIDATION
-// Directs to: Backend login processing (login.php POST handler)
 // ========================================
 document.addEventListener('DOMContentLoaded', function() {
     const loginForm = document.getElementById('loginForm');
@@ -100,9 +92,12 @@ document.addEventListener('DOMContentLoaded', function() {
             // Password length validation
             if (password.length < 8) {
                 e.preventDefault();
-                showError('Password must be at least 6 characters');
+                showError('Password must be at least 8 characters');
                 return false;
             }
+            
+            // If all validations pass, allow form submission
+            return true;
         });
 
         // Auto-focus on email field for better UX
@@ -111,18 +106,21 @@ document.addEventListener('DOMContentLoaded', function() {
             emailInput.focus();
         }
     }
+    
+    // ========================================
     // REGISTRATION FORM VALIDATION
-    // Directs to: Backend registration processing (register.php POST handler)
+    // ========================================
     const signupForm = document.getElementById('signupForm');
     
     if (signupForm) {
         signupForm.addEventListener('submit', function(e) {
-            const email = document.getElementById('email').value.trim();
-            const password = document.getElementById('password').value;
-            const confirmPassword = document.getElementById('confirm_password').value;
+            const fullName = document.getElementById('full_name')?.value.trim() || '';
+            const email = document.getElementById('email')?.value.trim() || '';
+            const password = document.getElementById('password')?.value || '';
+            const confirmPassword = document.getElementById('confirm_password')?.value || '';
             
             // Check for empty fields
-            if (email.length === 0 || password.length === 0 || confirmPassword.length === 0) {
+            if (fullName.length === 0 || email.length === 0 || password.length === 0 || confirmPassword.length === 0) {
                 e.preventDefault();
                 showError('Please fill in all fields');
                 return false;
@@ -136,16 +134,9 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             // Password length validation
-            if (password.length < 6) {
+            if (password.length < 8) {
                 e.preventDefault();
-                showError('Password must be at least 6 characters');
-                return false;
-            }
-            
-            // Password strength validation
-            if (!isPasswordStrong(password)) {
-                e.preventDefault();
-                showError('Password must contain at least one letter and one number');
+                showError('Password must be at least 8 characters long');
                 return false;
             }
             
@@ -155,9 +146,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 showError('Passwords do not match');
                 return false;
             }
+            
+            // All validations passed - allow form to submit
+            return true;
         });
 
-        // Real-time password match indicator
+        // Real-time password match indicator - KEEP THIS
         const passwordInput = document.getElementById('password');
         const confirmPasswordInput = document.getElementById('confirm_password');
         
@@ -184,10 +178,10 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
 
-        // Auto-focus on email field for better UX
-        const emailInput = document.getElementById('email');
-        if (emailInput) {
-            emailInput.focus();
+        // Auto-focus on full name field for better UX
+        const fullNameInput = document.getElementById('full_name');
+        if (fullNameInput) {
+            fullNameInput.focus();
         }
     }
 

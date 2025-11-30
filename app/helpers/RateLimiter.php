@@ -1,9 +1,16 @@
 <?php
 class RateLimiter {
+    // 🔧 DEVELOPMENT MODE: Set to false in production
+    private static $devMode = false;
+    
     /**
      * Check login attempts (5 attempts per 15 minutes)
      */
     public static function checkLoginAttempts($email) {
+        if (self::$devMode) {
+            return ['allowed' => true, 'remaining' => 999];
+        }
+        
         $key = 'login_attempts_' . md5($email);
         
         if (!isset($_SESSION[$key])) {
@@ -19,7 +26,7 @@ class RateLimiter {
         }
         
         // Max 5 attempts in 15 minutes
-        if ($attempts['count'] >= 5) {
+        if ($attempts['count'] >= 10) {
             $timeRemaining = 900 - (time() - $attempts['time']);
             return [
                 'allowed' => false, 
@@ -38,6 +45,8 @@ class RateLimiter {
      * Record failed login attempt
      */
     public static function recordFailedLogin($email) {
+        if (self::$devMode) return;
+        
         $key = 'login_attempts_' . md5($email);
         
         if (!isset($_SESSION[$key])) {
@@ -57,7 +66,7 @@ class RateLimiter {
     }
 
     /**
-     * Check registration attempts (3 per hour per IP)
+     * Check registration attempts (50 per hour per IP in dev mode, 3 in production)
      */
     public static function checkRegistrationAttempts() {
         $key = 'registration_attempts_' . md5($_SERVER['REMOTE_ADDR']);
@@ -71,11 +80,13 @@ class RateLimiter {
         // Reset after 1 hour (3600 seconds)
         if (time() - $attempts['time'] > 3600) {
             $_SESSION[$key] = ['count' => 0, 'time' => time()];
-            return ['allowed' => true, 'remaining' => 3];
+            return ['allowed' => true, 'remaining' => self::$devMode ? 50 : 3];
         }
         
-        // Max 3 registrations per hour per IP
-        if ($attempts['count'] >= 3) {
+        // Max registrations per hour per IP
+        $maxAttempts = self::$devMode ? 50 : 3; // 50 in dev, 3 in production
+        
+        if ($attempts['count'] >= $maxAttempts) {
             $timeRemaining = 3600 - (time() - $attempts['time']);
             return [
                 'allowed' => false,
@@ -84,7 +95,7 @@ class RateLimiter {
             ];
         }
         
-        return ['allowed' => true, 'remaining' => 3 - $attempts['count']];
+        return ['allowed' => true, 'remaining' => $maxAttempts - $attempts['count']];
     }
 
     /**
@@ -104,6 +115,10 @@ class RateLimiter {
      * Check password reset attempts (3 per hour per email)
      */
     public static function checkPasswordResetAttempts($email) {
+        if (self::$devMode) {
+            return ['allowed' => true, 'remaining' => 999];
+        }
+        
         $key = 'password_reset_' . md5($email);
         
         if (!isset($_SESSION[$key])) {
@@ -133,6 +148,8 @@ class RateLimiter {
      * Record password reset attempt
      */
     public static function recordPasswordResetAttempt($email) {
+        if (self::$devMode) return;
+        
         $key = 'password_reset_' . md5($email);
         
         if (!isset($_SESSION[$key])) {
@@ -146,6 +163,10 @@ class RateLimiter {
      * Check API/AJAX request rate (60 requests per minute per session)
      */
     public static function checkApiRate($identifier = null) {
+        if (self::$devMode) {
+            return ['allowed' => true, 'remaining' => 999];
+        }
+        
         $key = 'api_rate_' . ($identifier ?? session_id());
         
         if (!isset($_SESSION[$key])) {
@@ -166,5 +187,19 @@ class RateLimiter {
         
         $_SESSION[$key]['count']++;
         return ['allowed' => true, 'remaining' => 60 - $_SESSION[$key]['count']];
+    }
+    
+    /**
+     * Clear all rate limit data (for testing)
+     */
+    public static function clearAll() {
+        foreach ($_SESSION as $key => $value) {
+            if (strpos($key, 'login_attempts_') === 0 || 
+                strpos($key, 'registration_attempts_') === 0 || 
+                strpos($key, 'password_reset_') === 0 || 
+                strpos($key, 'api_rate_') === 0) {
+                unset($_SESSION[$key]);
+            }
+        }
     }
 }
