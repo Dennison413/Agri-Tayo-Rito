@@ -30,9 +30,10 @@ $routes = [
     'marketplace/product' => BASE_PATH . '/app/views/marketplace/product.php',
     'marketplace/livestream' => BASE_PATH . '/app/views/marketplace/livestream.php',
     'marketplace/notifications' => BASE_PATH . '/app/views/marketplace/notifications.php',
-    'marketplace/messages' => BASE_PATH . '/app/views/messages/messageindex.php',
+    'marketplace/messages' => BASE_PATH . '/app/views/marketplace/messages.php',
     'marketplace/wishlist' => BASE_PATH . '/app/views/profile/buyer/wishlists.php',
-    'marketplace/orders' => BASE_PATH . '/app/views/profile/buyer/myorders.php',
+    'marketplace/myorders' => BASE_PATH . '/app/views/profile/buyer/myorders.php',
+    'profile/apply' => BASE_PATH . '/app/views/profile/buyer/apply-seller.php',
 
     // Item Handling (require login)
     'item-handling/cart' => BASE_PATH . '/app/views/item-handling/cart.php',
@@ -51,14 +52,14 @@ $routes = [
     // User Profile (general)
     'profile/user' => BASE_PATH . '/app/views/marketplace/profile.php',
     
-    // ✅ Seller Routes - UPDATED
+    // ✅ Seller Routes
     'profile/seller/dashboard' => BASE_PATH . '/app/views/profile/seller/dashboard.php',
     'profile/seller/profile-info' => BASE_PATH . '/app/views/profile/seller/shop-profile.php',
     'profile/seller/products' => BASE_PATH . '/app/views/profile/seller/my-products.php',
     'profile/seller/orders' => BASE_PATH . '/app/views/profile/seller/orders.php',
-    'profile/seller/order-details' => BASE_PATH . '/app/views/profile/seller/order-details.php', // ✅ NEW
-    'profile/seller/withdrawals' => BASE_PATH . '/app/views/profile/seller/withdrawals.php', // ✅ NEW
-    'profile/seller/image-upload' => BASE_PATH . '/app/views/profile/seller/image-upload.php', // ✅ NEW (if you have this)
+    'profile/seller/order-details' => BASE_PATH . '/app/views/profile/seller/order-details.php', 
+    'profile/seller/withdrawals' => BASE_PATH . '/app/views/profile/seller/withdrawals.php', 
+    'profile/seller/image-upload' => BASE_PATH . '/app/views/profile/seller/image-upload.php', 
 
     // Devs pages
     'devs/about' => BASE_PATH . '/app/views/devs/about.php',

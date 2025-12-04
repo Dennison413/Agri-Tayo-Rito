@@ -47,82 +47,7 @@ $stats = $ordersModel->getOrderStats($sellerID, 'seller');
     <link rel="stylesheet" href="<?php echo BASE_URL; ?>css/seller/dashboard.css">
 </head>
 <body>
-    <div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
-    
-    <!-- Top Navigation -->
-    <nav class="top-navbar">
-        <div class="logo-wrapper">
-            <img src="<?php echo BASE_URL; ?>images/logo.jpg" alt="Logo">
-            <span class="logo">Seller Panel</span>
-        </div>
-        <div class="navbar-actions">
-            <button class="nav-btn" onclick="toggleSidebar()">
-                <span class="menu-icon">☰</span>
-            </button>
-        </div>
-    </nav>
-
-    <!-- Sidebar -->
-    <aside class="sidebar" id="sidebar">
-        <div class="sidebar-header">
-            <div class="sidebar-logo">🪴</div>
-            <div class="sidebar-title">
-                <h2>Seller Dashboard</h2>
-                <p><?php echo htmlspecialchars($_SESSION['username'] ?? 'Seller'); ?></p>
-            </div>
-            <div class="sidebar-actions">
-                <button class="sidebar-action-btn" onclick="toggleSidebar()">✕</button>
-            </div>
-        </div>
-
-        <div class="user-info">
-            <div class="user-avatar">👤</div>
-            <div class="user-details">
-                <h3><?php echo htmlspecialchars($_SESSION['username'] ?? 'Seller'); ?></h3>
-                <p>Seller Account</p>
-            </div>
-        </div>
-
-        <nav class="nav-menu">
-            <div class="nav-section">
-                <p class="nav-section-title">Main Menu</p>
-                <button class="nav-item" onclick="location.href='<?php echo BASE_URL; ?>profile/seller/dashboard'">
-                    <span class="nav-icon-menu">📊</span>
-                    <span>Dashboard</span>
-                </button>
-                <button class="nav-item" onclick="location.href='<?php echo BASE_URL; ?>profile/seller/products'">
-                    <span class="nav-icon-menu">📦</span>
-                    <span>My Products</span>
-                </button>
-                <button class="nav-item active" onclick="location.href='<?php echo BASE_URL; ?>profile/seller/orders'">
-                    <span class="nav-icon-menu">🛒</span>
-                    <span>Orders</span>
-                    <?php if ($stats['pending'] > 0): ?>
-                        <span class="nav-badge"><?php echo $stats['pending']; ?></span>
-                    <?php endif; ?>
-                </button>
-                <button class="nav-item" onclick="location.href='<?php echo BASE_URL; ?>profile/seller/withdrawals'">
-                    <span class="nav-icon-menu">💰</span>
-                    <span>Withdrawals</span>
-                </button>
-            </div>
-
-            <div class="nav-section">
-                <p class="nav-section-title">Settings</p>
-                <button class="nav-item" onclick="location.href='<?php echo BASE_URL; ?>profile/seller/profile-info'">
-                    <span class="nav-icon-menu">🏬</span>
-                    <span>Shop Profile</span>
-                </button>
-            </div>
-        </nav>
-
-        <div class="sidebar-footer">
-            <button class="logout-btn" onclick="location.href='<?php echo BASE_URL; ?>auth/logout'">
-                <span>🚪</span>
-                <span>Logout</span>
-            </button>
-        </div>
-    </aside>
+    <?php include 'seller-nav.php'; ?>
 
     <!-- Main Content -->
     <main class="main-content">
@@ -326,13 +251,6 @@ $stats = $ordersModel->getOrderStats($sellerID, 'seller');
     </style>
 
     <script>
-        function toggleSidebar() {
-            const sidebar = document.getElementById('sidebar');
-            const overlay = document.getElementById('overlay');
-            sidebar.classList.toggle('active');
-            overlay.classList.toggle('active');
-        }
-
         function filterOrders() {
             const statusFilter = document.getElementById('statusFilter').value;
             const rows = document.querySelectorAll('#ordersTable tbody tr');

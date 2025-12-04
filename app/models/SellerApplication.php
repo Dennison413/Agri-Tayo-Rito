@@ -2,6 +2,8 @@
 // app/models/SellerApplication.php
 // Seller Application Management - Application Submission, Review, Approval/Rejection
 require_once __DIR__ . '/../../config/database.php';
+require_once __DIR__ . '/User.php';  // ADD THIS LINE
+require_once __DIR__ . '/Shop.php';
 
 class SellerApplication
 {
@@ -311,81 +313,142 @@ public function getRecentApplications($limit = 10)
      * Approve seller application
      * Creates seller profile and shop, updates user role
      */
-    public function approveApplication($applicationID, $adminID)
-    {
-        try {
-            $this->conn->beginTransaction();
+    /**
+ * Approve seller application
+ * Creates seller profile and shop, updates user role
+ */
+public function approveApplication($applicationID, $adminID)
+{
+    try {
+        $this->conn->beginTransaction();
 
-            // Get application details
-            $application = $this->getApplicationById($applicationID);
+        // Get application details
+        $application = $this->getApplicationById($applicationID);
 
-            if (!$application) {
-                return ['success' => false, 'message' => 'Application not found'];
-            }
-
-            if ($application['application_status'] !== 'pending') {
-                return ['success' => false, 'message' => 'Application already processed'];
-            }
-
-            // Update application status
-            $updateQuery = "UPDATE {$this->table} 
-                           SET application_status = 'approved',
-                               reviewed_by = ?,
-                               reviewed_at = NOW()
-                           WHERE applicationID = ?";
-            $stmt = $this->conn->prepare($updateQuery);
-            $stmt->execute([$adminID, $applicationID]);
-
-            // Update user role to seller
-            $userModel = new User();
-            $roleResult = $userModel->updateUserRole($application['userID'], 'seller');
-
-            if (!$roleResult['success']) {
-                throw new Exception('Failed to update user role');
-            }
-
-            // Create seller profile
-            $profileQuery = "INSERT INTO {$this->sellerProfilesTable} 
-                            (userID, business_name, business_description, farm_location, is_verified) 
-                            VALUES (?, ?, NULL, ?, 1)";
-            $profileStmt = $this->conn->prepare($profileQuery);
-            $profileStmt->execute([
-                $application['userID'],
-                $application['business_name'],
-                $application['business_address']
-            ]);
-            $sellerID = $this->conn->lastInsertId();
-
-            // Create shop
-            $shopModel = new Shop();
-            $shopResult = $shopModel->createShop($sellerID, [
-                'shop_name' => $application['business_name'],
-                'shop_description' => "Welcome to {$application['business_name']}!",
-                'farm_location' => $application['business_address'],
-                'contact_number' => $application['phone'] ?? null
-            ]);
-
-            if (!$shopResult['success']) {
-                throw new Exception('Failed to create shop');
-            }
-
-            $this->conn->commit();
-
-            return [
-                'success' => true,
-                'message' => 'Application approved successfully. Seller account created.',
-                'sellerID' => $sellerID,
-                'shopID' => $shopResult['shopID']
-            ];
-        } catch (Exception $e) {
+        if (!$application) {
             $this->conn->rollBack();
-            error_log("Approve application error: " . $e->getMessage());
-            return [
-                'success' => false,
-                'message' => 'Failed to approve application: ' . $e->getMessage()
-            ];
+            return ['success' => false, 'message' => 'Application not found'];
         }
+
+        if ($application['application_status'] !== 'pending') {
+            $this->conn->rollBack();
+            return ['success' => false, 'message' => 'Application already processed'];
+        }
+
+        // 1. Update application status FIRST
+        $updateQuery = "UPDATE {$this->table} 
+                       SET application_status = 'approved',
+                           reviewed_by = ?,
+                           reviewed_at = NOW()
+                       WHERE applicationID = ?";
+        $stmt = $this->conn->prepare($updateQuery);
+        if (!$stmt->execute([$adminID, $applicationID])) {
+            throw new Exception('Failed to update application status');
+        }
+
+        // 2. Update user role to seller
+        $userModel = new User();
+        $roleResult = $userModel->updateUserRole($application['userID'], 'seller');
+
+        if (!$roleResult['success']) {
+            throw new Exception('Failed to update user role: ' . $roleResult['message']);
+        }
+
+        // 3. Create seller profile
+        $profileQuery = "INSERT INTO {$this->sellerProfilesTable} 
+                        (userID, business_name, business_description, farm_location, is_verified) 
+                        VALUES (?, ?, NULL, ?, 1)";
+        $profileStmt = $this->conn->prepare($profileQuery);
+        if (!$profileStmt->execute([
+            $application['userID'],
+            $application['business_name'],
+            $application['business_address']
+        ])) {
+            throw new Exception('Failed to create seller profile');
+        }
+        $sellerID = $this->conn->lastInsertId();
+
+        // 4. Create shop slug
+        $shopSlug = $this->createShopSlug($application['business_name']);
+
+        // 5. Create shop directly (without Shop model to avoid dependency issues)
+        $shopQuery = "INSERT INTO shops 
+                     (sellerID, shop_name, shop_slug, shop_description, farm_location, contact_number, is_verified, is_active) 
+                     VALUES (?, ?, ?, ?, ?, ?, 1, 1)";
+        $shopStmt = $this->conn->prepare($shopQuery);
+        if (!$shopStmt->execute([
+            $sellerID,
+            $application['business_name'],
+            $shopSlug,
+            "Welcome to {$application['business_name']}!",
+            $application['business_address'],
+            $application['phone'] ?? null
+        ])) {
+            throw new Exception('Failed to create shop');
+        }
+        $shopID = $this->conn->lastInsertId();
+
+        // 6. Update seller profile with shopID
+        $updateSellerQuery = "UPDATE {$this->sellerProfilesTable} SET shopID = ? WHERE sellerID = ?";
+        $updateSellerStmt = $this->conn->prepare($updateSellerQuery);
+        $updateSellerStmt->execute([$shopID, $sellerID]);
+
+        $this->conn->commit();
+
+        return [
+            'success' => true,
+            'message' => 'Application approved successfully. Seller account created.',
+            'sellerID' => $sellerID,
+            'shopID' => $shopID
+        ];
+    } catch (Exception $e) {
+        $this->conn->rollBack();
+        error_log("Approve application error: " . $e->getMessage());
+        return [
+            'success' => false,
+            'message' => 'Failed to approve application: ' . $e->getMessage()
+        ];
     }
+}
+
+/**
+ * Create URL-friendly slug from shop name
+ */
+private function createShopSlug($shopName)
+{
+    // Convert to lowercase
+    $slug = strtolower($shopName);
+    
+    // Replace spaces and special characters with hyphens
+    $slug = preg_replace('/[^a-z0-9]+/', '-', $slug);
+    
+    // Remove leading/trailing hyphens
+    $slug = trim($slug, '-');
+    
+    // Check if slug exists, append number if needed
+    $originalSlug = $slug;
+    $counter = 1;
+    
+    while ($this->slugExists($slug)) {
+        $slug = $originalSlug . '-' . $counter;
+        $counter++;
+    }
+    
+    return $slug;
+}
+
+/**
+ * Check if shop slug already exists
+ */
+private function slugExists($slug)
+{
+    $query = "SELECT COUNT(*) as count FROM shops WHERE shop_slug = ?";
+    $stmt = $this->conn->prepare($query);
+    $stmt->execute([$slug]);
+    $result = $stmt->fetch(PDO::FETCH_ASSOC);
+    
+    return $result['count'] > 0;
+}
 
     /**
      * Reject seller application
