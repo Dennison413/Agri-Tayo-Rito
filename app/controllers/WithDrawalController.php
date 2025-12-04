@@ -1,5 +1,5 @@
 <?php
-// app/controllers/WithdrawalController.php
+// app/controllers/WithDrawalController.php
 // SECURED: Seller Withdrawal Management with CSRF + Rate Limiting
 if (session_status() === PHP_SESSION_NONE) {
     session_start();

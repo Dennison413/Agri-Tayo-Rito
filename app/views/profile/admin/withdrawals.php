@@ -194,7 +194,7 @@ $allShops = $shopModel->getAllShopsWithBalance();
     <div id="rejectionModal" class="modal">
         <div class="modal-content">
             <h3>Reject Withdrawal</h3>
-            <form method="POST" action="<?php echo BASE_URL; ?>app/controllers/WithdrawalController.php">
+            <form method="POST" action="<?php echo BASE_URL; ?>withdrawal">
                 <input type="hidden" name="withdrawal_id" id="reject_withdrawal_id">
                 <div class="form-group">
                     <label>Reason for Rejection *</label>

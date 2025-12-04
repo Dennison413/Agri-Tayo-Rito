@@ -110,7 +110,7 @@ $minWithdrawal = $stmt->fetch(PDO::FETCH_ASSOC)['setting_value'] ?? 100;
             <div class="form-card">
                 <h2 class="section-title">Request Withdrawal</h2>
                 
-                <form method="POST" action="<?php echo BASE_URL; ?>app/controllers/WithdrawalController.php">
+                <form method="POST" action="<?php echo BASE_URL; ?>profile/seller/withdrawal-request">
                     <div class="form-group">
                         <label for="amount">Amount to Withdraw *</label>
                         <div class="input-group">

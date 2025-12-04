@@ -72,6 +72,10 @@ $routes = [
     'settings/account' => BASE_PATH . '/app/views/settings/custom.php',
     'settings/language-settings' => BASE_PATH . '/app/views/settings/language.php',
     'settings' => BASE_PATH . '/app/views/settings/settings.php',
+
+
+    // Controllers Routes
+    'withdrawal' => BASE_PATH . '/app/controllers/WithDrawalController.php',
 ];
 
 if (isset($routes[$url])) {

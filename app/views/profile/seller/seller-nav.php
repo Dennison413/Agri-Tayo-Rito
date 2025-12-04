@@ -27,11 +27,12 @@ if (isset($stats) && isset($stats['pending_orders'])) {
 
 <!-- Sidebar Navigation -->
 <aside class="seller-sidebar" id="sellerSidebar">
+    
     <div class="sidebar-header">
         <div class="sidebar-logo">🪴</div>
         <div class="sidebar-title">
-            <h2>Seller Dashboard</h2>
-            <p><?php echo htmlspecialchars($_SESSION['username'] ?? 'Seller'); ?></p>
+            <h2>Agri Tayo Rito</h2>
+            <p>Fresh from Farm to Table</p>
         </div>
         <div class="sidebar-actions">
             <button class="sidebar-action-btn" onclick="toggleSellerSidebar()">✕</button>
@@ -198,13 +199,13 @@ if (isset($stats) && isset($stats['pending_orders'])) {
 .sidebar-title h2 {
     margin: 0;
     font-size: 1.2rem;
-    color: #1f2937;
+    color: #ffffffff;
 }
 
 .sidebar-title p {
     margin: 5px 0 0 0;
     font-size: 0.85rem;
-    color: #6b7280;
+    color: #ffffffff;
 }
 
 .sidebar-actions {

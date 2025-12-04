@@ -1,7 +1,6 @@
 <?php
 // app/models/Withdrawal.php
 // Handles seller withdrawal requests and balance management
-
 require_once __DIR__ . '/../../config/database.php';
 
 class Withdrawal 
@@ -13,12 +12,15 @@ class Withdrawal
     {
         $this->db = new Database();
         $this->conn = $this->db->connect();
+        // Use exceptions for easier error handling
+        $this->conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     }
 
     // ==================== CREATE WITHDRAWAL REQUEST ====================
-    
     /**
      * Create a new withdrawal request
+     * Ensures shop exists, amount valid, no pending requests, and stores atm card presented.
+     *
      * @param int $shopID
      * @param float $amount
      * @param string $method - 'cash' or 'atm'
@@ -28,86 +30,84 @@ class Withdrawal
     public function createRequest($shopID, $amount, $method = 'cash', $atmCard = null) 
     {
         try {
-            // Get shop details and balance
+            // Input sanitization & normalization
+            $amount = floatval($amount);
+            $method = ($method === 'atm') ? 'atm' : 'cash';
+
+            // Start short transaction to prevent race between checks and insert
+            $this->conn->beginTransaction();
+
+            // Lock the shop row for update to get consistent balance read
             $stmt = $this->conn->prepare("
-                SELECT shopID, shop_name, balance, atm_card_number 
-                FROM shops 
-                WHERE shopID = ? AND is_active = 1
+                SELECT shopID, shop_name, balance, atm_card_number, is_active
+                FROM shops
+                WHERE shopID = ?
+                FOR UPDATE
             ");
             $stmt->execute([$shopID]);
             $shop = $stmt->fetch(PDO::FETCH_ASSOC);
 
-            if (!$shop) {
-                return [
-                    'success' => false,
-                    'message' => 'Shop not found or inactive'
-                ];
+            if (!$shop || intval($shop['is_active']) !== 1) {
+                $this->conn->rollBack();
+                return ['success' => false, 'message' => 'Shop not found or inactive'];
             }
 
-            // Validate withdrawal amount
+            // Validate withdrawal amount and minimum
             $minWithdrawal = $this->getMinWithdrawalAmount();
-            
             if ($amount < $minWithdrawal) {
-                return [
-                    'success' => false,
-                    'message' => "Minimum withdrawal amount is ₱{$minWithdrawal}"
-                ];
+                $this->conn->rollBack();
+                return ['success' => false, 'message' => "Minimum withdrawal amount is ₱{$minWithdrawal}"];
             }
 
-            if ($amount > $shop['balance']) {
-                return [
-                    'success' => false,
-                    'message' => 'Insufficient balance. Available: ₱' . number_format($shop['balance'], 2)
-                ];
+            if ($amount > floatval($shop['balance'])) {
+                $this->conn->rollBack();
+                return ['success' => false, 'message' => 'Insufficient balance. Available: ₱' . number_format($shop['balance'], 2)];
             }
 
             // Validate ATM method
-            if ($method === 'atm' && empty($shop['atm_card_number'])) {
-                return [
-                    'success' => false,
-                    'message' => 'No ATM card registered. Please register your card first or choose cash withdrawal.'
-                ];
+            if ($method === 'atm' && empty($shop['atm_card_number']) && empty($atmCard)) {
+                $this->conn->rollBack();
+                return ['success' => false, 'message' => 'No ATM card registered. Please register your card first or choose cash withdrawal.'];
             }
 
-            // Check for pending withdrawals
+            // Check for existing pending withdrawal(s)
             $stmt = $this->conn->prepare("
-                SELECT COUNT(*) as pending_count 
-                FROM withdrawal_requests 
+                SELECT COUNT(*) as pending_count
+                FROM withdrawal_requests
                 WHERE shopID = ? AND status = 'pending'
+                FOR UPDATE
             ");
             $stmt->execute([$shopID]);
             $pending = $stmt->fetch(PDO::FETCH_ASSOC);
 
-            if ($pending['pending_count'] > 0) {
-                return [
-                    'success' => false,
-                    'message' => 'You have a pending withdrawal request. Please wait for admin approval.'
-                ];
+            if ($pending && intval($pending['pending_count']) > 0) {
+                $this->conn->rollBack();
+                return ['success' => false, 'message' => 'You have a pending withdrawal request. Please wait for admin approval.'];
             }
 
-            // Create withdrawal request
+            // Insert withdrawal request
             $stmt = $this->conn->prepare("
-                INSERT INTO withdrawal_requests 
+                INSERT INTO withdrawal_requests
                 (shopID, amount, withdrawal_method, atm_card_presented, status, requested_at)
                 VALUES (?, ?, ?, ?, 'pending', NOW())
             ");
-            
-            $stmt->execute([
-                $shopID,
-                $amount,
-                $method,
-                $atmCard ?? $shop['atm_card_number']
-            ]);
+            $atmValue = $atmCard ?? $shop['atm_card_number'] ?? null;
+            $stmt->execute([$shopID, $amount, $method, $atmValue]);
 
             $withdrawalID = $this->conn->lastInsertId();
+
+            $this->conn->commit();
 
             return [
                 'success' => true,
                 'message' => 'Withdrawal request submitted successfully. Please wait for admin approval.',
                 'withdrawal_id' => $withdrawalID
             ];
-
         } catch (Exception $e) {
+            // Rollback if in transaction
+            if ($this->conn->inTransaction()) {
+                $this->conn->rollBack();
+            }
             error_log("Create withdrawal error: " . $e->getMessage());
             return [
                 'success' => false,
@@ -117,10 +117,10 @@ class Withdrawal
     }
 
     // ==================== APPROVE WITHDRAWAL ====================
-    
     /**
      * Approve withdrawal request (Admin only)
-     * This triggers the DB trigger to deduct balance
+     * Performs atomic balance deduction and ledger insertion.
+     *
      * @param int $withdrawalID
      * @param int $adminID
      * @param string|null $notes
@@ -129,63 +129,96 @@ class Withdrawal
     public function approveWithdrawal($withdrawalID, $adminID, $notes = null) 
     {
         try {
+            // Begin transaction for atomicity
             $this->conn->beginTransaction();
 
-            // Get withdrawal details
+            // Lock withdrawal row for update and join the shop (shop locked too)
             $stmt = $this->conn->prepare("
-                SELECT wr.*, s.shop_name, s.balance 
+                SELECT wr.*, s.shop_name, s.balance, s.shopID, s.atm_card_number, wr.withdrawalID as wID
                 FROM withdrawal_requests wr
                 JOIN shops s ON wr.shopID = s.shopID
                 WHERE wr.withdrawalID = ?
+                FOR UPDATE
             ");
             $stmt->execute([$withdrawalID]);
             $withdrawal = $stmt->fetch(PDO::FETCH_ASSOC);
 
             if (!$withdrawal) {
                 $this->conn->rollBack();
-                return [
-                    'success' => false,
-                    'message' => 'Withdrawal request not found'
-                ];
+                return ['success' => false, 'message' => 'Withdrawal request not found'];
             }
 
+            // Ensure only pending requests are processed
             if ($withdrawal['status'] !== 'pending') {
                 $this->conn->rollBack();
-                return [
-                    'success' => false,
-                    'message' => 'Withdrawal request is already processed'
-                ];
+                return ['success' => false, 'message' => 'Withdrawal request is already processed'];
             }
 
-            // Check if shop still has sufficient balance
-            if ($withdrawal['amount'] > $withdrawal['balance']) {
+            $shopID = intval($withdrawal['shopID']);
+            $amount = floatval($withdrawal['amount']);
+            $currentBalance = floatval($withdrawal['balance']);
+
+            // Re-check sufficient funds
+            if ($amount > $currentBalance) {
                 $this->conn->rollBack();
-                return [
-                    'success' => false,
-                    'message' => 'Insufficient shop balance'
-                ];
+                return ['success' => false, 'message' => 'Insufficient shop balance'];
             }
 
-            // Update withdrawal status to 'completed' (this triggers DB trigger to deduct balance)
-            $stmt = $this->conn->prepare("
-                UPDATE withdrawal_requests 
+            // Compute new balance
+            $newBalance = $currentBalance - $amount;
+
+            // Update shops table (deduct balance and increment total_withdrawn)
+            $updateShop = $this->conn->prepare("
+                UPDATE shops
+                SET balance = ?, total_withdrawn = total_withdrawn + ?
+                WHERE shopID = ?
+            ");
+            $updateShop->execute([$newBalance, $amount, $shopID]);
+
+            // Insert ledger entry into seller_transactions
+            // transaction_type should reflect the method
+            $txType = ($withdrawal['withdrawal_method'] === 'atm') ? 'withdrawal_atm' : 'withdrawal_cash';
+            $insertTx = $this->conn->prepare("
+                INSERT INTO seller_transactions
+                (shopID, transaction_type, amount, balance_before, balance_after, reference_type, reference_id, processed_by, notes, created_at)
+                VALUES (?, ?, ?, ?, ?, 'withdrawal', ?, ?, ?, NOW())
+            ");
+            // amount stored as negative for withdrawals (consistent with TransactionController expectation)
+            $insertTx->execute([
+                $shopID,
+                $txType,
+                -1 * $amount,
+                $currentBalance,
+                $newBalance,
+                $withdrawalID,
+                $adminID,
+                $notes
+            ]);
+            $transactionID = $this->conn->lastInsertId();
+
+            // Finally update withdrawal_requests to 'completed' and set processed_by / processed_at / notes
+            $updateWithdrawal = $this->conn->prepare("
+                UPDATE withdrawal_requests
                 SET status = 'completed',
                     processed_by = ?,
                     processed_at = NOW(),
                     notes = ?
                 WHERE withdrawalID = ?
             ");
-            $stmt->execute([$adminID, $notes, $withdrawalID]);
+            $updateWithdrawal->execute([$adminID, $notes, $withdrawalID]);
 
             $this->conn->commit();
 
             return [
                 'success' => true,
-                'message' => "Withdrawal approved! ₱" . number_format($withdrawal['amount'], 2) . " will be deducted from {$withdrawal['shop_name']}'s balance."
+                'message' => "Withdrawal approved! ₱" . number_format($amount, 2) . " has been deducted.",
+                'transaction_id' => $transactionID,
+                'new_balance' => $newBalance
             ];
-
         } catch (Exception $e) {
-            $this->conn->rollBack();
+            if ($this->conn->inTransaction()) {
+                $this->conn->rollBack();
+            }
             error_log("Approve withdrawal error: " . $e->getMessage());
             return [
                 'success' => false,
@@ -195,9 +228,9 @@ class Withdrawal
     }
 
     // ==================== REJECT WITHDRAWAL ====================
-    
     /**
      * Reject withdrawal request
+     *
      * @param int $withdrawalID
      * @param int $adminID
      * @param string $reason
@@ -206,28 +239,21 @@ class Withdrawal
     public function rejectWithdrawal($withdrawalID, $adminID, $reason) 
     {
         try {
-            // Get withdrawal details
+            // Simple update; no balance changes required
             $stmt = $this->conn->prepare("
-                SELECT * FROM withdrawal_requests WHERE withdrawalID = ?
+                SELECT status FROM withdrawal_requests WHERE withdrawalID = ?
             ");
             $stmt->execute([$withdrawalID]);
-            $withdrawal = $stmt->fetch(PDO::FETCH_ASSOC);
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
-            if (!$withdrawal) {
-                return [
-                    'success' => false,
-                    'message' => 'Withdrawal request not found'
-                ];
+            if (!$row) {
+                return ['success' => false, 'message' => 'Withdrawal request not found'];
             }
 
-            if ($withdrawal['status'] !== 'pending') {
-                return [
-                    'success' => false,
-                    'message' => 'Withdrawal request is already processed'
-                ];
+            if ($row['status'] !== 'pending') {
+                return ['success' => false, 'message' => 'Withdrawal request is already processed'];
             }
 
-            // Update status to rejected
             $stmt = $this->conn->prepare("
                 UPDATE withdrawal_requests 
                 SET status = 'rejected',
@@ -238,27 +264,16 @@ class Withdrawal
             ");
             $stmt->execute([$adminID, $reason, $withdrawalID]);
 
-            return [
-                'success' => true,
-                'message' => 'Withdrawal request rejected'
-            ];
-
+            return ['success' => true, 'message' => 'Withdrawal request rejected'];
         } catch (Exception $e) {
             error_log("Reject withdrawal error: " . $e->getMessage());
-            return [
-                'success' => false,
-                'message' => 'Failed to reject withdrawal: ' . $e->getMessage()
-            ];
+            return ['success' => false, 'message' => 'Failed to reject withdrawal: ' . $e->getMessage()];
         }
     }
 
     // ==================== GET WITHDRAWAL HISTORY ====================
-    
     /**
      * Get withdrawal history by shop
-     * @param int $shopID
-     * @param int $limit
-     * @return array
      */
     public function getWithdrawalsByShop($shopID, $limit = 20) 
     {
@@ -275,7 +290,6 @@ class Withdrawal
             ");
             $stmt->execute([$shopID, $limit]);
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
-
         } catch (Exception $e) {
             error_log("Get withdrawals error: " . $e->getMessage());
             return [];
@@ -284,7 +298,7 @@ class Withdrawal
 
     /**
      * Get all pending withdrawal requests (Admin)
-     * @return array
+     * NOTE: returns `balance` field (used by view) for compatibility.
      */
     public function getPendingWithdrawals() 
     {
@@ -293,6 +307,7 @@ class Withdrawal
                 SELECT 
                     wr.*,
                     s.shop_name,
+                    s.balance as balance,
                     s.balance as current_balance,
                     sp.business_name,
                     u.full_name as seller_name,
@@ -306,7 +321,6 @@ class Withdrawal
             ");
             $stmt->execute();
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
-
         } catch (Exception $e) {
             error_log("Get pending withdrawals error: " . $e->getMessage());
             return [];
@@ -315,8 +329,6 @@ class Withdrawal
 
     /**
      * Get all withdrawal history (Admin)
-     * @param int $limit
-     * @return array
      */
     public function getAllWithdrawals($limit = 50) 
     {
@@ -337,7 +349,6 @@ class Withdrawal
             ");
             $stmt->execute([$limit]);
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
-
         } catch (Exception $e) {
             error_log("Get all withdrawals error: " . $e->getMessage());
             return [];
@@ -345,12 +356,6 @@ class Withdrawal
     }
 
     // ==================== WITHDRAWAL STATISTICS ====================
-    
-    /**
-     * Get withdrawal statistics for a shop
-     * @param int $shopID
-     * @return array|false Returns array of stats or false on error
-     */
     public function getShopWithdrawalStats($shopID) 
     {
         try {
@@ -366,8 +371,6 @@ class Withdrawal
             ");
             $stmt->execute([$shopID]);
             $result = $stmt->fetch(PDO::FETCH_ASSOC);
-            
-            // Return empty stats array if no data found
             return $result ?: [
                 'pending_count' => 0,
                 'completed_count' => 0,
@@ -375,10 +378,8 @@ class Withdrawal
                 'total_withdrawn' => 0,
                 'pending_amount' => 0
             ];
-
         } catch (Exception $e) {
             error_log("Get withdrawal stats error: " . $e->getMessage());
-            // Return empty stats array on error
             return [
                 'pending_count' => 0,
                 'completed_count' => 0,
@@ -390,10 +391,8 @@ class Withdrawal
     }
 
     // ==================== HELPER METHODS ====================
-    
     /**
      * Get minimum withdrawal amount from system settings
-     * @return float
      */
     private function getMinWithdrawalAmount() 
     {
@@ -406,7 +405,6 @@ class Withdrawal
             $stmt->execute();
             $result = $stmt->fetch(PDO::FETCH_ASSOC);
             return $result ? floatval($result['setting_value']) : 100.00;
-
         } catch (Exception $e) {
             return 100.00; // Default minimum
         }
@@ -414,8 +412,6 @@ class Withdrawal
 
     /**
      * Format withdrawal status for display
-     * @param string $status
-     * @return array
      */
     public function formatStatus($status) 
     {
@@ -431,8 +427,6 @@ class Withdrawal
 
     /**
      * Format withdrawal method for display
-     * @param string $method
-     * @return string
      */
     public function formatMethod($method) 
     {
