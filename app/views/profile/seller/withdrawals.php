@@ -8,6 +8,7 @@ require_once __DIR__ . '/../../../../config/config.php';
 require_once __DIR__ . '/../../../../config/database.php';
 require_once __DIR__ . '/../../../models/Shop.php';
 require_once __DIR__ . '/../../../models/Withdrawal.php';
+require_once __DIR__ . '/../../../helpers/csrf.php';
 
 // Check if user is logged in and is seller
 $isLoggedIn = isset($_SESSION['logged_in']) && $_SESSION['logged_in'];
@@ -51,8 +52,6 @@ $minWithdrawal = $stmt->fetch(PDO::FETCH_ASSOC)['setting_value'] ?? 100;
     <link rel="stylesheet" href="<?php echo BASE_URL; ?>css/seller/dashboard.css">
 </head>
 <body>
-    <?php include 'seller-nav.php'; ?>
-
     <?php if (isset($_SESSION['success'])): ?>
         <div class="alert alert-success"><?php echo $_SESSION['success']; unset($_SESSION['success']); ?></div>
     <?php endif; ?>
@@ -60,6 +59,13 @@ $minWithdrawal = $stmt->fetch(PDO::FETCH_ASSOC)['setting_value'] ?? 100;
     <?php if (isset($_SESSION['error'])): ?>
         <div class="alert alert-error"><?php echo $_SESSION['error']; unset($_SESSION['error']); ?></div>
     <?php endif; ?>
+
+    <div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
+    
+    <?php 
+    // Include reusable seller navigation
+    include __DIR__ . '/seller-nav.php'; 
+    ?>
 
     <!-- Main Content -->
     <main class="main-content">
@@ -110,12 +116,15 @@ $minWithdrawal = $stmt->fetch(PDO::FETCH_ASSOC)['setting_value'] ?? 100;
             <div class="form-card">
                 <h2 class="section-title">Request Withdrawal</h2>
                 
-                <form method="POST" action="<?php echo BASE_URL; ?>profile/seller/withdrawal-request">
+                <form id="withdrawalForm" onsubmit="submitWithdrawal(event)">
+                    <input type="hidden" name="csrf_token" value="<?php echo CSRF::generateToken(); ?>">
+                    <input type="hidden" name="shop_id" value="<?php echo $shop['shopID']; ?>">
+                    
                     <div class="form-group">
                         <label for="amount">Amount to Withdraw *</label>
                         <div class="input-group">
                             <span class="input-prefix">₱</span>
-                            <input type="number" id="amount" name="amount" step="0.01" 
+                            <input type="number" id="amount" name="amount" step="100" 
                                    min="<?php echo $minWithdrawal; ?>" 
                                    max="<?php echo $balance['balance']; ?>" 
                                    required>
@@ -142,7 +151,7 @@ $minWithdrawal = $stmt->fetch(PDO::FETCH_ASSOC)['setting_value'] ?? 100;
                     <input type="hidden" name="atm_card_number" value="<?php echo htmlspecialchars($shop['atm_card_number'] ?? ''); ?>">
                     <input type="hidden" name="action" value="request_withdrawal">
 
-                    <button type="submit" class="btn-submit" <?php echo ($balance['balance'] < $minWithdrawal) ? 'disabled' : ''; ?>>
+                    <button type="submit" class="btn-submit" id="submitBtn" <?php echo ($balance['balance'] < $minWithdrawal) ? 'disabled' : ''; ?>>
                         Submit Withdrawal Request
                     </button>
                 </form>
@@ -201,6 +210,26 @@ $minWithdrawal = $stmt->fetch(PDO::FETCH_ASSOC)['setting_value'] ?? 100;
             </div>
         </section>
     </main>
+
+    <!-- Success Modal -->
+    <div id="successModal" class="modal">
+        <div class="modal-content success">
+            <div class="modal-icon">✅</div>
+            <h3>Withdrawal Request Submitted!</h3>
+            <p id="successMessage">Your withdrawal request has been submitted successfully.</p>
+            <button onclick="closeSuccessModal()" class="btn-ok">OK</button>
+        </div>
+    </div>
+
+    <!-- Error Modal -->
+    <div id="errorModal" class="modal">
+        <div class="modal-content error">
+            <div class="modal-icon">❌</div>
+            <h3>Request Failed</h3>
+            <p id="errorMessage">Something went wrong. Please try again.</p>
+            <button onclick="closeErrorModal()" class="btn-ok">OK</button>
+        </div>
+    </div>
 
     <style>
         .balance-section {
@@ -323,8 +352,9 @@ $minWithdrawal = $stmt->fetch(PDO::FETCH_ASSOC)['setting_value'] ?? 100;
             background: #f9fafb;
         }
 
-        .radio-option input {
-            cursor: pointer;
+        .radio-option input:checked + span {
+            font-weight: bold;
+            color: #667eea;
         }
 
         .btn-submit {
@@ -352,6 +382,55 @@ $minWithdrawal = $stmt->fetch(PDO::FETCH_ASSOC)['setting_value'] ?? 100;
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
 
+        .table-container {
+            overflow-x: auto;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .data-table th,
+        .data-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .data-table th {
+            background: #f9fafb;
+            font-weight: 600;
+            color: #374151;
+        }
+
+        .status-badge {
+            padding: 5px 10px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .status-pending {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .status-approved {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .status-completed {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .status-rejected {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
         .no-data {
             text-align: center;
             padding: 40px;
@@ -361,6 +440,132 @@ $minWithdrawal = $stmt->fetch(PDO::FETCH_ASSOC)['setting_value'] ?? 100;
         .text-muted {
             color: #999;
         }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 10000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+        }
+
+        .modal-icon {
+            font-size: 4rem;
+            margin-bottom: 20px;
+        }
+
+        .modal-content h3 {
+            margin: 0 0 10px 0;
+            color: #1f2937;
+        }
+
+        .modal-content p {
+            margin: 0 0 20px 0;
+            color: #6b7280;
+        }
+
+        .btn-ok {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .modal-content.error .btn-ok {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        }
+
+        @media (max-width: 768px) {
+            .balance-section {
+                grid-template-columns: 1fr;
+            }
+        }
     </style>
+
+    <script>
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sellerSidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            sidebar.classList.toggle('active');
+            overlay.classList.toggle('active');
+        }
+
+        async function submitWithdrawal(event) {
+            event.preventDefault();
+            
+            const form = document.getElementById('withdrawalForm');
+            const submitBtn = document.getElementById('submitBtn');
+            const formData = new FormData(form);
+            
+            // Disable submit button
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Processing...';
+            
+            try {
+                const response = await fetch('<?php echo BASE_URL; ?>withdrawal', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    // Show success modal
+                    document.getElementById('successMessage').textContent = result.message;
+                    document.getElementById('successModal').classList.add('active');
+                    
+                    // Reset form
+                    form.reset();
+                    
+                    // Reload page after 2 seconds
+                    setTimeout(() => {
+                        location.reload();
+                    }, 2000);
+                } else {
+                    // Show error modal
+                    document.getElementById('errorMessage').textContent = result.message;
+                    document.getElementById('errorModal').classList.add('active');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('errorMessage').textContent = 'Network error. Please try again.';
+                document.getElementById('errorModal').classList.add('active');
+            } finally {
+                // Re-enable submit button
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Submit Withdrawal Request';
+            }
+        }
+
+        function closeSuccessModal() {
+            document.getElementById('successModal').classList.remove('active');
+        }
+
+        function closeErrorModal() {
+            document.getElementById('errorModal').classList.remove('active');
+        }
+    </script>
 </body>
 </html>

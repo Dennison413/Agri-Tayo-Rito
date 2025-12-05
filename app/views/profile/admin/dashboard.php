@@ -222,44 +222,10 @@ $recent_orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     </table>
                 </div>
             </section>
-
-            <section class="content-section">
-                <div class="section-header">
-                    <h2 class="section-title">Recent Orders</h2>
-                    <a href="<?php echo BASE_URL; ?>profile/admin/orders" class="view-all-link">View All →</a>
-                </div>
-                <div class="table-container">
-                    <table class="data-table">
-                        <thead>
-                            <tr>
-                                <th>Order ID</th>
-                                <th>Customer</th>
-                                <th>Amount</th>
-                                <th>Status</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php foreach ($recent_orders as $order): ?>
-                                <tr>
-                                    <td>#<?php echo $order['orderID']; ?></td>
-                                    <td><?php echo htmlspecialchars($order['full_name']); ?></td>
-                                    <td>₱<?php echo number_format($order['total_amount'], 2); ?></td>
-                                    <td>
-                                        <span class="status-badge status-<?php echo $order['order_status']; ?>">
-                                            <?php echo ucfirst($order['order_status']); ?>
-                                        </span>
-                                    </td>
-                                </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
-                </div>
-            </section>
         </div>
     </main>
 
     <style>
-        /* ✅ NEW: Alert Cards Styling */
         .alerts-section {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));

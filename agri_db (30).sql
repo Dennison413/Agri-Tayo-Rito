@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Dec 04, 2025 at 11:26 AM
+-- Generation Time: Dec 05, 2025 at 03:15 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -590,11 +590,11 @@ CREATE TABLE `seller_applications` (
 --
 
 INSERT INTO `seller_applications` (`applicationID`, `userID`, `business_name`, `business_address`, `business_permit`, `application_status`, `applied_at`, `reviewed_at`, `reviewed_by`) VALUES
-(1, 8, 'Dela Cruz Fresh Vegetables', 'Sitio Maligaya, Brgy. San Buenaventura, San Pablo City', 'BP-2024-001', 'pending', '2024-01-09 17:00:00', '2025-12-02 02:48:19', 1),
+(1, 8, 'Dela Cruz Fresh Vegetables', 'Sitio Maligaya, Brgy. San Buenaventura, San Pablo City', 'BP-2024-001', 'approved', '2024-01-09 17:00:00', '2025-12-04 16:16:23', 1),
 (2, 6, 'Rosa\'s Organic Farm', 'Purok 3, Brgy. San Isidro, San Pablo City', 'BP-2024-002', 'approved', '2024-01-11 19:00:00', '2024-01-19 22:00:00', 1),
 (3, 7, 'Reyes Fruit Garden', 'Km 8, Brgy. Sto. Angel Sur, San Pablo City', 'BP-2024-003', 'approved', '2024-01-24 21:30:00', '2024-01-31 17:45:00', 1),
-(6, 2, 'M and C Seed Farm', 'Poblacion, Padre Garcia, Batangas', '/uploads/business_permits/permit_user_2_1764841301.pdf', 'pending', '2025-12-04 09:41:41', NULL, NULL),
-(7, 4, 'Tan Bilihan ng Palay', 'Lagalag, Tiaong, Quezon', '/uploads/business_permits/permit_user_4_1764841418.pdf', 'pending', '2025-12-04 09:43:38', NULL, NULL);
+(6, 2, 'M and C Seed Farm', 'Poblacion, Padre Garcia, Batangas', '/uploads/business_permits/permit_user_2_1764841301.pdf', 'rejected', '2025-12-04 09:41:41', '2025-12-04 16:16:41', 1),
+(7, 4, 'Tan Bilihan ng Palay', 'Lagalag, Tiaong, Quezon', '/uploads/business_permits/permit_user_4_1764841418.pdf', 'approved', '2025-12-04 09:43:38', '2025-12-04 16:16:17', 1);
 
 -- --------------------------------------------------------
 
@@ -623,8 +623,9 @@ INSERT INTO `seller_profiles` (`sellerID`, `shopID`, `userID`, `business_name`, 
 (1, 1, 5, 'Dela Cruz Fresh Vegetables', 'Family-owned farm specializing in fresh leafy vegetables and root crops. Serving San Pablo City for over 10 years.', 'Brgy. San Buenaventura, 2 hectares', 4.8, 150, 1, '2025-11-18 13:15:08'),
 (2, 2, 6, 'Rosa\'s Organic Farm', 'Certified organic farm growing chemical-free vegetables using traditional farming methods.', 'Brgy. San Isidro, 1.5 hectares', 4.9, 98, 1, '2025-11-18 13:15:08'),
 (3, 3, 7, 'Reyes Fruit Garden', 'Tropical fruit orchard specializing in mangoes, coconuts, and seasonal fruits. We also sell fruit seedlings.', 'Brgy. Sto. Angel Sur, 3 hectares', 4.7, 125, 1, '2025-11-18 13:15:08'),
-(10, 4, 8, 'Dela Cruz Fresh Vegetables', NULL, 'Sitio Maligaya, Brgy. San Buenaventura, San Pablo City', 0.0, 0, 1, '2025-12-02 02:48:19'),
-(11, 5, 2, 'M and C Seed Farm', NULL, 'K. Morales Street, Poblacion, Padre Garcia, Batangas', 0.0, 0, 1, '2025-12-04 03:24:22');
+(11, NULL, 2, 'M and C Seed Farm', NULL, 'K. Morales Street, Poblacion, Padre Garcia, Batangas', 0.0, 0, 1, '2025-12-04 03:24:22'),
+(12, 6, 4, 'Tan Bilihan ng Palay', NULL, 'Lagalag, Tiaong, Quezon', 0.0, 0, 1, '2025-12-04 16:16:17'),
+(13, 7, 8, 'Dela Cruz Fresh Vegetables', NULL, 'Sitio Maligaya, Brgy. San Buenaventura, San Pablo City', 0.0, 0, 1, '2025-12-04 16:16:23');
 
 -- --------------------------------------------------------
 
@@ -653,7 +654,29 @@ CREATE TABLE `seller_transactions` (
 INSERT INTO `seller_transactions` (`transactionID`, `shopID`, `transaction_type`, `amount`, `balance_before`, `balance_after`, `reference_type`, `reference_id`, `processed_by`, `notes`, `created_at`) VALUES
 (1, 1, 'order_payment', 350.00, 0.00, 350.00, 'order', 5, 1, 'Payment credited', '2025-12-04 09:59:28'),
 (2, 2, 'withdrawal_cash', -200.00, 500.00, 300.00, 'withdrawal', 2, 1, 'Cash withdrawal processed', '2025-12-04 09:59:28'),
-(3, 3, 'adjustment', 50.00, 300.00, 350.00, 'manual', NULL, 1, 'Manual balance correction', '2025-12-04 09:59:28');
+(3, 3, 'adjustment', 50.00, 300.00, 350.00, 'manual', NULL, 1, 'Manual balance correction', '2025-12-04 09:59:28'),
+(4, 1, 'withdrawal_cash', -500.00, 23856.00, 23356.00, 'withdrawal', 1, 1, '', '2025-12-04 14:49:04'),
+(5, 1, 'withdrawal_cash', -500.00, 23356.00, 22856.00, 'withdrawal', 1, 1, 'Withdrawal via CASH', '2025-12-04 14:49:04'),
+(6, 1, 'withdrawal_cash', -1000.00, 22856.00, 21856.00, 'withdrawal', 4, 1, '', '2025-12-04 16:23:51'),
+(7, 1, 'withdrawal_cash', -1000.00, 21856.00, 20856.00, 'withdrawal', 4, 1, 'Withdrawal via CASH', '2025-12-04 16:23:51'),
+(8, 1, 'withdrawal_cash', -1000.00, 20856.00, 19856.00, 'withdrawal', 5, 1, '', '2025-12-04 16:29:19'),
+(9, 1, 'withdrawal_cash', -1000.00, 19856.00, 18856.00, 'withdrawal', 5, 1, 'Withdrawal via CASH', '2025-12-04 16:29:19'),
+(10, 1, 'withdrawal_cash', -500.00, 18856.00, 18356.00, 'withdrawal', 6, 1, '', '2025-12-04 17:25:26'),
+(11, 1, 'withdrawal_cash', -500.00, 18356.00, 17856.00, 'withdrawal', 6, 1, 'Withdrawal via CASH', '2025-12-04 17:25:26'),
+(12, 1, 'withdrawal_cash', -400.00, 17856.00, 17456.00, 'withdrawal', 7, 1, '', '2025-12-04 17:27:43'),
+(13, 1, 'withdrawal_cash', -400.00, 17456.00, 17056.00, 'withdrawal', 7, 1, 'Withdrawal via CASH', '2025-12-04 17:27:43'),
+(14, 1, 'withdrawal_cash', -350.00, 17056.00, 16706.00, 'withdrawal', 8, 1, 'Cash withdrawal processed', '2025-12-05 00:10:11'),
+(15, 1, 'withdrawal_cash', -350.00, 16706.00, 16356.00, 'withdrawal', 8, 1, 'Withdrawal via CASH', '2025-12-05 00:10:11'),
+(16, 1, 'withdrawal_cash', -600.00, 16356.00, 15756.00, 'withdrawal', 9, 1, '', '2025-12-05 00:28:23'),
+(17, 1, 'withdrawal_cash', -600.00, 15756.00, 15156.00, 'withdrawal', 9, 1, 'Withdrawal via CASH', '2025-12-05 00:28:23'),
+(18, 1, 'withdrawal_cash', -400.00, 15156.00, 14756.00, 'withdrawal', 10, 1, '', '2025-12-05 00:47:56'),
+(19, 1, 'withdrawal_cash', -400.00, 14756.00, 14356.00, 'withdrawal', 10, 1, 'Withdrawal via CASH', '2025-12-05 00:47:56'),
+(20, 1, 'withdrawal_cash', -500.00, 14356.00, 13856.00, 'withdrawal', 11, 1, 'Cash withdrawal processed', '2025-12-05 01:06:05'),
+(21, 1, 'withdrawal_cash', -500.00, 13856.00, 13356.00, 'withdrawal', 11, 1, 'Withdrawal via CASH', '2025-12-05 01:06:05'),
+(22, 1, 'withdrawal_atm', -400.00, 13356.00, 12956.00, 'withdrawal', 12, 1, '', '2025-12-05 01:22:57'),
+(23, 1, 'withdrawal_atm', -400.00, 12956.00, 12556.00, 'withdrawal', 12, 1, 'Withdrawal via ATM', '2025-12-05 01:22:57'),
+(24, 1, 'withdrawal_cash', -500.00, 12556.00, 12056.00, 'withdrawal', 13, 1, '', '2025-12-05 02:08:04'),
+(25, 1, 'withdrawal_cash', -500.00, 12056.00, 11556.00, 'withdrawal', 13, 1, 'Withdrawal via CASH', '2025-12-05 02:08:04');
 
 -- --------------------------------------------------------
 
@@ -692,11 +715,11 @@ CREATE TABLE `shops` (
 --
 
 INSERT INTO `shops` (`shopID`, `sellerID`, `shop_name`, `shop_slug`, `shop_description`, `shop_logo`, `shop_banner`, `farm_location`, `business_hours`, `contact_number`, `rating`, `total_products`, `total_orders`, `total_reviews`, `balance`, `total_earned`, `total_withdrawn`, `atm_card_number`, `atm_card_issued_at`, `is_verified`, `is_active`, `created_at`, `updated_at`) VALUES
-(1, 1, 'Dela Cruz Fresh Vegetables', 'dela-cruz-fresh-vegetables', 'Family-owned farm specializing in fresh leafy vegetables and root crops. Serving San Pablo City for over 10 years.', NULL, NULL, 'Brgy. San Buenaventura, 2 hectares', NULL, NULL, 4.80, 0, 0, 0, 23856.00, 5689.00, 0.00, '21-11827', '2025-11-27 18:51:10', 1, 1, '2025-11-25 03:53:43', '2025-12-04 10:04:42'),
+(1, 1, 'Dela Cruz Fresh Vegetables', 'dela-cruz-fresh-vegetables', 'Family-owned farm specializing in fresh leafy vegetables and root crops. Serving San Pablo City for over 10 years.', NULL, NULL, 'Brgy. San Buenaventura, 2 hectares', NULL, NULL, 4.80, 0, 0, 0, 11556.00, 5689.00, 12300.00, '21-11827', '2025-11-27 18:51:10', 1, 1, '2025-11-25 03:53:43', '2025-12-05 02:08:04'),
 (2, 2, 'Rosa\'s Organic Farm', 'rosas-organic-farm', 'Certified organic farm growing chemical-free vegetables using traditional farming methods.', NULL, NULL, 'Brgy. San Isidro, 1.5 hectares', NULL, NULL, 4.90, 0, 0, 0, 0.00, 0.00, 0.00, NULL, NULL, 1, 1, '2025-11-25 03:53:43', '2025-11-27 14:10:16'),
 (3, 3, 'Reyes Fruit Garden', 'reyes-fruit-garden', 'Tropical fruit orchard specializing in mangoes, coconuts, and seasonal fruits. We also sell fruit seedlings.', NULL, NULL, 'Brgy. Sto. Angel Sur, 3 hectares', NULL, NULL, 4.70, 0, 0, 0, 0.00, 0.00, 0.00, '21-11823', '2025-11-29 12:20:55', 1, 1, '2025-11-25 03:53:43', '2025-11-29 12:20:55'),
-(4, 10, 'Dela Cruz Fresh Vegetables', 'dela-cruz-fresh-vegetables-1', 'Welcome to Dela Cruz Fresh Vegetables!', NULL, NULL, 'Sitio Maligaya, Brgy. San Buenaventura, San Pablo City', NULL, '09121493081', 0.00, 0, 0, 0, 0.00, 0.00, 0.00, NULL, NULL, 1, 1, '2025-12-02 02:48:19', '2025-12-02 02:48:19'),
-(5, 11, 'M and C Seed Farm', 'm-and-c-seed-farm', 'Welcome to M and C Seed Farm!', NULL, NULL, 'K. Morales Street, Poblacion, Padre Garcia, Batangas', NULL, '09181234567', 0.00, 0, 0, 0, 0.00, 0.00, 0.00, NULL, NULL, 1, 1, '2025-12-04 03:24:22', '2025-12-04 03:24:22');
+(6, 12, 'Tan Bilihan ng Palay', 'tan-bilihan-ng-palay', 'Welcome to Tan Bilihan ng Palay!', NULL, NULL, 'Lagalag, Tiaong, Quezon', NULL, '09201234567', 0.00, 0, 0, 0, 0.00, 0.00, 0.00, '21-77796', '2025-12-05 00:02:49', 1, 1, '2025-12-04 16:16:17', '2025-12-05 00:02:49'),
+(7, 13, 'Dela Cruz Fresh Vegetables Fruits and Saplings and Seeds and Livestocks', 'dela-cruz-fresh-vegetables-1', 'Welcome to Dela Cruz Fresh Vegetables!', NULL, NULL, 'Sitio Maligaya, Brgy. San Buenaventura, San Pablo City', NULL, '09121493081', 0.00, 0, 0, 0, 0.00, 0.00, 0.00, '21-12338', '2025-12-04 17:19:47', 1, 1, '2025-12-04 16:16:23', '2025-12-05 00:04:58');
 
 -- --------------------------------------------------------
 
@@ -780,11 +803,11 @@ INSERT INTO `users` (`userID`, `email`, `profile_image`, `password_hash`, `full_
 (1, 'admin@sanpablo-lgu.gov.ph', '/images/avatars/avt1.jpg', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Administrator', '09171234567', '/images/avatars/avt1.jpg', 'admin', 1, '2025-11-18 13:15:07', '2025-11-27 16:44:04'),
 (2, 'anna.garcia@gmail.com', '/images/avatars/avt4.jpg', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Anna Garcia', '09181234567', '/images/avatars/avt4.jpg', 'buyer', 1, '2025-11-18 13:15:07', '2025-12-04 03:30:06'),
 (3, 'michael.cruz@yahoo.com', '/images/avatars/avt3.jpg', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Michael Cruz', '09191234567', '/images/avatars/avt3.jpg', 'buyer', 1, '2025-11-18 13:15:07', '2025-11-25 03:53:48'),
-(4, 'lisa.tan@gmail.com', '/images/avatars/avt4.jpg', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Lisa Tan', '09201234567', '/images/avatars/avt4.jpg', 'buyer', 1, '2025-11-18 13:15:07', '2025-11-25 03:53:48'),
+(4, 'lisa.tan@gmail.com', '/images/avatars/avt4.jpg', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Lisa Tan', '09201234567', '/images/avatars/avt4.jpg', 'seller', 1, '2025-11-18 13:15:07', '2025-12-04 16:16:17'),
 (5, 'juan.delacruz@gmail.com', '/images/avatars/avt5.jpg', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Juan Dela Cruz', '09211234567', '/images/avatars/avt5.jpg', 'seller', 1, '2025-11-18 13:15:07', '2025-12-02 02:46:20'),
 (6, 'rosa.mendoza@yahoo.com', '/images/avatars/avt6.jpg', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Rosa Mendoza', '09221234567', '/images/avatars/avt6.jpg', 'seller', 1, '2025-11-18 13:15:07', '2025-11-25 03:53:48'),
 (7, 'pedro.reyes@gmail.com', '/images/avatars/avt7.jpg', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Pedro Reyes', '09231234567', '/images/avatars/avt7.jpg', 'seller', 1, '2025-11-18 13:15:07', '2025-11-25 03:53:48'),
-(8, 'dennisontenorio11@gmail.com', '/images/avatars/avt13.jpg', '$2y$10$snLkU5e6aQTTYsw1H.Cq6.N2IMK.V68bPd2ukOjSqkotpmzoMMLem', 'Dennison Tenorio', '09121493081', '/images/avatars/avt13.jpg', 'buyer', 1, '2025-11-19 04:20:47', '2025-12-02 02:50:10'),
+(8, 'dennisontenorio11@gmail.com', '/images/avatars/avt13.jpg', '$2y$10$snLkU5e6aQTTYsw1H.Cq6.N2IMK.V68bPd2ukOjSqkotpmzoMMLem', 'Dennison Tenorio', '09121493081', '/images/avatars/avt13.jpg', 'seller', 1, '2025-11-19 04:20:47', '2025-12-04 16:16:23'),
 (12, 'test@example.com', NULL, '$2y$10$9AVeVnfOo6dqbmLZXwu0Qux0O1y8FdYEz9hzdcj8Lkbx.R4fi/hbG', 'Test User', NULL, '/images/avatars/avt1.jpg', 'buyer', 1, '2025-11-30 00:49:53', '2025-11-30 00:49:53'),
 (13, 'dennis1@gmail.com', NULL, '$2y$10$iHtit/MP1XPCekjBm5EQv.xn9z79lMF/78tBFIGULIyCrsNdteFqa', 'Dennis Tenorio', NULL, '/images/avatars/avt1.jpg', 'buyer', 1, '2025-11-30 01:06:21', '2025-11-30 01:06:21'),
 (14, 'lebron23@gmail.com', NULL, '$2y$10$f9x/ZAzCCmOzDhylpJBV2O1nWziUYYqG57QLBnFDzfLaDHtK72b0i', 'Lebron James', NULL, '/images/avatars/avt1.jpg', 'buyer', 1, '2025-11-30 01:09:45', '2025-11-30 01:09:45'),
@@ -887,9 +910,19 @@ CREATE TABLE `withdrawal_requests` (
 --
 
 INSERT INTO `withdrawal_requests` (`withdrawalID`, `shopID`, `amount`, `withdrawal_method`, `atm_card_presented`, `status`, `requested_at`, `processed_by`, `processed_at`, `rejection_reason`, `notes`) VALUES
-(1, 1, 500.00, 'cash', NULL, 'pending', '2025-12-04 09:59:28', NULL, NULL, NULL, 'First withdrawal request'),
+(1, 1, 500.00, 'cash', NULL, 'completed', '2025-12-04 09:59:28', 1, '2025-12-04 14:49:04', NULL, ''),
 (2, 2, 300.00, 'atm', '21-11827', 'approved', '2025-12-04 09:59:28', 1, '2025-12-04 09:59:28', NULL, 'ATM withdrawal approved'),
-(3, 3, 700.00, 'cash', NULL, 'rejected', '2025-12-04 09:59:28', 1, '2025-12-04 09:59:28', 'Insufficient balance', 'Rejected due to low funds');
+(3, 3, 700.00, 'cash', NULL, 'rejected', '2025-12-04 09:59:28', 1, '2025-12-04 09:59:28', 'Insufficient balance', 'Rejected due to low funds'),
+(4, 1, 1000.00, 'cash', '21-11827', 'completed', '2025-12-04 16:23:29', 1, '2025-12-04 16:23:51', NULL, ''),
+(5, 1, 1000.00, 'cash', '21-11827', 'completed', '2025-12-04 16:24:30', 1, '2025-12-04 16:29:19', NULL, ''),
+(6, 1, 500.00, 'cash', '21-11827', 'completed', '2025-12-04 16:46:54', 1, '2025-12-04 17:25:26', NULL, ''),
+(7, 1, 400.00, 'cash', '21-11827', 'completed', '2025-12-04 17:26:44', 1, '2025-12-04 17:27:43', NULL, ''),
+(8, 1, 350.00, 'cash', '21-11827', 'completed', '2025-12-05 00:10:11', 1, '2025-12-05 00:10:11', NULL, 'Cash withdrawal processed'),
+(9, 1, 600.00, 'cash', '21-11827', 'completed', '2025-12-05 00:14:04', 1, '2025-12-05 00:28:23', NULL, ''),
+(10, 1, 400.00, 'cash', '21-11827', 'completed', '2025-12-05 00:34:59', 1, '2025-12-05 00:47:56', NULL, ''),
+(11, 1, 500.00, 'cash', '21-11827', 'completed', '2025-12-05 01:06:05', 1, '2025-12-05 01:06:05', NULL, 'Cash withdrawal processed'),
+(12, 1, 400.00, 'atm', '21-11827', 'completed', '2025-12-05 01:22:28', 1, '2025-12-05 01:22:57', NULL, ''),
+(13, 1, 500.00, 'cash', '21-11827', 'completed', '2025-12-05 02:07:34', 1, '2025-12-05 02:08:04', NULL, '');
 
 --
 -- Triggers `withdrawal_requests`
@@ -1131,7 +1164,7 @@ ALTER TABLE `cart`
 -- AUTO_INCREMENT for table `categories`
 --
 ALTER TABLE `categories`
-  MODIFY `categoryID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+  MODIFY `categoryID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
 -- AUTO_INCREMENT for table `delivery_riders`
@@ -1191,19 +1224,19 @@ ALTER TABLE `seller_applications`
 -- AUTO_INCREMENT for table `seller_profiles`
 --
 ALTER TABLE `seller_profiles`
-  MODIFY `sellerID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
+  MODIFY `sellerID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
 
 --
 -- AUTO_INCREMENT for table `seller_transactions`
 --
 ALTER TABLE `seller_transactions`
-  MODIFY `transactionID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `transactionID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=26;
 
 --
 -- AUTO_INCREMENT for table `shops`
 --
 ALTER TABLE `shops`
-  MODIFY `shopID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+  MODIFY `shopID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
 
 --
 -- AUTO_INCREMENT for table `shop_followers`
@@ -1239,7 +1272,7 @@ ALTER TABLE `wishlist`
 -- AUTO_INCREMENT for table `withdrawal_requests`
 --
 ALTER TABLE `withdrawal_requests`
-  MODIFY `withdrawalID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `withdrawalID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
 
 --
 -- Constraints for dumped tables

@@ -1,6 +1,6 @@
 <?php
 // app/views/components/admin-nav.php
-// Unified navbar component for all admin pages
+// Unified navbar component for all admin pages - UPDATED TO MATCH SELLER UI
 
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
@@ -31,13 +31,11 @@ try {
 }
 ?>
 
-<div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
-
-<!-- Top Navigation -->
+<!-- Top Navigation Bar -->
 <nav class="top-navbar">
     <div class="logo-wrapper">
         <img src="<?php echo BASE_URL; ?>images/logo.jpg" alt="Logo">
-        <span class="logo">Agri Tayo Rito</span>
+        <span class="logo">Admin Panel</span>
     </div>
     
     <!-- Search Bar (shows on relevant pages) -->
@@ -53,22 +51,23 @@ try {
     <?php endif; ?>
     
     <div class="navbar-actions">
-        <button class="nav-btn" onclick="toggleSidebar()">
+        <button class="nav-btn" onclick="toggleAdminSidebar()">
             <span class="menu-icon">☰</span>
         </button>
     </div>
 </nav>
 
-<!-- Sidebar -->
-<aside class="sidebar" id="sidebar">
+<!-- Sidebar Navigation -->
+<aside class="admin-sidebar" id="adminSidebar">
+    
     <div class="sidebar-header">
         <div class="sidebar-logo">🛡️</div>
         <div class="sidebar-title">
-            <h2>Admin Dashboard</h2>
-            <p><?php echo htmlspecialchars($_SESSION['username'] ?? 'Administrator'); ?></p>
+            <h2>Agri Tayo Rito</h2>
+            <p>Fresh from Farm to Table</p>
         </div>
         <div class="sidebar-actions">
-            <button class="sidebar-action-btn" onclick="toggleSidebar()">✕</button>
+            <button class="sidebar-action-btn" onclick="toggleAdminSidebar()">✕</button>
         </div>
     </div>
 
@@ -82,7 +81,12 @@ try {
 
     <nav class="nav-menu">
         <div class="nav-section">
-            <p class="nav-section-title">Main Menu</p>
+            <p class="nav-section-title">MAIN MENU</p>
+            <button class="nav-item <?php echo $current_page === 'category' || $current_page === 'categories' ? 'active' : ''; ?>" 
+                    onclick="location.href='<?php echo BASE_URL; ?>marketplace'">
+                <span class="nav-icon-menu">🍅</span>
+                <span>View Marketplace</span>
+            </button>
             
             <button class="nav-item <?php echo $current_page === 'dashboard' ? 'active' : ''; ?>" 
                     onclick="location.href='<?php echo BASE_URL; ?>profile/admin/dashboard'">
@@ -146,16 +150,10 @@ try {
                 <span class="nav-icon-menu">🏷️</span>
                 <span>Categories</span>
             </button>
-            
-            <button class="nav-item <?php echo $current_page === 'orders' || $current_page === 'orders-management' ? 'active' : ''; ?>" 
-                    onclick="location.href='<?php echo BASE_URL; ?>profile/admin/orders'">
-                <span class="nav-icon-menu">🛒</span>
-                <span>All Orders</span>
-            </button>
         </div>
 
         <div class="nav-section">
-            <p class="nav-section-title">Settings</p>
+            <p class="nav-section-title">SETTINGS</p>
             <button class="nav-item <?php echo $current_page === 'settings' ? 'active' : ''; ?>" 
                     onclick="location.href='<?php echo BASE_URL; ?>settings'">
                 <span class="nav-icon-menu">⚙️</span>
@@ -172,48 +170,35 @@ try {
     </div>
 </aside>
 
+<!-- Overlay for mobile -->
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleAdminSidebar()"></div>
+
 <style>
 /* ============================================
-   ADMIN SIDEBAR STYLES
+   ADMIN NAVIGATION STYLES - MATCHING SELLER UI
    ============================================ */
 
-/* Overlay */
-.overlay {
-    display: none;
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.5);
-    z-index: 999;
-}
-
-.overlay.active {
-    display: block;
-}
-
-/* Top Navbar */
+/* Top Navigation Bar */
 .top-navbar {
     position: fixed;
     top: 0;
     left: 0;
     right: 0;
     height: 70px;
-    background: #2d5016;
+    background: linear-gradient(135deg, #2d5016 0%, #4a7c25 100%);
     display: flex;
-    align-items: center;
     justify-content: space-between;
-    padding: 0 30px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    align-items: center;
+    padding: 0 20px;
     z-index: 1000;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
     gap: 20px;
 }
 
 .logo-wrapper {
     display: flex;
     align-items: center;
-    gap: 15px;
+    gap: 12px;
 }
 
 .logo-wrapper img {
@@ -221,25 +206,30 @@ try {
     height: 45px;
     border-radius: 50%;
     object-fit: cover;
+    border: 2px solid white;
 }
 
 .logo {
-    font-size: 1.3rem;
-    font-weight: 700;
     color: white;
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+
+.navbar-actions {
+    display: none; /* Hidden on desktop */
 }
 
 .nav-btn {
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.2);
     border: none;
     padding: 10px 15px;
     border-radius: 8px;
     cursor: pointer;
-    transition: all 0.3s;
+    transition: background 0.3s;
 }
 
 .nav-btn:hover {
-    background: rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.3);
 }
 
 .menu-icon {
@@ -284,35 +274,34 @@ try {
     pointer-events: none;
 }
 
-/* Sidebar */
-.sidebar {
+/* Sidebar - Always visible on desktop */
+.admin-sidebar {
     position: fixed;
-    top: 0;
-    right: -400px;
-    width: 350px;
-    height: 100vh;
+    left: 0;
+    top: 70px;
+    bottom: 0;
+    width: 280px;
     background: white;
-    box-shadow: -5px 0 25px rgba(0, 0, 0, 0.15);
-    z-index: 1001;
-    transition: right 0.3s ease;
+    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
     overflow-y: auto;
+    z-index: 999;
     display: flex;
     flex-direction: column;
+    /* Hide scrollbar */
+    scrollbar-width: none;
+    -ms-overflow-style: none;
 }
 
-.sidebar.active {
-    right: 0;
+.admin-sidebar::-webkit-scrollbar {
+    display: none;
 }
 
-/* Sidebar Header */
 .sidebar-header {
-    background: #2d5016;
-    color: white;
     padding: 20px;
+    border-bottom: 1px solid #e5e7eb;
     display: flex;
     align-items: center;
-    gap: 15px;
-    position: relative;
+    gap: 12px;
 }
 
 .sidebar-logo {
@@ -322,241 +311,235 @@ try {
 .sidebar-title h2 {
     margin: 0;
     font-size: 1.2rem;
+    color: #ffffffff;
 }
 
 .sidebar-title p {
     margin: 5px 0 0 0;
-    opacity: 0.9;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
+    color: #ffffffff;
 }
 
 .sidebar-actions {
-    position: absolute;
-    right: 15px;
-    top: 15px;
+    margin-left: auto;
+    display: none; /* Hidden on desktop */
 }
 
 .sidebar-action-btn {
-    background: rgba(255, 255, 255, 0.2);
+    background: none;
     border: none;
-    color: white;
-    width: 35px;
-    height: 35px;
-    border-radius: 50%;
+    font-size: 1.5rem;
+    color: #6b7280;
     cursor: pointer;
-    font-size: 1.2rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s;
+    padding: 5px;
 }
 
-.sidebar-action-btn:hover {
-    background: rgba(255, 255, 255, 0.3);
-}
-
-/* User Info */
 .user-info {
     padding: 20px;
     display: flex;
     align-items: center;
     gap: 15px;
-    border-bottom: 2px solid #f0f0f0;
+    border-bottom: 1px solid #e5e7eb;
 }
 
 .user-avatar {
-    width: 55px;
-    height: 55px;
-    background: #2d5016;
+    width: 50px;
+    height: 50px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.8rem;
+    font-size: 1.5rem;
 }
 
 .user-details h3 {
     margin: 0;
-    font-size: 1.1rem;
-    color: #333;
+    font-size: 1rem;
+    color: #1f2937;
 }
 
 .user-details p {
     margin: 5px 0 0 0;
-    color: #666;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
+    color: #6b7280;
 }
 
-/* Navigation Menu */
 .nav-menu {
     flex: 1;
-    padding: 10px 0;
-    overflow-y: auto;
+    padding: 20px 0;
 }
 
 .nav-section {
-    margin-bottom: 10px;
+    margin-bottom: 20px;
 }
 
 .nav-section-title {
-    padding: 15px 20px 10px 20px;
-    margin: 0;
+    padding: 0 20px;
+    margin: 0 0 10px 0;
     font-size: 0.75rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    color: #999;
+    font-weight: 600;
+    color: #9ca3af;
     letter-spacing: 0.5px;
 }
 
 .nav-item {
     width: 100%;
+    padding: 12px 20px;
+    background: none;
+    border: none;
     display: flex;
     align-items: center;
     gap: 12px;
-    padding: 14px 20px;
-    background: none;
-    border: none;
-    border-left: 3px solid transparent;
     cursor: pointer;
-    transition: all 0.2s;
-    position: relative;
-    text-align: left;
+    transition: all 0.3s;
+    color: #4b5563;
     font-size: 0.95rem;
-    color: #555;
+    text-align: left;
+    position: relative;
 }
 
 .nav-item:hover {
-    background: #f8f9fa;
-    border-left-color: #2d5016;
+    background: #f3f4f6;
     color: #2d5016;
 }
 
 .nav-item.active {
-    background: rgba(45, 80, 22, 0.1);
-    border-left-color: #2d5016;
+    background: linear-gradient(135deg, #ecfccb 0%, #d9f99d 100%);
     color: #2d5016;
     font-weight: 600;
+    border-left: 4px solid #4a7c25;
 }
 
 .nav-icon-menu {
     font-size: 1.3rem;
-    width: 25px;
-    text-align: center;
 }
 
 .nav-badge {
     margin-left: auto;
     background: #ef4444;
     color: white;
-    padding: 3px 8px;
-    border-radius: 12px;
     font-size: 0.75rem;
+    padding: 2px 8px;
+    border-radius: 10px;
     font-weight: 600;
 }
 
-/* Sidebar Footer */
 .sidebar-footer {
     padding: 20px;
-    border-top: 2px solid #f0f0f0;
+    border-top: 1px solid #e5e7eb;
 }
 
 .logout-btn {
     width: 100%;
+    padding: 12px;
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 10px;
-    padding: 14px;
-    background: #ef4444;
-    color: white;
-    border: none;
-    border-radius: 10px;
-    cursor: pointer;
-    font-weight: 600;
-    font-size: 1rem;
-    transition: all 0.3s;
-    box-shadow: 0 4px 10px rgba(239, 68, 68, 0.3);
+    gap: 8px;
+    transition: transform 0.3s;
 }
 
 .logout-btn:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 15px rgba(239, 68, 68, 0.4);
 }
 
-.logout-btn span:first-child {
-    font-size: 1.2rem;
+/* Overlay - hidden on desktop */
+.sidebar-overlay {
+    display: none;
 }
 
-/* Scrollbar Styling */
-.sidebar::-webkit-scrollbar {
-    width: 6px;
-}
-
-.sidebar::-webkit-scrollbar-track {
-    background: #f1f1f1;
-}
-
-.sidebar::-webkit-scrollbar-thumb {
-    background: #ccc;
-    border-radius: 3px;
-}
-
-.sidebar::-webkit-scrollbar-thumb:hover {
-    background: #999;
-}
-
-/* Mobile Responsive */
+/* ============================================
+   MOBILE RESPONSIVE (768px and below)
+   ============================================ */
 @media (max-width: 768px) {
-    .sidebar {
-        width: 300px;
-        right: -300px;
+    /* Show hamburger menu */
+    .navbar-actions {
+        display: block;
     }
     
-    .top-navbar {
-        padding: 0 15px;
+    /* Hide sidebar by default on mobile */
+    .admin-sidebar {
+        left: -280px;
+        transition: left 0.3s ease;
+        top: 70px;
     }
     
-    .logo {
-        font-size: 1.1rem;
+    /* Show sidebar when active */
+    .admin-sidebar.active {
+        left: 0;
+    }
+    
+    /* Show close button in sidebar on mobile */
+    .sidebar-actions {
+        display: block;
+    }
+    
+    /* Show overlay when sidebar is active */
+    .sidebar-overlay {
+        display: none;
+        position: fixed;
+        top: 70px;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 998;
+    }
+    
+    .sidebar-overlay.active {
+        display: block;
     }
     
     .search-wrapper {
-        display: none; /* Hide search on mobile */
+        display: none;
     }
 }
 
-@media (max-width: 480px) {
-    .sidebar {
-        width: 280px;
-        right: -280px;
-    }
-    
-    .logo-wrapper img {
-        width: 35px;
-        height: 35px;
+/* ============================================
+   MAIN CONTENT ADJUSTMENT
+   ============================================ */
+.main-content {
+    margin-left: 280px;
+    margin-top: 70px;
+    padding: 30px;
+    min-height: calc(100vh - 70px);
+}
+
+@media (max-width: 768px) {
+    .main-content {
+        margin-left: 0;
     }
 }
 </style>
 
 <script>
-function toggleSidebar() {
-    const sidebar = document.getElementById('sidebar');
-    const overlay = document.getElementById('overlay');
+function toggleAdminSidebar() {
+    const sidebar = document.getElementById('adminSidebar');
+    const overlay = document.getElementById('sidebarOverlay');
     sidebar.classList.toggle('active');
     overlay.classList.toggle('active');
 }
 
 // Close sidebar when clicking outside
 document.addEventListener('DOMContentLoaded', function() {
-    const overlay = document.getElementById('overlay');
+    const overlay = document.getElementById('sidebarOverlay');
     if (overlay) {
-        overlay.addEventListener('click', toggleSidebar);
+        overlay.addEventListener('click', toggleAdminSidebar);
     }
 });
 
 // Search functionality
 function performSearch() {
-    const searchTerm = document.getElementById('adminSearch').value.toLowerCase();
+    const searchTerm = document.getElementById('adminSearch')?.value.toLowerCase();
+    if (!searchTerm) return;
+    
     const currentPage = '<?php echo $current_page; ?>';
     
     // Get all table rows based on current page
