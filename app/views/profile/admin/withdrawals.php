@@ -194,7 +194,7 @@ $allShops = $shopModel->getAllShopsWithBalance();
             font-weight: 600;
         }
 
-        /* Table Styles - UPDATED FOR RESPONSIVE COLUMNS */
+        /* Table Styles - OPTIMIZED FOR NO HORIZONTAL SCROLL */
         .table-container {
             overflow-x: auto;
         }
@@ -203,8 +203,8 @@ $allShops = $shopModel->getAllShopsWithBalance();
             width: 100%;
             border-collapse: collapse;
             margin-top: 20px;
-            table-layout: auto;
-            /* Let content determine column width */
+            table-layout: fixed;
+            /* ✅ Changed to fixed for better control */
         }
 
         .data-table thead {
@@ -228,109 +228,60 @@ $allShops = $shopModel->getAllShopsWithBalance();
             font-size: 0.9rem;
         }
 
-        /* Remove ALL fixed column widths - let them be flexible */
-        .data-table th,
-        .data-table td {
-            width: auto !important;
-        }
+        /* ✅ OPTIMIZED COLUMN WIDTHS - Remove extra space */
 
-        /* Specific column behaviors for better layout */
-
-        /* ID column - keep it compact */
+        /* Shop Name - flexible but not too wide */
         .data-table th:nth-child(1),
         .data-table td:nth-child(1) {
-            width: 1% !important;
-            white-space: nowrap;
+            width: 25%;
+            max-width: 250px;
+            word-wrap: break-word;
+            white-space: normal;
         }
 
-        /* Shop Name - allow wrapping for long names */
+        /* Seller - moderate */
         .data-table th:nth-child(2),
         .data-table td:nth-child(2) {
-            min-width: 180px;
-            max-width: 300px;
-            word-wrap: break-word;
-            white-space: normal;
+            width: 15%;
+            white-space: nowrap;
         }
 
-        /* Seller - moderate width */
+        /* ATM Card - compact */
         .data-table th:nth-child(3),
         .data-table td:nth-child(3) {
-            min-width: 120px;
+            width: 12%;
             white-space: nowrap;
         }
 
-        /* Amount - compact */
+        /* Balance - compact */
         .data-table th:nth-child(4),
         .data-table td:nth-child(4) {
+            width: 12%;
             white-space: nowrap;
         }
 
-        /* Method - compact */
+        /* Earned - compact */
         .data-table th:nth-child(5),
         .data-table td:nth-child(5) {
+            width: 12%;
             white-space: nowrap;
         }
 
-        /* Current Balance - compact */
+        /* Withdrawn - compact */
         .data-table th:nth-child(6),
         .data-table td:nth-child(6) {
+            width: 12%;
             white-space: nowrap;
         }
 
-        /* Requested - compact */
+        /* Actions - ✅ REDUCED from min-width: 180px to fit buttons */
         .data-table th:nth-child(7),
         .data-table td:nth-child(7) {
-            white-space: nowrap;
-        }
-
-        .data-table th:nth-child(8),
-        .data-table td:nth-child(8) {
+            width: 12%;
+            min-width: 140px;
+            /* ✅ Reduced to fit buttons better */
             text-align: right;
             padding-right: 10px;
-            min-width: 160px;
-        }
-
-        /* Shop Balances Table - Specific adjustments */
-        .shops-section .data-table th:nth-child(1),
-        .shops-section .data-table td:nth-child(1) {
-            min-width: 200px;
-            max-width: 350px;
-            word-wrap: break-word;
-            white-space: normal;
-        }
-
-        .shops-section .data-table th:nth-child(2),
-        .shops-section .data-table td:nth-child(2) {
-            min-width: 120px;
-            white-space: nowrap;
-        }
-
-        .shops-section .data-table th:nth-child(3),
-        .shops-section .data-table td:nth-child(3) {
-            min-width: 140px;
-            white-space: nowrap;
-        }
-
-        .shops-section .data-table th:nth-child(4),
-        .shops-section .data-table td:nth-child(4) {
-            white-space: nowrap;
-        }
-
-        .shops-section .data-table th:nth-child(5),
-        .shops-section .data-table td:nth-child(5) {
-            white-space: nowrap;
-        }
-
-        .shops-section .data-table th:nth-child(6),
-        .shops-section .data-table td:nth-child(6) {
-            white-space: nowrap;
-        }
-
-        .shops-section .data-table th:nth-child(7),
-        .shops-section .data-table td:nth-child(7) {
-            text-align: right;
-            padding-right: 15px;
-            min-width: 180px;
         }
 
         .data-table tbody tr:hover {
@@ -361,10 +312,13 @@ $allShops = $shopModel->getAllShopsWithBalance();
             color: #1e40af;
         }
 
+        /* ✅ OPTIMIZED ACTION BUTTONS - More compact */
         .action-buttons {
             display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
+            gap: 5px;
+            /* ✅ Reduced gap from 8px to 5px */
+            flex-wrap: nowrap;
+            /* ✅ Changed to nowrap */
             justify-content: flex-end;
         }
 
@@ -372,15 +326,14 @@ $allShops = $shopModel->getAllShopsWithBalance();
         .btn-reject,
         .btn-view-history,
         .btn-quick-cash {
-            padding: 5px 8px;
-            /* Even smaller padding */
+            padding: 6px 10px;
+            /* ✅ Slightly increased padding for better look */
             border: none;
             border-radius: 6px;
             cursor: pointer;
             font-weight: 600;
             transition: all 0.3s;
             font-size: 0.75rem;
-            /* Smaller font */
             white-space: nowrap;
         }
 
@@ -391,6 +344,7 @@ $allShops = $shopModel->getAllShopsWithBalance();
 
         .btn-approve:hover {
             background: #15803d;
+            transform: translateY(-1px);
         }
 
         .btn-reject {
@@ -400,15 +354,17 @@ $allShops = $shopModel->getAllShopsWithBalance();
 
         .btn-reject:hover {
             background: #b91c1c;
+            transform: translateY(-1px);
         }
 
         .btn-view-history {
-            background: #3b82f6;
+            background: #3e6c1eff;
             color: white;
         }
 
         .btn-view-history:hover {
-            background: #2563eb;
+            background: #2d5016;
+            transform: translateY(-1px);
         }
 
         .btn-quick-cash {
@@ -418,6 +374,7 @@ $allShops = $shopModel->getAllShopsWithBalance();
 
         .btn-quick-cash:hover {
             background: #d97706;
+            transform: translateY(-1px);
         }
 
         .card-number {
@@ -454,6 +411,15 @@ $allShops = $shopModel->getAllShopsWithBalance();
             z-index: 10000;
             align-items: center;
             justify-content: center;
+        }
+
+        .modal-content {
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+
+        .modal-content::-webkit-scrollbar {
+            display: none;
         }
 
         .modal.active {
@@ -570,7 +536,7 @@ $allShops = $shopModel->getAllShopsWithBalance();
             background: #f9fafb;
             border-radius: 8px;
             margin-bottom: 10px;
-            border-left: 4px solid #3b82f6;
+            border-left: 4px solid #2d5016;
         }
 
         .history-item p {
@@ -853,9 +819,9 @@ $allShops = $shopModel->getAllShopsWithBalance();
                                 <td>
                                     <div class="action-buttons">
                                         <button onclick="viewHistory(<?php echo $shop['shopID']; ?>, '<?php echo htmlspecialchars($shop['shop_name']); ?>')"
-                                            class="btn-view-history">👁️View History</button>
+                                            class="btn-view-history">👁️</button>
                                         <button onclick="quickCash(<?php echo $shop['shopID']; ?>, '<?php echo htmlspecialchars($shop['shop_name']); ?>', <?php echo $shop['balance']; ?>)"
-                                            class="btn-quick-cash">💵 Quick Cash</button>
+                                            class="btn-quick-cash">💵</button>
                                     </div>
                                 </td>
                             </tr>
@@ -1125,7 +1091,7 @@ $allShops = $shopModel->getAllShopsWithBalance();
 
             const formData = new FormData();
             formData.append('action', 'get_withdrawals_by_shop');
-            formData.append('shop_id', shopID); 
+            formData.append('shop_id', shopID);
             formData.append('csrf_token', CSRF_TOKEN);
 
             console.log('Fetching history for shopID:', shopID);
@@ -1136,7 +1102,7 @@ $allShops = $shopModel->getAllShopsWithBalance();
                 })
                 .then(response => response.json())
                 .then(data => {
-                    console.log('History Response:', data); 
+                    console.log('History Response:', data);
 
                     if (data.success) {
                         if (data.withdrawals && data.withdrawals.length > 0) {
