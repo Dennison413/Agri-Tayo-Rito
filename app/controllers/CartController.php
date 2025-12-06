@@ -1,10 +1,5 @@
 <?php
-/**
- * CartController.php - Fixed Version
- * Handles AJAX cart operations with CSRF validation
- */
-
-// Initialize session if not started
+// app/controllers/CartController.php
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }

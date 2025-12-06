@@ -1,6 +1,5 @@
 <?php
 // app/controllers/TransactionController.php
-// SECURED: Transaction History Management with CSRF + Rate Limiting
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
@@ -18,11 +17,7 @@ class TransactionController
         $this->shopModel = new Shop();
     }
 
-    // ==================== SELLER: VIEW TRANSACTIONS ====================
-
-    /**
-     * Get seller's transaction history
-     */
+    // seller transaction history
     public function getSellerTransactions($sellerID, $limit = 50, $offset = 0) 
     {
         $shop = $this->shopModel->getShopBySeller($sellerID);

@@ -1,6 +1,6 @@
 <?php
 // app/models/Orders.php
-// Order Management, Order Items, and Delivery Riders
+// ✅ FINAL FIX: Only delete checked out items from cart
 require_once __DIR__ . '/../../config/database.php';
 
 class Orders 
@@ -14,12 +14,12 @@ class Orders
         $this->conn = $database->connect();
     }
 
-    // Create new order from cart items
-    // This is your main checkout function
+    // ✅ FINAL FIX: Create order and only remove ordered items from cart
     public function createOrder($buyerID, $orderData, $cartItems) 
     {
         try {
-            // In Orders.php → createOrder(), before beginTransaction()
+            // Validate cart BEFORE starting transaction
+            require_once __DIR__ . '/Cart.php';
             $cartModel = new Cart();
             $validation = $cartModel->validateCartForCheckout($buyerID);
 
@@ -29,7 +29,15 @@ class Orders
                     'message' => 'Cart validation failed: ' . implode(', ', $validation['errors'])
                 ];
             }
+
+            error_log("=== STARTING ORDER CREATION ===");
+            error_log("Buyer ID: $buyerID");
+            error_log("Total Amount: " . $orderData['total_amount']);
+            error_log("Cart Items Count: " . count($cartItems));
+
+            // Start transaction
             $this->conn->beginTransaction();
+            error_log("Transaction started");
 
             // Insert order
             $query = "INSERT INTO {$this->table} 
@@ -46,49 +54,77 @@ class Orders
                 $orderData['delivery_municipality'],
                 $orderData['delivery_province'],
                 $orderData['delivery_postal_code'],
-                $orderData['payment_method'], // cod, gcash, paymaya
-                0.00, // LGU handles delivery - always zero shipping
+                $orderData['payment_method'],
+                0.00,
                 $orderData['notes'] ?? null
             ]);
 
             if (!$result) {
-                throw new Exception("Failed to create order");
+                throw new Exception("Failed to insert order");
             }
 
             $orderID = $this->conn->lastInsertId();
+            error_log("Order created with ID: $orderID");
 
-            // Insert order items and reserve stock
-            $orderItemsModel = new OrderItems();
+            // ✅ Collect product IDs that are being ordered
+            $orderedProductIDs = [];
+
+            // Insert order items
             foreach ($cartItems as $item) {
-                $itemResult = $orderItemsModel->addOrderItem(
-                    $orderID, 
-                    $item['productID'], 
-                    $item['quantity'], 
-                    $item['price']
-                );
+                $itemSubtotal = $item['quantity'] * $item['price'];
+                
+                $itemQuery = "INSERT INTO order_items 
+                             (orderID, productID, quantity, unit_price, subtotal) 
+                             VALUES (?, ?, ?, ?, ?)";
+                
+                $itemStmt = $this->conn->prepare($itemQuery);
+                $itemResult = $itemStmt->execute([
+                    $orderID,
+                    $item['productID'],
+                    $item['quantity'],
+                    $item['price'],
+                    $itemSubtotal
+                ]);
 
                 if (!$itemResult) {
-                    throw new Exception("Failed to add order item");
+                    throw new Exception("Failed to add order item: " . $item['product_name']);
                 }
 
-                // Reserve stock
-                $this->reserveStock($item['productID'], $item['quantity']);
+                // ✅ Track this product ID
+                $orderedProductIDs[] = $item['productID'];
+                
+                error_log("Added item: {$item['product_name']} x {$item['quantity']}");
             }
 
-            // Clear buyer's cart
-            $cartModel = new Cart();
-            $cartModel->clearCart($buyerID);
-
-            // If payment method is GCash/Paymaya, update payment status
-            // For online payments (GCash/Paymaya)
+            // Handle online payment status
             if (in_array($orderData['payment_method'], ['gcash', 'paymaya'])) {
-                // Mark as paid by buyer, but NOT yet received by LGU
-                $this->updatePaymentStatus($orderID, 'paid');
-                // LGU still needs to confirm they received it
-                // Payment won't be credited to seller until LGU confirms
+                $updatePayment = "UPDATE {$this->table} 
+                                 SET payment_status = 'paid' 
+                                 WHERE orderID = ?";
+                $this->conn->prepare($updatePayment)->execute([$orderID]);
+                error_log("Payment status set to 'paid' for online payment");
             }
 
+            // ✅ FIXED: Only delete the items that were ordered
+            if (!empty($orderedProductIDs)) {
+                $placeholders = implode(',', array_fill(0, count($orderedProductIDs), '?'));
+                $clearCartQuery = "DELETE FROM cart 
+                                  WHERE buyerID = ? 
+                                  AND productID IN ($placeholders)";
+                
+                $clearStmt = $this->conn->prepare($clearCartQuery);
+                
+                // Bind buyer ID first, then all product IDs
+                $params = array_merge([$buyerID], $orderedProductIDs);
+                $clearStmt->execute($params);
+                
+                error_log("Cleared " . count($orderedProductIDs) . " ordered items from cart for buyer $buyerID");
+                error_log("Product IDs removed: " . implode(', ', $orderedProductIDs));
+            }
+
+            // Commit transaction
             $this->conn->commit();
+            error_log("Transaction committed successfully");
 
             return [
                 'success' => true,
@@ -97,8 +133,15 @@ class Orders
             ];
 
         } catch (Exception $e) {
-            $this->conn->rollBack();
-            error_log("Create order error: " . $e->getMessage());
+            // Rollback on any error
+            if ($this->conn->inTransaction()) {
+                $this->conn->rollBack();
+                error_log("Transaction rolled back");
+            }
+            
+            error_log("❌ Create order error: " . $e->getMessage());
+            error_log("Stack trace: " . $e->getTraceAsString());
+            
             return [
                 'success' => false,
                 'message' => 'Failed to create order: ' . $e->getMessage()
@@ -121,7 +164,7 @@ class Orders
     {
         $query = "UPDATE products p
                  INNER JOIN order_items oi ON p.productID = oi.productID
-                 SET p.reserved_quantity = p.reserved_quantity - oi.quantity
+                 SET p.reserved_quantity = GREATEST(0, p.reserved_quantity - oi.quantity)
                  WHERE oi.orderID = ?";
         $stmt = $this->conn->prepare($query);
         return $stmt->execute([$orderID]);
@@ -132,8 +175,8 @@ class Orders
     {
         $query = "UPDATE products p
                  INNER JOIN order_items oi ON p.productID = oi.productID
-                 SET p.stock_quantity = p.stock_quantity - oi.quantity,
-                     p.reserved_quantity = p.reserved_quantity - oi.quantity
+                 SET p.stock_quantity = GREATEST(0, p.stock_quantity - oi.quantity),
+                     p.reserved_quantity = GREATEST(0, p.reserved_quantity - oi.quantity)
                  WHERE oi.orderID = ?";
         $stmt = $this->conn->prepare($query);
         return $stmt->execute([$orderID]);
@@ -252,20 +295,11 @@ class Orders
             $query = "UPDATE {$this->table} SET lgu_delivery_status = ?";
             $params = [$status];
 
-            // Update timestamps based on status
             if ($status === 'picked_up') {
-                $query .= ", picked_up_at = NOW()";
+                $query .= ", picked_up_at = NOW(), order_status = 'processing'";
             } 
-            elseif ($status === 'picked_up') {
-                $query .= ", order_status = 'processing'";
-            }
             elseif ($status === 'delivered') {
-                $query .= ", delivered_at = NOW()";
-                
-                // Also update order_status
-                $query .= ", order_status = 'delivered'";
-                
-                // Deduct actual stock
+                $query .= ", delivered_at = NOW(), order_status = 'delivered'";
                 $this->deductStock($orderID);
             }
 
@@ -275,7 +309,6 @@ class Orders
             $stmt = $this->conn->prepare($query);
             $result = $stmt->execute($params);
 
-            // If delivered and COD, mark payment as received by LGU
             if ($status === 'delivered') {
                 $order = $this->getOrderById($orderID);
                 if ($order['payment_method_new'] === 'cod') {
@@ -294,7 +327,6 @@ class Orders
     }
 
     // Mark payment as received by LGU
-    // Triggers balance credit to seller
     public function markPaymentReceivedByLGU($orderID) 
     {
         $query = "UPDATE {$this->table} 
@@ -320,10 +352,8 @@ class Orders
         try {
             $this->conn->beginTransaction();
 
-            // Release reserved stock
             $this->releaseReservedStock($orderID);
 
-            // Update order status
             $query = "UPDATE {$this->table} 
                      SET order_status = 'cancelled', 
                          notes = CONCAT(COALESCE(notes, ''), '\nCancellation reason: ', ?)
@@ -370,7 +400,7 @@ class Orders
                      WHERE p.sellerID = ?";
             $stmt = $this->conn->prepare($query);
             $stmt->execute([$userID]);
-        } else { // admin
+        } else {
             $query = "SELECT 
                         COUNT(*) as total_orders,
                         SUM(CASE WHEN order_status = 'pending' THEN 1 ELSE 0 END) as pending,
@@ -397,7 +427,6 @@ class OrderItems
         $this->conn = $database->connect();
     }
 
-    // Add order item
     public function addOrderItem($orderID, $productID, $quantity, $unitPrice) 
     {
         $subtotal = $quantity * $unitPrice;
@@ -410,7 +439,6 @@ class OrderItems
         return $stmt->execute([$orderID, $productID, $quantity, $unitPrice, $subtotal]);
     }
 
-    // Get order items by order ID
     public function getOrderItems($orderID) 
     {
         $query = "SELECT oi.*, p.product_name, p.unit, 
@@ -440,7 +468,6 @@ class DeliveryRiders
         $this->conn = $database->connect();
     }
 
-    // Get all active riders
     public function getActiveRiders() 
     {
         $query = "SELECT * FROM {$this->table} 
@@ -450,7 +477,6 @@ class DeliveryRiders
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    // Get rider by ID
     public function getRiderById($riderID) 
     {
         $query = "SELECT * FROM {$this->table} WHERE riderID = ?";
@@ -459,7 +485,6 @@ class DeliveryRiders
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
-    // Add new rider
     public function addRider($data) 
     {
         $query = "INSERT INTO {$this->table} 
@@ -486,7 +511,6 @@ class DeliveryRiders
         }
     }
 
-    // Update rider details
     public function updateRider($riderID, $data) 
     {
         $query = "UPDATE {$this->table} SET ";
@@ -510,7 +534,6 @@ class DeliveryRiders
         }
     }
 
-    // Deactivate rider
     public function deactivateRider($riderID) 
     {
         $query = "UPDATE {$this->table} SET is_active = 0 WHERE riderID = ?";
@@ -518,7 +541,6 @@ class DeliveryRiders
         return $stmt->execute([$riderID]);
     }
 
-    // Get rider statistics
     public function getRiderStats($riderID) 
     {
         $query = "SELECT 

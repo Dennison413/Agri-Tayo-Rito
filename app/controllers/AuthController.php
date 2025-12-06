@@ -1,6 +1,5 @@
 <?php
 // app/controllers/AuthController.php
-// SECURED: Authentication with CSRF + Rate Limiting + Session Security
 require_once __DIR__ . '/../models/User.php';
 require_once __DIR__ . '/../helpers/csrf.php';
 require_once __DIR__ . '/../helpers/RateLimiter.php';
@@ -15,10 +14,9 @@ class AuthController
         $this->userModel = new User();
     }
 
-    // UPDATED: Registration without CSRF check (for new users who don't have a session yet)
+    // Registration without CSRF check (for new users who don't have a session yet)
     public function register($data) 
     {
-        // Check registration rate limit
         $rateLimitCheck = RateLimiter::checkRegistrationAttempts();
         if (!$rateLimitCheck['allowed']) {
             return [
@@ -27,7 +25,6 @@ class AuthController
             ];
         }
 
-        // Validate ONLY required fields: email, password, full_name
         $requiredFields = ['email', 'password', 'full_name'];
         foreach ($requiredFields as $field) {
             if (empty($data[$field])) {
@@ -37,46 +34,31 @@ class AuthController
                 ];
             }
         }
-
-        // Validate email format
         if (!filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
             return [
                 'success' => false,
                 'message' => 'Invalid email format'
             ];
         }
-
-        // Check password length
         if (strlen($data['password']) < 8) {
             return [
                 'success' => false,
                 'message' => 'Password must be at least 8 characters long'
             ];
         }
-
-        // Validate password confirmation if provided
         if (isset($data['confirm_password']) && $data['password'] !== $data['confirm_password']) {
             return [
                 'success' => false,
                 'message' => 'Passwords do not match'
             ];
         }
-
-        // Hash password
         $data['password_hash'] = password_hash($data['password'], PASSWORD_DEFAULT);
-        
-        // Set default role as buyer
         $data['role'] = 'buyer';
-
-        // Create user
         try {
             $result = $this->userModel->createUser($data);
             
             if ($result['success']) {
-                // Record registration attempt
                 RateLimiter::recordRegistrationAttempt();
-
-                // Log registration
                 error_log("New user registered: Email={$data['email']}, UserID={$result['userID']}, IP={$_SERVER['REMOTE_ADDR']}");
 
                 return [

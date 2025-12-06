@@ -1,6 +1,5 @@
 <?php
 // app/controllers/ProfileController.php
-// SECURED: User Profile Management with CSRF Protection
 require_once __DIR__ . '/../models/User.php';
 require_once __DIR__ . '/../helpers/csrf.php';
 require_once __DIR__ . '/../../config/database.php';
@@ -14,8 +13,7 @@ class ProfileController
         $this->userModel = new User();
     }
 
-    // ==================== PROFILE RETRIEVAL ====================
-
+    // user profile
     public function getProfile()
     {
         $this->requireLogin();
@@ -37,10 +35,8 @@ class ProfileController
         return $this->userModel->getUserById($userID);
     }
 
-    // ==================== PROFILE UPDATE ====================
     public function updateProfile()
     {
-        // CSRF Validation
         if (!CSRF::validateRequest()) {
             CSRF::handleFailure(false);
             return;
@@ -56,20 +52,17 @@ class ProfileController
 
         $userID = $_SESSION['user_id'];
 
-        // Sanitize input data (REMOVED address fields)
         $data = [
             'full_name' => filter_var(trim($_POST['full_name'] ?? ''), FILTER_SANITIZE_STRING),
             'phone' => filter_var(trim($_POST['phone'] ?? ''), FILTER_SANITIZE_STRING)
         ];
 
-        // Validate required fields
         if (empty($data['full_name']) || empty($data['phone'])) {
             $_SESSION['error'] = 'Full name and phone are required';
             header('Location: /agri_system/public/profile/user');
             exit;
         }
 
-        // Validate phone number (Philippine format)
         $phone = preg_replace('/[^0-9]/', '', $data['phone']);
         if (strlen($phone) !== 11 || substr($phone, 0, 2) !== '09') {
             $_SESSION['error'] = 'Invalid phone number format. Use: 09XXXXXXXXX';
@@ -77,9 +70,7 @@ class ProfileController
             exit;
         }
 
-        // Update profile
         if ($this->userModel->updateUser($userID, $data)) {
-            // Update session data (REMOVED address fields)
             $_SESSION['username'] = $data['full_name'];
             $_SESSION['phone'] = $data['phone'];
 
@@ -92,11 +83,10 @@ class ProfileController
         header('Location: /agri_system/public/profile/user');
         exit;
     }
-    // ==================== PASSWORD MANAGEMENT ====================
-
+    
+    //password management
     public function updatePassword()
     {
-        // CSRF Validation
         if (!CSRF::validateRequest()) {
             CSRF::handleFailure(false);
             return;
@@ -115,28 +105,24 @@ class ProfileController
         $newPassword = $_POST['new_password'] ?? '';
         $confirmPassword = $_POST['confirm_password'] ?? '';
 
-        // Validate inputs
         if (empty($currentPassword) || empty($newPassword) || empty($confirmPassword)) {
             $_SESSION['error'] = 'All password fields are required';
             header('Location: /agri_system/public/profile/security');
             exit;
         }
 
-        // Check if new passwords match
         if ($newPassword !== $confirmPassword) {
             $_SESSION['error'] = 'New passwords do not match';
             header('Location: /agri_system/public/profile/security');
             exit;
         }
 
-        // Validate password strength
         if (strlen($newPassword) < 8) {
             $_SESSION['error'] = 'Password must be at least 8 characters long';
             header('Location: /agri_system/public/profile/security');
             exit;
         }
 
-        // Get user and verify current password
         $user = $this->userModel->getUserById($userID);
         if (!$user || !password_verify($currentPassword, $user['password_hash'])) {
             $_SESSION['error'] = 'Current password is incorrect';
@@ -144,7 +130,6 @@ class ProfileController
             exit;
         }
 
-        // Hash new password and update
         $newPasswordHash = password_hash($newPassword, PASSWORD_DEFAULT);
         if ($this->userModel->updatePassword($userID, $newPasswordHash)) {
             CSRF::regenerateToken();
@@ -157,8 +142,7 @@ class ProfileController
         exit;
     }
 
-    // ==================== AVATAR MANAGEMENT ====================
-
+    // avatars
     public function updateAvatar()
     {
         $this->requireLogin();
@@ -173,7 +157,6 @@ class ProfileController
             exit;
         }
 
-        // CSRF validation for AJAX
         if (!CSRF::validateJsonRequest() && !CSRF::validateRequest()) {
             echo json_encode([
                 'success' => false,
@@ -184,8 +167,6 @@ class ProfileController
         }
 
         $userID = $_SESSION['user_id'];
-
-        // Check if it's a preset avatar or custom upload
         if (isset($_FILES['avatar_upload']) && $_FILES['avatar_upload']['error'] === UPLOAD_ERR_OK) {
             $this->handleCustomAvatarUpload($userID);
         } else {
@@ -200,7 +181,6 @@ class ProfileController
 
         $selectedAvatar = filter_var($data['avatar'] ?? '', FILTER_SANITIZE_STRING);
 
-        // Validate avatar
         if (!$this->userModel->isValidAvatar($selectedAvatar)) {
             echo json_encode([
                 'success' => false,
@@ -209,7 +189,6 @@ class ProfileController
             exit;
         }
 
-        // Update avatar
         if ($this->userModel->updateAvatar($userID, $selectedAvatar)) {
             $_SESSION['avatar'] = $selectedAvatar;
 
@@ -232,11 +211,9 @@ class ProfileController
     {
         $file = $_FILES['avatar_upload'];
 
-        // Get old avatar to delete if custom
         $user = $this->userModel->getUserById($userID);
         $oldAvatar = $user['avatar'] ?? null;
 
-        // Validate and upload
         $validation = $this->userModel->validateAvatarUpload($file);
 
         if (!$validation['valid']) {
@@ -289,11 +266,8 @@ class ProfileController
         return '/agri_system/public/images/avatars/avt1.jpg';
     }
 
-    // ==================== ADDRESS MANAGEMENT ====================
-
     public function addAddress()
     {
-        // CSRF Validation
         if (!CSRF::validateRequest()) {
             CSRF::handleFailure(false);
             return;
@@ -309,7 +283,6 @@ class ProfileController
 
         $userID = $_SESSION['user_id'];
 
-        // Sanitize input
         $data = [
             'address_label' => filter_var($_POST['address_label'] ?? 'Home', FILTER_SANITIZE_STRING),
             'full_name' => filter_var($_POST['full_name'] ?? $_SESSION['username'], FILTER_SANITIZE_STRING),
@@ -323,7 +296,6 @@ class ProfileController
             'is_default' => isset($_POST['is_default']) ? 1 : 0
         ];
 
-        // Validate required fields
         $required = ['full_name', 'phone', 'address_line1', 'barangay', 'municipality', 'province', 'postal_code'];
         foreach ($required as $field) {
             if (empty($data[$field])) {
@@ -333,7 +305,6 @@ class ProfileController
             }
         }
 
-        // Validate phone number
         $phone = preg_replace('/[^0-9]/', '', $data['phone']);
         if (strlen($phone) !== 11 || substr($phone, 0, 2) !== '09') {
             $_SESSION['error'] = 'Invalid phone number format. Use: 09XXXXXXXXX';
@@ -345,14 +316,12 @@ class ProfileController
             $db = new Database();
             $conn = $db->connect();
 
-            // If this is set as default, unset other defaults
             if ($data['is_default']) {
                 $updateQuery = "UPDATE user_addresses SET is_default = 0 WHERE userID = ?";
                 $stmt = $conn->prepare($updateQuery);
                 $stmt->execute([$userID]);
             }
 
-            // Insert new address
             $query = "INSERT INTO user_addresses 
                      (userID, address_label, full_name, phone, address_line1, address_line2, 
                       barangay, municipality, province, postal_code, is_default) 
@@ -390,7 +359,6 @@ class ProfileController
 
     public function updateAddress()
     {
-        // CSRF Validation
         if (!CSRF::validateRequest()) {
             CSRF::handleFailure(false);
             return;
@@ -413,7 +381,6 @@ class ProfileController
             exit;
         }
 
-        // Sanitize input
         $data = [
             'address_label' => filter_var($_POST['address_label'] ?? 'Home', FILTER_SANITIZE_STRING),
             'full_name' => filter_var($_POST['full_name'] ?? '', FILTER_SANITIZE_STRING),
@@ -427,7 +394,6 @@ class ProfileController
             'is_default' => isset($_POST['is_default']) ? 1 : 0
         ];
 
-        // Validate required fields
         $required = ['full_name', 'phone', 'address_line1', 'barangay', 'municipality', 'province', 'postal_code'];
         foreach ($required as $field) {
             if (empty($data[$field])) {
@@ -437,7 +403,6 @@ class ProfileController
             }
         }
 
-        // Validate phone number
         $phone = preg_replace('/[^0-9]/', '', $data['phone']);
         if (strlen($phone) !== 11 || substr($phone, 0, 2) !== '09') {
             $_SESSION['error'] = 'Invalid phone number format. Use: 09XXXXXXXXX';
@@ -449,14 +414,12 @@ class ProfileController
             $db = new Database();
             $conn = $db->connect();
 
-            // If this is set as default, unset other defaults
             if ($data['is_default']) {
                 $updateQuery = "UPDATE user_addresses SET is_default = 0 WHERE userID = ? AND addressID != ?";
                 $stmt = $conn->prepare($updateQuery);
                 $stmt->execute([$userID, $addressID]);
             }
 
-            // Update address
             $query = "UPDATE user_addresses 
                      SET address_label = ?, full_name = ?, phone = ?, 
                          address_line1 = ?, address_line2 = ?, barangay = ?, 
@@ -496,7 +459,6 @@ class ProfileController
 
     public function setDefaultAddress()
     {
-        // CSRF Validation
         if (!CSRF::validateRequest()) {
             CSRF::handleFailure(false);
             return;
@@ -523,12 +485,10 @@ class ProfileController
             $db = new Database();
             $conn = $db->connect();
 
-            // Unset all defaults first
             $updateQuery = "UPDATE user_addresses SET is_default = 0 WHERE userID = ?";
             $stmt = $conn->prepare($updateQuery);
             $stmt->execute([$userID]);
 
-            // Set new default
             $query = "UPDATE user_addresses SET is_default = 1 WHERE addressID = ? AND userID = ?";
             $stmt = $conn->prepare($query);
             $result = $stmt->execute([$addressID, $userID]);
@@ -586,7 +546,6 @@ class ProfileController
 
     public function deleteAddress()
     {
-        // CSRF Validation
         if (!CSRF::validateRequest()) {
             CSRF::handleFailure(false);
             return;
@@ -632,11 +591,10 @@ class ProfileController
         exit;
     }
 
-    // ==================== ACCOUNT DELETION ====================
+    // accoumt deletion
 
     public function requestAccountDeletion()
     {
-        // CSRF Validation
         if (!CSRF::validateRequest()) {
             CSRF::handleFailure(false);
             return;
@@ -657,7 +615,6 @@ class ProfileController
             $db = new Database();
             $conn = $db->connect();
 
-            // Check if there's already a pending request
             $checkQuery = "SELECT * FROM account_deletion_requests 
                           WHERE userID = ? AND status = 'pending' LIMIT 1";
             $stmt = $conn->prepare($checkQuery);
@@ -690,7 +647,7 @@ class ProfileController
         exit;
     }
 
-    // ==================== UTILITY METHODS ====================
+    // other utility methods
 
     private function isLoggedIn()
     {
@@ -708,20 +665,17 @@ class ProfileController
         }
     }
 
-    // Get user role
     public function getUserRole($userID)
     {
         $user = $this->userModel->getUserById($userID);
         return $user['role'] ?? 'buyer';
     }
 
-    // Check if user is seller
     public function isSeller($userID)
     {
         return $this->getUserRole($userID) === 'seller';
     }
 
-    // Check if user is admin
     public function isAdmin($userID)
     {
         return $this->getUserRole($userID) === 'admin';

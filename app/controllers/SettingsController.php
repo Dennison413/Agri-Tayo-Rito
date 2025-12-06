@@ -1,6 +1,5 @@
 <?php
 // app/controllers/SettingsController.php
-// SECURED: System Settings & Account Management with CSRF + Rate Limiting
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
@@ -21,14 +20,9 @@ class SettingsController
         $this->adminModel = new Admin();
     }
 
-    // ==================== PASSWORD MANAGEMENT ====================
-
-    /**
-     * Change user password with CSRF + Rate Limiting
-     */
+    // password management
     public function changePassword() 
     {
-        // CSRF Validation
         if (!CSRF::validateRequest()) {
             CSRF::handleFailure(false);
             return;
@@ -36,7 +30,6 @@ class SettingsController
 
         $this->requireLogin();
 
-        // Rate limit password changes (3 attempts per hour)
         $rateCheck = RateLimiter::checkApiRate('password_change_' . $_SESSION['user_id']);
         if (!$rateCheck['allowed']) {
             $_SESSION['error'] = 'Too many password change attempts. Please try again later.';
@@ -56,28 +49,24 @@ class SettingsController
             $newPassword = $_POST['new_password'] ?? '';
             $confirmPassword = $_POST['confirm_password'] ?? '';
 
-            // Validate inputs
             if (empty($currentPassword) || empty($newPassword) || empty($confirmPassword)) {
                 $_SESSION['error'] = 'All password fields are required';
                 header('Location: /agri_system/public/profile/settings');
                 exit;
             }
 
-            // Check password confirmation
             if ($newPassword !== $confirmPassword) {
                 $_SESSION['error'] = 'New passwords do not match';
                 header('Location: /agri_system/public/profile/settings');
                 exit;
             }
 
-            // Validate new password length
             if (strlen($newPassword) < 8) {
                 $_SESSION['error'] = 'Password must be at least 8 characters long';
                 header('Location: /agri_system/public/profile/settings');
                 exit;
             }
 
-            // Get user
             $user = $this->userModel->getUserById($userID);
 
             if (!$user) {
@@ -86,22 +75,18 @@ class SettingsController
                 exit;
             }
 
-            // Verify current password
             if (!password_verify($currentPassword, $user['password_hash'])) {
                 $_SESSION['error'] = 'Current password is incorrect';
                 header('Location: /agri_system/public/profile/settings');
                 exit;
             }
 
-            // Hash new password
             $newPasswordHash = password_hash($newPassword, PASSWORD_DEFAULT);
 
             // Update password
             if ($this->userModel->updatePassword($userID, $newPasswordHash)) {
-                // Regenerate CSRF token after password change
                 CSRF::regenerateToken();
                 
-                // Log password change
                 error_log("Password changed: UserID={$userID}, IP={$_SERVER['REMOTE_ADDR']}");
                 
                 $_SESSION['success'] = 'Password changed successfully';
@@ -118,14 +103,9 @@ class SettingsController
         exit;
     }
 
-    // ==================== ACCOUNT DELETION ====================
-
-    /**
-     * Request account deletion with CSRF validation
-     */
+    // request account deletion with CSRF validation
     public function requestAccountDeletion() 
     {
-        // CSRF Validation
         if (!CSRF::validateRequest()) {
             CSRF::handleFailure(false);
             return;
@@ -133,7 +113,6 @@ class SettingsController
 
         $this->requireLogin();
 
-        // Rate limit deletion requests (1 per hour)
         $rateCheck = RateLimiter::checkApiRate('deletion_request_' . $_SESSION['user_id']);
         if (!$rateCheck['allowed']) {
             $_SESSION['error'] = 'Too many deletion requests. Please try again later.';
@@ -152,14 +131,11 @@ class SettingsController
             $reason = filter_var($_POST['deletion_reason'] ?? '', FILTER_SANITIZE_STRING);
             $confirmEmail = filter_var($_POST['confirm_email'] ?? '', FILTER_SANITIZE_EMAIL);
 
-            // Verify email confirmation
             if ($confirmEmail !== $_SESSION['email']) {
                 $_SESSION['error'] = 'Email confirmation does not match';
                 header('Location: /agri_system/public/profile/settings');
                 exit;
             }
-
-            // Check if user already has a pending deletion request
             $db = new Database();
             $conn = $db->connect();
 
@@ -174,7 +150,6 @@ class SettingsController
                 exit;
             }
 
-            // Create deletion request
             $insertQuery = "INSERT INTO account_deletion_requests 
                            (userID, reason, status, requested_at) 
                            VALUES (?, ?, 'pending', NOW())";
@@ -182,10 +157,8 @@ class SettingsController
             $result = $insertStmt->execute([$userID, $reason]);
 
             if ($result) {
-                // Regenerate CSRF token
                 CSRF::regenerateToken();
                 
-                // Log deletion request
                 error_log("Account deletion requested: UserID={$userID}, IP={$_SERVER['REMOTE_ADDR']}");
                 
                 $_SESSION['success'] = 'Account deletion request submitted. Admin will review your request.';
@@ -202,12 +175,8 @@ class SettingsController
         exit;
     }
 
-    /**
-     * Cancel account deletion request with CSRF
-     */
     public function cancelDeletionRequest() 
     {
-        // CSRF Validation
         if (!CSRF::validateRequest()) {
             CSRF::handleFailure(false);
             return;
@@ -228,7 +197,6 @@ class SettingsController
             $db = new Database();
             $conn = $db->connect();
 
-            // Verify ownership and pending status
             $query = "DELETE FROM account_deletion_requests 
                      WHERE requestID = ? AND userID = ? AND status = 'pending'";
             $stmt = $conn->prepare($query);
@@ -250,9 +218,6 @@ class SettingsController
         exit;
     }
 
-    /**
-     * Get user's deletion request status
-     */
     public function getDeletionRequestStatus($userID) 
     {
         try {
@@ -274,31 +239,18 @@ class SettingsController
         }
     }
 
-    // ==================== ADMIN: SYSTEM SETTINGS ====================
-
-    /**
-     * Get all system settings (admin only)
-     */
+    // admin system settings
     public function getAllSettings() 
     {
         $this->requireRole('admin');
         return $this->adminModel->getAllSystemSettings();
     }
-
-    /**
-     * Get specific system setting
-     */
     public function getSetting($key) 
     {
         return $this->adminModel->getSystemSetting($key);
     }
-
-    /**
-     * Update system setting (admin) with CSRF
-     */
     public function updateSystemSetting() 
     {
-        // CSRF Validation
         if (!CSRF::validateRequest()) {
             CSRF::handleFailure(false);
             return;
@@ -340,12 +292,9 @@ class SettingsController
         exit;
     }
 
-    /**
-     * Update multiple system settings at once (admin) with CSRF
-     */
+    
     public function updateMultipleSettings() 
     {
-        // CSRF Validation
         if (!CSRF::validateRequest()) {
             CSRF::handleFailure(false);
             return;
@@ -392,14 +341,9 @@ class SettingsController
         exit;
     }
 
-    // ==================== USER PREFERENCES ====================
-
-    /**
-     * Update user preferences (theme, language, notifications) with CSRF
-     */
+    // user settings
     public function updatePreferences() 
     {
-        // CSRF Validation
         if (!CSRF::validateRequest()) {
             CSRF::handleFailure(false);
             return;
@@ -414,7 +358,6 @@ class SettingsController
         }
 
         try {
-            // Theme preference
             if (isset($_POST['theme'])) {
                 $theme = $_POST['theme'];
                 if (in_array($theme, ['light', 'dark'])) {
@@ -423,7 +366,6 @@ class SettingsController
                 }
             }
 
-            // Language preference
             if (isset($_POST['language'])) {
                 $language = $_POST['language'];
                 if (in_array($language, ['en', 'fil'])) {
@@ -432,7 +374,6 @@ class SettingsController
                 }
             }
 
-            // Notification preferences
             if (isset($_POST['notifications'])) {
                 $_SESSION['notifications_enabled'] = $_POST['notifications'] === 'on';
             }
@@ -449,11 +390,6 @@ class SettingsController
         exit;
     }
 
-    // ==================== UTILITY METHODS ====================
-
-    /**
-     * Check if user is logged in
-     */
     private function isLoggedIn() 
     {
         return isset($_SESSION['user_id']) && 
@@ -461,9 +397,6 @@ class SettingsController
                $_SESSION['logged_in'] === true;
     }
 
-    /**
-     * Require login
-     */
     private function requireLogin() 
     {
         if (!$this->isLoggedIn()) {
@@ -473,9 +406,6 @@ class SettingsController
         }
     }
 
-    /**
-     * Require specific role
-     */
     private function requireRole($role) 
     {
         $this->requireLogin();
@@ -487,17 +417,10 @@ class SettingsController
         }
     }
 
-    /**
-     * Get current theme
-     */
     public function getCurrentTheme() 
     {
         return $_SESSION['theme'] ?? $_COOKIE['theme'] ?? 'light';
     }
-
-    /**
-     * Get current language
-     */
     public function getCurrentLanguage() 
     {
         return $_SESSION['language'] ?? $_COOKIE['language'] ?? 'en';

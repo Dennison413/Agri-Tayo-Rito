@@ -16,8 +16,8 @@ $wishlistCount = 0;
 if ($userRole === 'buyer' && $userId) {
     try {
         require_once __DIR__ . '/../../models/Cart.php';
-        $wishlistModel = new Wishlist();
-        $wishlistCount = $wishlistModel->getWishlistCount($userId);
+        $cartModel = new Cart();
+        $wishlistCount = $cartModel->getWishlistCount($userId);
     } catch (Exception $e) {
         error_log("Wishlist count error: " . $e->getMessage());
     }

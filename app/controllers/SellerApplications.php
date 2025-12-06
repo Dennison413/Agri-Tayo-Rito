@@ -1,10 +1,9 @@
 <?php
-// app/controllers/SellerApplicationController.php
+// app/controllers/SellerApplications.php
 // Handle Seller Application Submissions
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
-
 require_once __DIR__ . '/../models/SellerApplication.php';
 require_once __DIR__ . '/../helpers/csrf.php';
 
@@ -17,9 +16,6 @@ class SellerApplicationController
         $this->applicationModel = new SellerApplication();
     }
 
-    /**
-     * Get current user's application
-     */
     public function getMyApplication() 
     {
         if (!$this->isLoggedIn()) {
@@ -30,12 +26,8 @@ class SellerApplicationController
         return $this->applicationModel->getApplicationByUser($userID);
     }
 
-    /**
-     * Show application form
-     */
     public function showApplicationForm() 
     {
-        // Check if user is logged in as buyer
         if (!$this->isLoggedIn() || $_SESSION['user_role'] !== 'buyer') {
             $_SESSION['error'] = 'Only buyers can apply to become sellers';
             header('Location: ' . BASE_URL . 'marketplace');
@@ -44,7 +36,6 @@ class SellerApplicationController
 
         $userID = $_SESSION['user_id'];
 
-        // Check if user can apply
         $canApply = $this->applicationModel->canUserApply($userID);
 
         if (!$canApply['can_apply']) {
@@ -53,24 +44,19 @@ class SellerApplicationController
             exit;
         }
 
-        // Get application status if exists
         $existingApp = $this->applicationModel->getApplicationByUser($userID);
 
         include __DIR__ . '/../../public/marketplace/apply-seller.php';
     }
 
-    /**
-     * Handle application submission
-     */
+    // application submissions
     public function submitApplication() 
     {
-        // CSRF Validation
         if (!CSRF::validateRequest()) {
             CSRF::handleFailure(false);
             return;
         }
 
-        // Check authentication
         if (!$this->isLoggedIn() || $_SESSION['user_role'] !== 'buyer') {
             $_SESSION['error'] = 'Unauthorized access';
             header('Location: ' . BASE_URL . 'auth/login');
@@ -86,7 +72,6 @@ class SellerApplicationController
         $userID = $_SESSION['user_id'];
 
         try {
-            // Validate required fields
             $requiredFields = ['business_name', 'business_address'];
             foreach ($requiredFields as $field) {
                 if (empty($_POST[$field])) {
@@ -96,19 +81,16 @@ class SellerApplicationController
                 }
             }
 
-            // Prepare data
             $data = [
                 'business_name' => filter_var($_POST['business_name'], FILTER_SANITIZE_STRING),
                 'business_address' => filter_var($_POST['business_address'], FILTER_SANITIZE_STRING)
             ];
 
-            // Handle business permit upload
             $permitFile = null;
             if (isset($_FILES['business_permit']) && $_FILES['business_permit']['error'] === UPLOAD_ERR_OK) {
                 $permitFile = $_FILES['business_permit'];
             }
 
-            // Submit application
             $result = $this->applicationModel->submitApplication($userID, $data, $permitFile);
 
             if ($result['success']) {
@@ -129,9 +111,6 @@ class SellerApplicationController
         }
     }
 
-    /**
-     * Check if user can apply
-     */
     public function checkApplicationStatus() 
     {
         header('Content-Type: application/json');
@@ -148,9 +127,6 @@ class SellerApplicationController
         exit;
     }
 
-    /**
-     * Check if user is logged in
-     */
     private function isLoggedIn() 
     {
         return isset($_SESSION['user_id']) && 

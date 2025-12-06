@@ -1,9 +1,8 @@
 <?php
 // app/controllers/ProductController.php
-
 require_once __DIR__ . '/../models/Product.php';
 require_once __DIR__ . '/../models/Category.php';
-require_once __DIR__ . '/../models/User.php'; // If seller validation is needed
+require_once __DIR__ . '/../models/User.php'; 
 
 class ProductController
 {
@@ -18,9 +17,7 @@ class ProductController
         $this->reviewModel = new Review();
     }
 
-    // ======================================
-    // CATEGORY MANAGEMENT
-    // ======================================
+    // category management
 
     public function categories()
     {
@@ -34,10 +31,7 @@ class ProductController
         echo json_encode($this->categoryModel->getAllCategories());
     }
 
-    // ======================================
-    // MARKETPLACE PRODUCT LISTING
-    // ======================================
-
+    // marketplace product listing
     public function index()
     {
         $filters = [
@@ -77,9 +71,7 @@ class ProductController
         );
     }
 
-    // ======================================
-    // PRODUCT DETAILS PAGE
-    // ======================================
+    //product details page
 
     public function details()
     {
@@ -100,10 +92,6 @@ class ProductController
 
         echo json_encode($this->productModel->getProductById($productID));
     }
-
-    // ======================================
-    // SELLER PRODUCT MANAGEMENT
-    // ======================================
 
     public function sellerProducts()
     {
@@ -157,10 +145,8 @@ class ProductController
         echo json_encode($result);
     }
 
-    // ======================================
-    // STOCK MANAGEMENT
-    // ======================================
-
+    
+    // stock management
     public function updateStock()
     {
         $sellerID = $_SESSION['sellerID'];
@@ -178,10 +164,6 @@ class ProductController
 
         echo json_encode($this->productModel->getLowStockProducts($sellerID));
     }
-
-    // ======================================
-    // IMAGE MANAGEMENT
-    // ======================================
 
     public function addImage()
     {
@@ -205,10 +187,7 @@ class ProductController
         echo json_encode($result);
     }
 
-    // ======================================
-    // REVIEWS
-    // ======================================
-
+    // reviews or comments
     public function submitReview()
     {
         $buyerID = $_SESSION['userID'];

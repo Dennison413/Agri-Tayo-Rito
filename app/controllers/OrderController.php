@@ -1,6 +1,6 @@
 <?php
 // app/controllers/OrderController.php
-// SECURED: Order Management with CSRF Protection
+// FIXED: Order Management with proper JSON responses
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
@@ -8,7 +8,6 @@ if (session_status() === PHP_SESSION_NONE) {
 require_once __DIR__ . '/../models/Orders.php';
 require_once __DIR__ . '/../models/Cart.php';
 require_once __DIR__ . '/../helpers/csrf.php';
-require_once __DIR__ . '/../helpers/RateLimiter.php';
 
 class OrderController
 {
@@ -21,13 +20,9 @@ class OrderController
         $this->cartModel = new Cart();
     }
 
-    /**
-     * Handle AJAX checkout requests
-     * NEW METHOD - Add this to OrderController class
-     */
     public function handleCheckoutRequest()
     {
-        // Set JSON response headers
+        // Set JSON response headers FIRST
         header('Content-Type: application/json');
         header('Access-Control-Allow-Credentials: true');
 
@@ -39,27 +34,20 @@ class OrderController
             return;
         }
 
-        // Get request method
         if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-            // Get checkout data
             $this->getCheckoutData();
         } elseif ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            // Handle checkout actions
             $this->handleCheckoutPost();
         } else {
             $this->jsonResponse(false, 'Invalid request method');
         }
     }
-    /**
-     * Get checkout data (cart items + user details)
-     * ✅ FIXED: Now filters by selected product IDs
-     */
+
     private function getCheckoutData()
     {
         $buyerID = $_SESSION['user_id'];
 
         try {
-            // ✅ Get selected product IDs from query string
             $selectedProductIDsString = $_GET['product_ids'] ?? '';
             $selectedProductIDs = $selectedProductIDsString ? array_map('intval', explode(',', $selectedProductIDsString)) : [];
 
@@ -70,7 +58,9 @@ class OrderController
                 return;
             }
 
-            // Get ALL cart items first
+            // ✅ Store selected product IDs in session for later use
+            $_SESSION['checkout_product_ids'] = $selectedProductIDs;
+            error_log("Stored checkout product IDs in session: " . json_encode($selectedProductIDs));
             $allCartItems = $this->cartModel->getCartItemsGroupedByShop($buyerID);
 
             if (empty($allCartItems)) {
@@ -80,16 +70,13 @@ class OrderController
                 return;
             }
 
-            // ✅ Filter to get ONLY selected items
             $selectedItems = [];
-            $selectedShops = [];
             $subtotal = 0;
             $itemCount = 0;
 
             foreach ($allCartItems as $shopID => $shop) {
                 foreach ($shop['items'] as $item) {
                     if (in_array($item['productID'], $selectedProductIDs)) {
-                        // Add to selected items
                         $selectedItems[] = [
                             'productID' => $item['productID'],
                             'product_name' => $item['product_name'],
@@ -108,7 +95,6 @@ class OrderController
                 }
             }
 
-            // ✅ Check if we found the selected items
             if (empty($selectedItems)) {
                 $this->jsonResponse(false, 'Selected items not found in cart', [
                     'redirect' => '/agri_system/public/item-handling/cart'
@@ -116,7 +102,6 @@ class OrderController
                 return;
             }
 
-            // Get user details
             require_once __DIR__ . '/../models/User.php';
             require_once __DIR__ . '/../models/UserAddress.php';
 
@@ -130,28 +115,22 @@ class OrderController
                 return;
             }
 
-            // Get all user addresses for selection
             $userAddresses = $addressModel->getUserAddresses($buyerID);
-
-            // Add user's full_name and phone to each address for display
             foreach ($userAddresses as &$addr) {
                 $addr['full_name'] = $user['full_name'];
                 $addr['phone'] = $user['phone'] ?? '';
             }
             unset($addr);
 
-            // Get default address (most recent)
             $defaultAddress = $addressModel->getDefaultAddress($buyerID);
             if ($defaultAddress) {
                 $defaultAddress['full_name'] = $user['full_name'];
                 $defaultAddress['phone'] = $user['phone'] ?? '';
             }
 
-            // Calculate totals
-            $shippingFee = 0; // LGU handles delivery
+            $shippingFee = 0;
             $total = $subtotal;
 
-            // ✅ Return filtered items only
             $this->jsonResponse(true, 'Checkout data retrieved', [
                 'items' => $selectedItems,
                 'itemCount' => $itemCount,
@@ -169,15 +148,12 @@ class OrderController
             ]);
         } catch (Exception $e) {
             error_log("Get checkout data error: " . $e->getMessage());
-            $this->jsonResponse(false, 'Failed to load checkout data');
+            $this->jsonResponse(false, 'Failed to load checkout data: ' . $e->getMessage());
         }
     }
-    /**
-     * Handle POST requests (place order)
-     */
+
     private function handleCheckoutPost()
     {
-        // Get JSON input
         $rawInput = file_get_contents('php://input');
         $data = json_decode($rawInput, true);
 
@@ -186,9 +162,24 @@ class OrderController
             return;
         }
 
-        // CSRF validation
-        if (!CSRF::validateJsonRequest()) {
-            CSRF::handleFailure(true);
+        // ✅ FIX: More lenient CSRF validation with detailed logging
+        $csrfToken = $data['csrf_token'] ?? '';
+
+        if (empty($csrfToken)) {
+            error_log("CSRF token missing from request");
+            $this->jsonResponse(false, 'Security token missing');
+            return;
+        }
+
+        if (!isset($_SESSION['csrf_token'])) {
+            error_log("CSRF token not found in session");
+            $this->jsonResponse(false, 'Session expired. Please refresh and try again.');
+            return;
+        }
+
+        if ($csrfToken !== $_SESSION['csrf_token']) {
+            error_log("CSRF token mismatch. Provided: $csrfToken, Expected: {$_SESSION['csrf_token']}");
+            $this->jsonResponse(false, 'Invalid security token. Please refresh and try again.');
             return;
         }
 
@@ -201,23 +192,51 @@ class OrderController
         }
     }
 
-    /**
-     * Place order via AJAX
-     */
     private function placeOrderAjax($data)
     {
         $buyerID = $_SESSION['user_id'];
 
         try {
-            // Get cart items
-            $cartItems = $this->cartModel->getCartItemsGroupedByShop($buyerID);
+            // ✅ FIX: Get selected product IDs from session
+            $selectedProductIDs = isset($_SESSION['checkout_product_ids'])
+                ? $_SESSION['checkout_product_ids']
+                : [];
 
-            if (empty($cartItems)) {
+            if (empty($selectedProductIDs)) {
+                $this->jsonResponse(false, 'No items selected for checkout');
+                return;
+            }
+
+            error_log("=== PLACE ORDER DEBUG ===");
+            error_log("Selected product IDs from session: " . json_encode($selectedProductIDs));
+
+            // ✅ Get ALL cart items first
+            $allCartItems = $this->cartModel->getCartItemsGroupedByShop($buyerID);
+
+            if (empty($allCartItems)) {
                 $this->jsonResponse(false, 'Your cart is empty');
                 return;
             }
 
-            // Validate cart
+            // ✅ Filter to ONLY selected items
+            $selectedCartItems = [];
+            foreach ($allCartItems as $shop) {
+                foreach ($shop['items'] as $item) {
+                    if (in_array($item['productID'], $selectedProductIDs)) {
+                        $selectedCartItems[] = $item;
+                        error_log("✅ Including product: " . $item['product_name'] . " (ID: " . $item['productID'] . ")");
+                    }
+                }
+            }
+
+            if (empty($selectedCartItems)) {
+                $this->jsonResponse(false, 'Selected items not found in cart');
+                return;
+            }
+
+            error_log("Total selected items for order: " . count($selectedCartItems));
+
+            // Validate selected items
             $validation = $this->cartModel->validateCartForCheckout($buyerID);
             if (!$validation['valid']) {
                 $this->jsonResponse(false, 'Some items are no longer available', [
@@ -226,8 +245,8 @@ class OrderController
                 return;
             }
 
-            // Validate form data
-            $required = ['address_id', 'payment_method']; // Changed from full address fields to just address_id
+            // Validate required fields
+            $required = ['address_id', 'payment_method'];
             foreach ($required as $field) {
                 if (empty($data[$field])) {
                     $this->jsonResponse(false, ucfirst(str_replace('_', ' ', $field)) . ' is required');
@@ -241,7 +260,7 @@ class OrderController
                 return;
             }
 
-            // Get the selected address
+            // Get selected address
             require_once __DIR__ . '/../models/UserAddress.php';
             $addressModel = new UserAddress();
             $selectedAddress = $addressModel->getAddress($data['address_id'], $buyerID);
@@ -251,7 +270,7 @@ class OrderController
                 return;
             }
 
-            // Prepare order data using selected address
+            // Prepare order data
             $orderData = [
                 'delivery_address' => $selectedAddress['address'],
                 'delivery_municipality' => $selectedAddress['municipality'],
@@ -260,28 +279,29 @@ class OrderController
                 'payment_method' => $data['payment_method'],
                 'notes' => filter_var($data['notes'] ?? '', FILTER_SANITIZE_STRING)
             ];
-            // Calculate total
-            $totalAmount = $this->cartModel->getCartTotal($buyerID);
+
+            // ✅ Calculate total ONLY from selected items
+            $totalAmount = 0;
+            foreach ($selectedCartItems as $item) {
+                $totalAmount += ($item['price'] * $item['quantity']);
+            }
             $orderData['total_amount'] = $totalAmount;
 
-            // Flatten cart items
-            $flatCartItems = [];
-            foreach ($cartItems as $shop) {
-                foreach ($shop['items'] as $item) {
-                    $flatCartItems[] = $item;
-                }
-            }
+            error_log("Order total amount: ₱" . number_format($totalAmount, 2));
 
-            // Create order
-            $result = $this->ordersModel->createOrder($buyerID, $orderData, $flatCartItems);
+            // ✅ Create order with ONLY selected items
+            $result = $this->ordersModel->createOrder($buyerID, $orderData, $selectedCartItems);
 
             if ($result['success']) {
+                // ✅ Clear the selected product IDs from session
+                unset($_SESSION['checkout_product_ids']);
+
                 // Regenerate CSRF token
                 CSRF::regenerateToken();
 
                 $this->jsonResponse(true, 'Order placed successfully!', [
                     'orderID' => $result['orderID'],
-                    'redirect' => '/agri_system/public/profile/buyer/orders?order=' . $result['orderID'],
+                    'redirect' => '/agri_system/public/marketplace/myorders?order=' . $result['orderID'],
                     'csrf_token' => CSRF::generateToken()
                 ]);
             } else {
@@ -289,13 +309,11 @@ class OrderController
             }
         } catch (Exception $e) {
             error_log("Place order error: " . $e->getMessage());
-            $this->jsonResponse(false, 'Failed to place order. Please try again.');
+            error_log("Stack trace: " . $e->getTraceAsString());
+            $this->jsonResponse(false, 'Failed to place order: ' . $e->getMessage());
         }
     }
 
-    /**
-     * Send JSON response helper
-     */
     private function jsonResponse($success, $message, $data = [])
     {
         $response = array_merge([
@@ -306,410 +324,6 @@ class OrderController
         echo json_encode($response);
         exit;
     }
-    // ==================== BUYER: PLACE ORDER ====================
-
-    public function placeOrder()
-    {
-        // CSRF Validation
-        if (!CSRF::validateRequest()) {
-            CSRF::handleFailure(false);
-            return;
-        }
-
-        // Check authentication
-        if (!$this->isLoggedIn() || $_SESSION['user_role'] !== 'buyer') {
-            $_SESSION['error'] = 'Unauthorized access';
-            header('Location: /agri_system/public/auth/login');
-            exit;
-        }
-
-        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            $_SESSION['error'] = 'Invalid request method';
-            header('Location: /agri_system/public/item-handling/cart');
-            exit;
-        }
-
-        $buyerID = $_SESSION['user_id'];
-
-        try {
-            // Get cart items for checkout
-            $cartItems = $this->cartModel->getCartItemsGroupedByShop($buyerID);
-
-            if (empty($cartItems)) {
-                $_SESSION['error'] = 'Your cart is empty';
-                header('Location: /agri_system/public/item-handling/cart');
-                exit;
-            }
-
-            // Validate cart before checkout
-            $validation = $this->cartModel->validateCartForCheckout($buyerID);
-            if (!$validation['valid']) {
-                $_SESSION['error'] = 'Some items are no longer available: ' . implode(', ', $validation['errors']);
-                header('Location: /agri_system/public/item-handling/cart');
-                exit;
-            }
-
-            $addressID = filter_var($_POST['address_id'] ?? null, FILTER_VALIDATE_INT);
-
-            if (!$addressID) {
-                $_SESSION['error'] = 'Please select a delivery address';
-                header('Location: /agri_system/public/item-handling/checkout');
-                exit;
-            }
-
-            // Get the selected address
-            require_once __DIR__ . '/../models/UserAddress.php';
-            $addressModel = new UserAddress();
-            $selectedAddress = $addressModel->getAddress($addressID, $buyerID);
-
-            if (!$selectedAddress) {
-                $_SESSION['error'] = 'Invalid address selected';
-                header('Location: /agri_system/public/item-handling/checkout');
-                exit;
-            }
-
-            $orderData = [
-                'delivery_address' => $selectedAddress['address'],
-                'delivery_municipality' => $selectedAddress['municipality'],
-                'delivery_province' => $selectedAddress['province'],
-                'delivery_postal_code' => $selectedAddress['postal_code'],
-                'payment_method' => filter_var($_POST['payment_method'] ?? 'cod', FILTER_SANITIZE_STRING),
-                'notes' => filter_var($_POST['notes'] ?? null, FILTER_SANITIZE_STRING)
-            ];
-
-            // Validate payment method
-            if (!in_array($orderData['payment_method'], ['cod', 'gcash', 'paymaya'])) {
-                $_SESSION['error'] = 'Invalid payment method';
-                header('Location: /agri_system/public/item-handling/checkout');
-                exit;
-            }
-
-            // Calculate total from cart
-            $totalAmount = $this->cartModel->getCartTotal($buyerID);
-            $orderData['total_amount'] = $totalAmount;
-
-            // Flatten cart items for order creation
-            $flatCartItems = [];
-            foreach ($cartItems as $shop) {
-                foreach ($shop['items'] as $item) {
-                    $flatCartItems[] = $item;
-                }
-            }
-
-            // Create order
-            $result = $this->ordersModel->createOrder($buyerID, $orderData, $flatCartItems);
-
-            if ($result['success']) {
-                // Regenerate CSRF token after order
-                CSRF::regenerateToken();
-
-                $_SESSION['success'] = 'Order placed successfully! Waiting for LGU pickup and delivery.';
-                header('Location: /agri_system/public/profile/buyer/orders?order=' . $result['orderID']);
-            } else {
-                $_SESSION['error'] = $result['message'];
-                header('Location: /agri_system/public/item-handling/checkout');
-            }
-            exit;
-        } catch (Exception $e) {
-            error_log("Order placement error: " . $e->getMessage());
-            $_SESSION['error'] = 'Failed to place order. Please try again.';
-            header('Location: /agri_system/public/item-handling/checkout');
-            exit;
-        }
-    }
-
-    // ==================== BUYER: VIEW ORDERS ====================
-
-    public function getBuyerOrders($buyerID, $limit = 10, $offset = 0)
-    {
-        return $this->ordersModel->getOrdersByBuyer($buyerID, $limit, $offset);
-    }
-
-    public function getOrderDetails($orderID, $userID, $role)
-    {
-        $order = $this->ordersModel->getOrderById($orderID);
-
-        if (!$order) {
-            return null;
-        }
-
-        // Verify access rights
-        if ($role === 'buyer' && $order['buyerID'] != $userID) {
-            return null;
-        }
-
-        if ($role === 'seller') {
-            $hasAccess = false;
-            foreach ($order['items'] as $item) {
-                if ($item['sellerID'] == $userID) {
-                    $hasAccess = true;
-                    break;
-                }
-            }
-            if (!$hasAccess) {
-                return null;
-            }
-        }
-
-        return $order;
-    }
-
-    // ==================== BUYER: CANCEL ORDER ====================
-
-    public function cancelOrder()
-    {
-        // CSRF Validation
-        if (!CSRF::validateRequest()) {
-            CSRF::handleFailure(false);
-            return;
-        }
-
-        if (!$this->isLoggedIn()) {
-            $_SESSION['error'] = 'Please login first';
-            header('Location: /agri_system/public/auth/login');
-            exit;
-        }
-
-        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            $_SESSION['error'] = 'Invalid request';
-            header('Location: ' . $_SERVER['HTTP_REFERER']);
-            exit;
-        }
-
-        try {
-            $orderID = filter_var($_POST['order_id'], FILTER_VALIDATE_INT);
-            $reason = filter_var($_POST['cancellation_reason'] ?? 'Buyer requested cancellation', FILTER_SANITIZE_STRING);
-
-            if (!$orderID) {
-                $_SESSION['error'] = 'Invalid order ID';
-                header('Location: /agri_system/public/profile/buyer/orders');
-                exit;
-            }
-
-            $order = $this->ordersModel->getOrderById($orderID);
-
-            if (!$order) {
-                $_SESSION['error'] = 'Order not found';
-                header('Location: /agri_system/public/profile/buyer/orders');
-                exit;
-            }
-
-            // Verify ownership
-            if ($order['buyerID'] != $_SESSION['user_id']) {
-                $_SESSION['error'] = 'Unauthorized access';
-                header('Location: /agri_system/public/profile/buyer/orders');
-                exit;
-            }
-
-            // Can only cancel pending orders
-            if ($order['order_status'] !== 'pending') {
-                $_SESSION['error'] = 'Cannot cancel order that is already being processed';
-                header('Location: /agri_system/public/profile/buyer/orders');
-                exit;
-            }
-
-            $result = $this->ordersModel->cancelOrder($orderID, $reason);
-
-            if ($result) {
-                CSRF::regenerateToken();
-                $_SESSION['success'] = 'Order cancelled successfully';
-            } else {
-                $_SESSION['error'] = 'Failed to cancel order';
-            }
-
-            header('Location: /agri_system/public/profile/buyer/orders');
-            exit;
-        } catch (Exception $e) {
-            error_log("Cancel order error: " . $e->getMessage());
-            $_SESSION['error'] = 'An error occurred';
-            header('Location: ' . $_SERVER['HTTP_REFERER']);
-            exit;
-        }
-    }
-
-    // ==================== ADMIN: LGU PAYMENT PROCESSING ====================
-
-    public function confirmPaymentReceived()
-    {
-        // CSRF Validation
-        if (!CSRF::validateRequest()) {
-            CSRF::handleFailure(false);
-            return;
-        }
-
-        // Check admin authorization
-        if (!$this->isLoggedIn() || $_SESSION['user_role'] !== 'admin') {
-            $_SESSION['error'] = 'Unauthorized access';
-            header('Location: /agri_system/public/auth/login');
-            exit;
-        }
-
-        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            $_SESSION['error'] = 'Invalid request';
-            header('Location: ' . $_SERVER['HTTP_REFERER']);
-            exit;
-        }
-
-        try {
-            $orderID = filter_var($_POST['order_id'], FILTER_VALIDATE_INT);
-
-            if (!$orderID) {
-                $_SESSION['error'] = 'Invalid order ID';
-                header('Location: /agri_system/public/profile/admin/orders');
-                exit;
-            }
-
-            $order = $this->ordersModel->getOrderById($orderID);
-
-            if (!$order) {
-                $_SESSION['error'] = 'Order not found';
-                header('Location: /agri_system/public/profile/admin/orders');
-                exit;
-            }
-
-            if ($order['payment_received_by_lgu_at']) {
-                $_SESSION['error'] = 'Payment already processed';
-                header('Location: /agri_system/public/profile/admin/orders');
-                exit;
-            }
-
-            $result = $this->ordersModel->markPaymentReceivedByLGU($orderID);
-
-            if ($result) {
-                CSRF::regenerateToken();
-                $_SESSION['success'] = 'Payment confirmed! Seller balance has been credited.';
-            } else {
-                $_SESSION['error'] = 'Failed to confirm payment';
-            }
-
-            header('Location: /agri_system/public/profile/admin/orders');
-            exit;
-        } catch (Exception $e) {
-            error_log("Payment confirmation error: " . $e->getMessage());
-            $_SESSION['error'] = 'Failed to process payment';
-            header('Location: ' . $_SERVER['HTTP_REFERER']);
-            exit;
-        }
-    }
-
-    // ==================== ADMIN: UPDATE ORDER STATUS ====================
-
-    public function updateOrderStatus()
-    {
-        // CSRF Validation
-        if (!CSRF::validateRequest()) {
-            CSRF::handleFailure(false);
-            return;
-        }
-
-        if (!$this->isLoggedIn() || $_SESSION['user_role'] !== 'admin') {
-            $_SESSION['error'] = 'Unauthorized access';
-            header('Location: /agri_system/public/auth/login');
-            exit;
-        }
-
-        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            $_SESSION['error'] = 'Invalid request';
-            header('Location: ' . $_SERVER['HTTP_REFERER']);
-            exit;
-        }
-
-        try {
-            $orderID = filter_var($_POST['order_id'], FILTER_VALIDATE_INT);
-            $status = filter_var($_POST['order_status'], FILTER_SANITIZE_STRING);
-
-            if (!$orderID) {
-                $_SESSION['error'] = 'Invalid order ID';
-                header('Location: ' . $_SERVER['HTTP_REFERER']);
-                exit;
-            }
-
-            // Validate status
-            $validStatuses = ['pending', 'processing', 'shipped', 'delivered', 'cancelled'];
-            if (!in_array($status, $validStatuses)) {
-                $_SESSION['error'] = 'Invalid order status';
-                header('Location: ' . $_SERVER['HTTP_REFERER']);
-                exit;
-            }
-
-            $result = $this->ordersModel->updateOrderStatus($orderID, $status);
-
-            if ($result) {
-                CSRF::regenerateToken();
-                $_SESSION['success'] = 'Order status updated successfully';
-            } else {
-                $_SESSION['error'] = 'Failed to update order status';
-            }
-
-            header('Location: ' . $_SERVER['HTTP_REFERER']);
-            exit;
-        } catch (Exception $e) {
-            error_log("Update order status error: " . $e->getMessage());
-            $_SESSION['error'] = 'An error occurred';
-            header('Location: ' . $_SERVER['HTTP_REFERER']);
-            exit;
-        }
-    }
-
-    // ==================== SELLER: VIEW ORDERS ====================
-
-    public function getSellerOrders($sellerID, $limit = 10, $offset = 0)
-    {
-        return $this->ordersModel->getOrdersBySeller($sellerID, $limit, $offset);
-    }
-
-    // ==================== ADMIN: VIEW ALL ORDERS ====================
-
-    public function getAllOrders($status = null, $limit = 50, $offset = 0)
-    {
-        return $this->ordersModel->getAllOrders($status, $limit, $offset);
-    }
-
-    // ==================== ORDER STATISTICS ====================
-
-    public function getOrderStats($userID, $role)
-    {
-        return $this->ordersModel->getOrderStats($userID, $role);
-    }
-
-    // ==================== UTILITY METHODS ====================
-
-    public function formatOrderStatus($status)
-    {
-        $statusLabels = [
-            'pending' => ['label' => 'Pending', 'class' => 'warning'],
-            'processing' => ['label' => 'Processing', 'class' => 'info'],
-            'shipped' => ['label' => 'Shipped', 'class' => 'primary'],
-            'delivered' => ['label' => 'Delivered', 'class' => 'success'],
-            'cancelled' => ['label' => 'Cancelled', 'class' => 'danger']
-        ];
-
-        return $statusLabels[$status] ?? ['label' => 'Unknown', 'class' => 'secondary'];
-    }
-
-    public function formatDeliveryStatus($status)
-    {
-        $statusLabels = [
-            'pending_pickup' => ['label' => 'Waiting for Pickup', 'class' => 'warning'],
-            'picked_up' => ['label' => 'Picked Up by LGU', 'class' => 'info'],
-            'in_transit' => ['label' => 'Out for Delivery', 'class' => 'primary'],
-            'delivered' => ['label' => 'Delivered', 'class' => 'success'],
-            'failed' => ['label' => 'Delivery Failed', 'class' => 'danger']
-        ];
-
-        return $statusLabels[$status] ?? ['label' => 'Unknown', 'class' => 'secondary'];
-    }
-
-    public function formatPaymentMethod($method)
-    {
-        $methods = [
-            'cod' => 'Cash on Delivery',
-            'gcash' => 'GCash',
-            'paymaya' => 'PayMaya'
-        ];
-
-        return $methods[$method] ?? 'Unknown';
-    }
 
     private function isLoggedIn()
     {
@@ -718,56 +332,29 @@ class OrderController
             $_SESSION['logged_in'] === true;
     }
 
-    public function getDeliveryTimeline($order)
+    // Other methods for non-AJAX requests...
+    public function getBuyerOrders($buyerID, $limit = 10, $offset = 0)
     {
-        $timeline = [
-            'order_placed' => [
-                'status' => 'completed',
-                'date' => $order['order_date'],
-                'label' => 'Order Placed'
-            ],
-            'lgu_pickup' => [
-                'status' => $order['lgu_delivery_status'] !== 'pending_pickup' ? 'completed' : 'pending',
-                'date' => $order['picked_up_at'] ?? null,
-                'label' => 'Picked Up by LGU'
-            ],
-            'out_for_delivery' => [
-                'status' => $order['lgu_delivery_status'] === 'in_transit' || $order['lgu_delivery_status'] === 'delivered' ? 'completed' : 'pending',
-                'date' => $order['rider_assigned_at'] ?? null,
-                'label' => 'Out for Delivery'
-            ],
-            'delivered' => [
-                'status' => $order['lgu_delivery_status'] === 'delivered' ? 'completed' : 'pending',
-                'date' => $order['delivered_at'] ?? null,
-                'label' => 'Delivered'
-            ]
-        ];
+        return $this->ordersModel->getOrdersByBuyer($buyerID, $limit, $offset);
+    }
 
-        return $timeline;
+    public function getOrderDetails($orderID, $userID, $role)
+    {
+        $order = $this->ordersModel->getOrderById($orderID);
+        if (!$order) return null;
+
+        if ($role === 'buyer' && $order['buyerID'] != $userID) {
+            return null;
+        }
+
+        return $order;
+    }
+
+    public function getOrderStats($userID, $role)
+    {
+        return $this->ordersModel->getOrderStats($userID, $role);
     }
 }
 
-// Handle POST requests
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $controller = new OrderController();
-    $action = filter_var($_POST['action'] ?? '', FILTER_SANITIZE_STRING);
-
-    switch ($action) {
-        case 'place_order':
-            $controller->placeOrder();
-            break;
-        case 'cancel_order':
-            $controller->cancelOrder();
-            break;
-        case 'confirm_payment':
-            $controller->confirmPaymentReceived();
-            break;
-        case 'update_status':
-            $controller->updateOrderStatus();
-            break;
-        default:
-            $_SESSION['error'] = 'Invalid action';
-            header('Location: ' . $_SERVER['HTTP_REFERER']);
-            exit;
-    }
-}
+// ✅ REMOVED: Don't handle POST here - let the API endpoint handle it
+// This file should only define the class, not execute code

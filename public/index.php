@@ -16,7 +16,7 @@ $routes = [
     
     // API Routes
     'api/cart' => BASE_PATH . '/app/controllers/CartController.php',
-    'api/checkout' => BASE_PATH . '/app/controllers/CartController.php',
+    'api/checkout' => BASE_PATH . '/app/controllers/OrderController.php',
     'api/delivery-status' => BASE_PATH . '/app/controllers/OrderController.php',
 
     // Auth

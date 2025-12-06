@@ -17,13 +17,6 @@ class DeliveryController
         $this->ordersModel = new Orders();
         $this->ridersModel = new DeliveryRiders();
     }
-
-    // ==================== ADMIN: ASSIGN RIDER ====================
-
-    /**
-     * Assign rider to order for delivery
-     * Flow: Order placed → LGU picks up → Assign rider → Deliver
-     */
     public function assignRider() 
     {
         // Check admin authorization

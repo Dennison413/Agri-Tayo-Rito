@@ -1,6 +1,5 @@
 <?php
 // app/controllers/AdminController.php
-
 require_once __DIR__ . '/../models/Admin.php';
 require_once __DIR__ . '/../models/User.php';
 require_once __DIR__ . '/../models/Product.php';
@@ -15,9 +14,7 @@ class AdminController
         $this->admin = new Admin();
     }
 
-    // ===========================
-    // DASHBOARD
-    // ===========================
+    // dashboard
     public function dashboard()
     {
         $stats = $this->admin->getDashboardStats();
@@ -52,10 +49,7 @@ class AdminController
 
         echo json_encode($data);
     }
-
-    // ===========================
-    // USER MANAGEMENT
-    // ===========================
+    // user management
     public function users()
     {
         $filters = [
@@ -93,9 +87,7 @@ class AdminController
         echo json_encode($data);
     }
 
-    // ===========================
-    // ACCOUNT DELETION REQUESTS
-    // ===========================
+    // account deletion requests
     public function deletionRequests()
     {
         $data = $this->admin->getPendingDeletionRequests();
@@ -124,9 +116,7 @@ class AdminController
         echo json_encode($result);
     }
 
-    // ===========================
-    // CATEGORY MANAGEMENT
-    // ===========================
+    // category management (CRUD)
     public function addCategory()
     {
         $name = $_POST['category_name'];
@@ -156,9 +146,7 @@ class AdminController
         echo json_encode($result);
     }
 
-    // ===========================
-    // DELIVERY / ORDER MANAGEMENT
-    // ===========================
+    // delivery and orders
     public function pendingPickups()
     {
         $data = $this->admin->getOrdersPendingPickup();
@@ -187,9 +175,7 @@ class AdminController
         echo json_encode($result);
     }
 
-    // ===========================
-    // SYSTEM SETTINGS
-    // ===========================
+    // system settings
     public function settings()
     {
         $settings = $this->admin->getAllSystemSettings();
@@ -207,9 +193,7 @@ class AdminController
         echo json_encode($result);
     }
 
-    // ===========================
-    // REPORTS
-    // ===========================
+    // reports
     public function salesReport()
     {
         $start = $_GET['start'];

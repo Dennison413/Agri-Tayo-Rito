@@ -28,7 +28,7 @@ $wishlistCount = 0;
 if ($isLoggedIn && $userRole === 'buyer' && $userId) {
     try {
         $cartModel = new Cart();
-        $wishlistModel = new Wishlist();
+        $wishlistModel = new Cart();
         
         $cartCount = $cartModel->getCartCount($userId);
         $wishlistCount = $wishlistModel->getWishlistCount($userId);

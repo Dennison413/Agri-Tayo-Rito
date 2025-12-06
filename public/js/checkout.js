@@ -1,5 +1,5 @@
 // ==========================================
-// CHECKOUT PAGE - COMPLETELY FIXED VERSION
+// CHECKOUT PAGE - FIXED VERSION
 // ==========================================
 
 console.log('checkout.js loaded');
@@ -15,7 +15,7 @@ document.addEventListener('DOMContentLoaded', function () {
     loadCheckoutData();
 });
 
-// ✅ FIXED: Load checkout data with better debugging
+// Load checkout data
 async function loadCheckoutData() {
     const loadingEl = document.getElementById('checkoutLoading');
     const containerEl = document.getElementById('checkoutContainer');
@@ -24,7 +24,7 @@ async function loadCheckoutData() {
     try {
         console.log('=== Loading Checkout Data ===');
         
-        // ✅ Try multiple sources for product IDs
+        // Try multiple sources for product IDs
         let selectedProductIDs = null;
         
         // Method 1: SessionStorage
@@ -55,9 +55,6 @@ async function loadCheckoutData() {
         // Final validation
         if (!selectedProductIDs || !Array.isArray(selectedProductIDs) || selectedProductIDs.length === 0) {
             console.error('❌ No valid product IDs found');
-            console.log('SessionStorage keys:', Object.keys(sessionStorage));
-            console.log('URL search:', window.location.search);
-            
             loadingEl.style.display = 'none';
             errorEl.style.display = 'flex';
             document.getElementById('errorMessage').textContent = 
@@ -71,7 +68,7 @@ async function loadCheckoutData() {
 
         console.log('✅ Using product IDs:', selectedProductIDs);
 
-        // ✅ Fetch checkout data from API
+        // Fetch checkout data from API
         const url = new URL(CHECKOUT_API_URL, window.location.origin);
         url.searchParams.append('product_ids', selectedProductIDs.join(','));
 
@@ -109,7 +106,7 @@ async function loadCheckoutData() {
             throw new Error(data.message);
         }
 
-        // ✅ Store checkout data globally
+        // Store checkout data globally
         checkoutData = data;
         addresses = data.addresses || [];
 
@@ -141,6 +138,7 @@ async function loadCheckoutData() {
             error.message || 'Failed to load checkout. Please try again.';
     }
 }
+
 // Display saved addresses
 function displayAddresses() {
     const container = document.getElementById('savedAddressesList');
@@ -217,34 +215,29 @@ function cancelAddAddress() {
     document.getElementById('new_postal_code').value = '';
 }
 
-// ✅ FIXED: Save new address to DATABASE via API
+// Save new address
 async function saveNewAddress() {
     const address = document.getElementById('new_address').value.trim();
     const municipality = document.getElementById('new_municipality').value.trim();
     const province = document.getElementById('new_province').value.trim();
     const postalCode = document.getElementById('new_postal_code').value.trim();
 
-    // Validate inputs
     if (!address || !municipality || !province || !postalCode) {
         showNotification('Please fill in all required fields', 'warning');
         return;
     }
 
-    // Validate postal code (4 digits)
     if (!/^\d{4}$/.test(postalCode)) {
         showNotification('Postal code must be 4 digits', 'warning');
         return;
     }
 
-    // Show loading state
     const saveBtn = event.target;
     const originalText = saveBtn.innerHTML;
     saveBtn.disabled = true;
     saveBtn.innerHTML = 'Saving...';
 
     try {
-        console.log('Saving address...', { address, municipality, province, postalCode });
-
         const response = await fetch(BASE_URL + 'api/address.php', {
             method: 'POST',
             headers: {
@@ -262,7 +255,6 @@ async function saveNewAddress() {
             })
         });
 
-        // Check response type
         const contentType = response.headers.get("content-type");
         if (!contentType || !contentType.includes("application/json")) {
             const text = await response.text();
@@ -271,7 +263,6 @@ async function saveNewAddress() {
         }
 
         const data = await response.json();
-        console.log('Add address response:', data);
 
         if (!data.success) {
             showNotification(data.message || 'Failed to save address', 'error');
@@ -280,7 +271,6 @@ async function saveNewAddress() {
             return;
         }
 
-        // ✅ Add the new address to the list
         const newAddress = data.address;
         newAddress.full_name = checkoutData.user.full_name;
         newAddress.phone = checkoutData.user.phone;
@@ -288,20 +278,14 @@ async function saveNewAddress() {
         addresses.push(newAddress);
         selectedAddressId = newAddress.addressID;
 
-        // Update CSRF token
         if (data.csrf_token) {
             updateCsrfToken(data.csrf_token);
         }
 
-        // Redisplay addresses
         displayAddresses();
-
-        // Hide form and reset
         cancelAddAddress();
-
         showNotification('Address saved successfully!', 'success');
         
-        // Reset button
         saveBtn.disabled = false;
         saveBtn.innerHTML = originalText;
 
@@ -309,11 +293,11 @@ async function saveNewAddress() {
         console.error('Error saving address:', error);
         showNotification('Failed to save address. Please try again.', 'error');
         
-        // Reset button
         saveBtn.disabled = false;
         saveBtn.innerHTML = originalText;
     }
 }
+
 // Display order items grouped by shop
 function displayOrderItems(items) {
     const container = document.getElementById('orderItemsList');
@@ -371,7 +355,7 @@ function selectPayment(radio) {
     radio.closest('.payment-option').classList.add('selected');
 }
 
-// Apply promo code (placeholder)
+// Apply promo code
 function applyPromo() {
     const promoCode = document.getElementById('promoCode').value.trim();
     
@@ -383,43 +367,54 @@ function applyPromo() {
     showNotification('Promo code feature coming soon!', 'info');
 }
 
-// ✅ FIXED: Place order function
+// ✅ FIXED: Place order with better error handling
 async function placeOrder() {
     const btn = document.getElementById('placeOrderBtn');
     
-    // Check if address is selected
+    // Validation
     if (!selectedAddressId) {
         showNotification('Please select a delivery address', 'warning');
         return;
     }
 
-    // Get selected payment method
     const paymentMethod = document.querySelector('input[name="payment_method"]:checked')?.value;
     if (!paymentMethod) {
         showNotification('Please select a payment method', 'warning');
         return;
     }
 
-    // Get notes if any
     const notes = document.getElementById('notes')?.value || '';
+
+    // Get current CSRF token
+    const csrfToken = getCsrfToken();
+    console.log('📝 Current CSRF token:', csrfToken);
 
     const orderData = {
         action: 'place_order',
         address_id: selectedAddressId,
         payment_method: paymentMethod,
         notes: notes,
-        csrf_token: getCsrfToken()
+        csrf_token: csrfToken
     };
+
+    console.log('📦 Order data to send:', orderData);
 
     // Show confirmation popup
     const confirmed = await showConfirmationPopup(orderData);
-    if (!confirmed) return;
+    if (!confirmed) {
+        console.log('❌ User cancelled order');
+        return;
+    }
 
     // Disable button
     btn.disabled = true;
     btn.innerHTML = '<span class="spinner-small"></span> Processing...';
 
     try {
+        console.log('🚀 Sending order to API...');
+        console.log('API URL:', CHECKOUT_API_URL);
+        console.log('Request body:', JSON.stringify(orderData));
+
         const response = await fetch(CHECKOUT_API_URL, {
             method: 'POST',
             headers: {
@@ -430,43 +425,56 @@ async function placeOrder() {
             body: JSON.stringify(orderData)
         });
 
+        console.log('📡 Response status:', response.status);
+        console.log('📡 Response headers:', [...response.headers.entries()]);
+
+        // ✅ Check content type BEFORE parsing
+        const contentType = response.headers.get("content-type");
+        console.log('📄 Content-Type:', contentType);
+
+        if (!contentType || !contentType.includes("application/json")) {
+            const text = await response.text();
+            console.error('❌ Non-JSON response received:', text);
+            throw new Error('Server returned invalid response. Please check server logs.');
+        }
+
         const data = await response.json();
-        console.log('Place order response:', data);
+        console.log('✅ Place order response:', data);
 
         if (data.success) {
             if (data.csrf_token) {
                 updateCsrfToken(data.csrf_token);
             }
 
-            // ✅ Clear sessionStorage
+            // Clear sessionStorage
             sessionStorage.removeItem('checkout_product_ids');
 
             showOrderSuccess(data.orderID);
 
             setTimeout(() => {
-                window.location.href = data.redirect || BASE_URL + 'profile/buyer/orders';
+                window.location.href = data.redirect || BASE_URL + 'marketplace/myorders';
             }, 2000);
 
         } else {
+            console.error('❌ Order failed:', data.message);
             showNotification('Error: ' + data.message, 'error');
             btn.disabled = false;
             btn.innerHTML = '<span>Place Order</span><span>→</span>';
         }
 
     } catch (error) {
-        console.error('Place order error:', error);
-        showNotification('Connection error. Please try again.', 'error');
+        console.error('💥 Place order error:', error);
+        console.error('Error stack:', error.stack);
+        showNotification('Connection error: ' + error.message, 'error');
         btn.disabled = false;
         btn.innerHTML = '<span>Place Order</span><span>→</span>';
     }
 }
 
-// ✅ FIXED: Show confirmation popup with FULL order details including items
+// Show confirmation popup
 function showConfirmationPopup(orderData) {
     return new Promise((resolve) => {
         console.log('=== SHOWING CONFIRMATION POPUP ===');
-        console.log('Selected Address ID:', selectedAddressId);
-        console.log('Checkout Data:', checkoutData);
         
         const paymentMethods = {
             'cod': 'Cash on Delivery',
@@ -482,13 +490,11 @@ function showConfirmationPopup(orderData) {
             return;
         }
 
-        console.log('Selected address:', selectedAddr);
-
         const fullName = selectedAddr.full_name || checkoutData.user.full_name;
         const phone = selectedAddr.phone || checkoutData.user.phone;
         const addressText = `${selectedAddr.address}, ${selectedAddr.municipality}, ${selectedAddr.province} ${selectedAddr.postal_code}`;
 
-        // ✅ Build items list HTML
+        // Build items list HTML
         let itemsListHtml = '';
         if (checkoutData.items && checkoutData.items.length > 0) {
             itemsListHtml = checkoutData.items.map(item => `
@@ -506,8 +512,6 @@ function showConfirmationPopup(orderData) {
                     </div>
                 </div>
             `).join('');
-        } else {
-            itemsListHtml = '<p style="color: #999; text-align: center; padding: 20px;">No items</p>';
         }
 
         const overlay = document.createElement('div');
@@ -567,8 +571,6 @@ function showConfirmationPopup(orderData) {
 
         document.body.appendChild(overlay);
         window._confirmResolve = resolve;
-        
-        console.log('✅ Confirmation popup displayed with', checkoutData.items.length, 'items');
     });
 }
 
