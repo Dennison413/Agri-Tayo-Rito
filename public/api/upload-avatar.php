@@ -3,7 +3,7 @@
  * Custom Avatar Upload Endpoint
  * Handles file uploads for custom user avatars
  * 
- * File location: /agri_system/public/profile/upload-avatar.php
+ * File location: /agri_system/public/api/upload-avatar.php
  */
 
 // Start session

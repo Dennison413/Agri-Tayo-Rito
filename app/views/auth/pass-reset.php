@@ -1,3 +1,120 @@
+<?php
+// app/views/auth/pass-reset.php
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+// Handle AJAX POST requests
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    header('Content-Type: application/json');
+    
+    require_once BASE_PATH . '/app/controllers/PasswordResetController.php';
+    $controller = new PasswordResetController();
+    
+    $action = $_POST['action'] ?? '';
+    
+    switch ($action) {
+        case 'send_otp':
+            $email = $_POST['email'] ?? '';
+            $_SESSION['reset_email'] = $email; // Store in session
+            $result = $controller->sendOTP($email);
+            echo json_encode($result);
+            exit;
+            
+        case 'verify_otp':
+            $email = $_SESSION['reset_email'] ?? '';
+            $otp = $_POST['otp'] ?? '';
+            
+            // Debug logging
+            error_log("Verify OTP - Email from session: " . $email);
+            error_log("Verify OTP - OTP received: " . $otp);
+            
+            if (!$email) {
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'Session expired. Please start over.'
+                ]);
+                exit;
+            }
+            
+            if (empty($otp) || strlen($otp) !== 4) {
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'Invalid OTP format. Must be 4 digits.'
+                ]);
+                exit;
+            }
+            
+            $result = $controller->verifyOTP($email, $otp);
+            
+            error_log("Verify OTP - Result: " . json_encode($result));
+            
+            if ($result['success']) {
+                $_SESSION['otp_verified'] = true;
+            }
+            
+            echo json_encode($result);
+            exit;
+            
+        case 'resend_otp':
+            $email = $_SESSION['reset_email'] ?? '';
+            
+            if (!$email) {
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'Session expired. Please start over.'
+                ]);
+                exit;
+            }
+            
+            $result = $controller->resendOTP($email);
+            echo json_encode($result);
+            exit;
+            
+        case 'reset_password':
+            $email = $_SESSION['reset_email'] ?? '';
+            $otpVerified = $_SESSION['otp_verified'] ?? false;
+            $newPassword = $_POST['new_password'] ?? '';
+            $confirmPassword = $_POST['confirm_password'] ?? '';
+            
+            if (!$email || !$otpVerified) {
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'Unauthorized. Please verify OTP first.'
+                ]);
+                exit;
+            }
+            
+            if ($newPassword !== $confirmPassword) {
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'Passwords do not match'
+                ]);
+                exit;
+            }
+            
+            $result = $controller->resetPassword($email, $newPassword);
+            
+            if ($result['success']) {
+                // Clear session
+                unset($_SESSION['reset_email']);
+                unset($_SESSION['otp_verified']);
+            }
+            
+            echo json_encode($result);
+            exit;
+            
+        default:
+            echo json_encode([
+                'success' => false,
+                'message' => 'Invalid action'
+            ]);
+            exit;
+    }
+}
+
+// If GET request, show the HTML form
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -27,7 +144,7 @@
             }
         }
         
-        /* Progress indicator (optional) */
+        /* Progress indicator */
         .progress-dots {
             display: flex;
             justify-content: center;
@@ -48,11 +165,42 @@
             width: 24px;
             border-radius: 4px;
         }
+
+        /* Toast notifications */
+        #toast-box {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 12px 24px;
+            border-radius: 8px;
+            color: white;
+            font-weight: 500;
+            font-size: 14px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            z-index: 9999;
+            max-width: 350px;
+            min-width: 200px;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        #toast-box.success {
+            background: #51cf66;
+        }
+
+        #toast-box.error {
+            background: #ff6b6b;
+        }
+
+        #toast-box.loading {
+            background: #4dabf7;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <!-- Home Button (visible on all steps) -->
+        <!-- Home Button -->
         <button class="home-btn" onclick="window.location.href='/agri_system/public/'">🏠</button>
 
         <!-- Progress Indicator -->
@@ -112,7 +260,10 @@
                     <input type="text" class="code-input" maxlength="1" pattern="[0-9]" required>
                     <input type="text" class="code-input" maxlength="1" pattern="[0-9]" required>
                 </div>
-                <a href="#" class="resend-link" id="resendCode">Resend Code</a>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin: 15px 0;">
+                    <a href="#" class="resend-link" id="resendCode">Resend Code</a>
+                    <a href="#" class="resend-link" id="startOver" style="color: #dc3545;">Start Over</a>
+                </div>
                 <button type="submit" class="submit-btn">VERIFY</button>
             </form>
         </div>
@@ -147,13 +298,13 @@
                         <span class="toggle-password" onclick="togglePassword('confirm_password')">👁️</span>
                     </div>
                 </div>
-                <a href="login.php" class="change-password-link">Change Password</a>
-                <button type="submit" class="submit-btn">SEND</button>
+                <button type="submit" class="submit-btn">RESET PASSWORD</button>
             </form>
         </div>
     </div>
+    
     <div id="toast-box"></div>
 
-    <script src="/public/js/pass-reset.js"></script>
+    <script src="/agri_system/public/js/pass-reset.js"></script>
 </body>
 </html>

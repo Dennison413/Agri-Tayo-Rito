@@ -3,7 +3,7 @@
  * Avatar Update Endpoint
  * Handles AJAX requests to update user avatar
  * 
- * File location: /agri_system/public/profile/update-avatar.php
+ * File location: /agri_system/public/api/update-avatar.php
  */
 
 // Start session

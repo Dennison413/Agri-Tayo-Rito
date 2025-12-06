@@ -1,11 +1,49 @@
 <?php
 // Initialize controller and get user data
 require_once BASE_PATH . '/app/controllers/ProfileController.php';
+require_once BASE_PATH . '/config/database.php';
 
 $profileController = new ProfileController();
 $user = $profileController->getProfile();
 $userStats = $profileController->getUserStats($user['userID']);
-$recentOrders = $profileController->getRecentOrders($user['userID']);
+
+// Get pending orders (not completed/cancelled)
+try {
+    $db = new Database();
+    $conn = $db->connect();
+    
+    $query = "SELECT 
+                o.orderID,
+                o.order_date as created_at,
+                o.total_amount,
+                o.order_status as status,
+                GROUP_CONCAT(p.product_name SEPARATOR ', ') as product_name,
+                MIN(pi.image_path) as image
+              FROM orders o
+              JOIN order_items oi ON o.orderID = oi.orderID
+              JOIN products p ON oi.productID = p.productID
+              LEFT JOIN product_images pi ON p.productID = pi.productID AND pi.is_main = 1
+              WHERE o.buyerID = ? AND o.order_status = 'pending'
+              GROUP BY o.orderID
+              ORDER BY o.order_date DESC
+              LIMIT 5";
+    
+    $stmt = $conn->prepare($query);
+    $stmt->execute([$user['userID']]);
+    $recentOrders = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    
+    // Format image paths
+    foreach ($recentOrders as &$order) {
+        if (empty($order['image'])) {
+            $order['image'] = '/agri_system/public/images/placeholder-product.jpg';
+        } else {
+            $order['image'] = '/agri_system/public' . $order['image'];
+        }
+    }
+} catch (Exception $e) {
+    error_log("Error fetching orders: " . $e->getMessage());
+    $recentOrders = [];
+}
 
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_profile'])) {
@@ -20,6 +58,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_profile'])) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Profile - Agri Tayo Rito</title>
     <style>
+        
         * {
             margin: 0;
             padding: 0;
@@ -1200,7 +1239,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_profile'])) {
             <!-- Profile Header -->
             <div class="profile-header">
                 <div class="profile-cover">
-                    <img src="https://images.unsplash.com/photo-1464226184884-fa280b87c399?w=1200" alt="Cover" class="cover-img">
+                    <img src="<?php 
+                        if (!empty($user['profile_image']) && file_exists($_SERVER['DOCUMENT_ROOT'] . '/agri_system/public' . $user['profile_image'])) {
+                            echo '/agri_system/public' . htmlspecialchars($user['profile_image']);
+                        } else {
+                            echo 'https://images.unsplash.com/photo-1464226184884-fa280b87c399?w=1200';
+                        }
+                    ?>" alt="Cover" class="cover-img">
+                    <input type="file" id="coverInput" accept="image/jpeg,image/png" style="display: none;" onchange="handleCoverUpload(event)">
                     <button class="edit-cover-btn" onclick="editCover()">📷 Change Cover</button>
                 </div>
 
@@ -1228,7 +1274,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_profile'])) {
             <!-- Profile Content -->
             <div class="profile-content">
 
-                <!-- Personal Information -->
+                <!-- Personal Information (Removed address fields) -->
                 <div class="profile-card">
                     <div class="card-header">
                         <h2>👤 Personal Information</h2>
@@ -1249,25 +1295,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_profile'])) {
                             <label>Phone Number</label>
                             <div class="info-value"><?php echo $profileController->formatPhone($user['phone']); ?></div>
                         </div>
-                        <div class="info-item">
-                            <label>Address</label>
-                            <div class="info-value"><?php echo htmlspecialchars($user['address'] ?: 'Not provided'); ?></div>
-                        </div>
-                        <div class="info-item">
-                            <label>Municipality</label>
-                            <div class="info-value"><?php echo htmlspecialchars($user['municipality'] ?: 'Not provided'); ?></div>
-                        </div>
-                        <div class="info-item">
-                            <label>Province</label>
-                            <div class="info-value"><?php echo htmlspecialchars($user['province'] ?: 'Not provided'); ?></div>
-                        </div>
-                        <div class="info-item">
-                            <label>Postal Code</label>
-                            <div class="info-value"><?php echo htmlspecialchars($user['postal_code'] ?: 'Not provided'); ?></div>
-                        </div>
                     </div>
 
-                    <!-- Edit Mode (Hidden by default) -->
+                    <!-- Edit Mode -->
                     <form method="POST" action="/agri_system/public/profile/user" id="personalInfoEdit" style="display: none;">
                         <div class="info-grid">
                             <div class="info-item">
@@ -1282,22 +1312,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_profile'])) {
                                 <label>Phone Number *</label>
                                 <input type="tel" name="phone" value="<?php echo htmlspecialchars($user['phone']); ?>" required>
                             </div>
-                            <div class="info-item">
-                                <label>Address</label>
-                                <input type="text" name="address" value="<?php echo htmlspecialchars($user['address']); ?>">
-                            </div>
-                            <div class="info-item">
-                                <label>Municipality</label>
-                                <input type="text" name="municipality" value="<?php echo htmlspecialchars($user['municipality']); ?>">
-                            </div>
-                            <div class="info-item">
-                                <label>Province</label>
-                                <input type="text" name="province" value="<?php echo htmlspecialchars($user['province']); ?>">
-                            </div>
-                            <div class="info-item">
-                                <label>Postal Code</label>
-                                <input type="text" name="postal_code" value="<?php echo htmlspecialchars($user['postal_code']); ?>">
-                            </div>
                         </div>
                         <div class="form-actions">
                             <button type="submit" name="update_profile" class="btn-save">Save Changes</button>
@@ -1306,22 +1320,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_profile'])) {
                     </form>
                 </div>
 
-                <!-- Shipping Addresses -->
+                <!-- Address Management (NEW - Replaces Primary Address) -->
                 <div class="profile-card">
                     <div class="card-header">
-                        <h2>📍 Primary Address</h2>
+                        <h2>📍 My Addresses</h2>
+                        <button class="card-add-btn" onclick="openAddAddressModal()">+ Add Address</button>
                     </div>
-                    <div class="addresses-list">
-                        <div class="address-card default">
-                            <div class="address-badge">Primary</div>
-                            <div class="address-content">
-                                <h3>Default Shipping Address</h3>
-                                <p class="address-recipient"><?php echo htmlspecialchars($user['full_name']); ?></p>
-                                <p class="address-phone"><?php echo $profileController->formatPhone($user['phone']); ?></p>
-                                <p class="address-text">
-                                    <?php echo $profileController->getFullAddress($user); ?>
-                                </p>
-                            </div>
+                    <div class="addresses-list" id="addressesContainer">
+                        <!-- Addresses will be loaded here via JavaScript -->
+                        <div class="empty-state">
+                            <p>Loading addresses...</p>
                         </div>
                     </div>
                 </div>
@@ -1355,16 +1363,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_profile'])) {
                     </div>
                 </div>
 
-                <!-- Recent Orders -->
+                <!-- Recent Orders (Now shows PENDING orders only) -->
                 <div class="profile-card">
                     <div class="card-header">
-                        <h2>📦 Recent Orders</h2>
-                        <a href="/agri_system/public/marketplace/orders" class="view-all-link">View All →</a>
+                        <h2>📦 Pending Orders</h2>
+                        <a href="/agri_system/public/marketplace/myorders" class="view-all-link">View All →</a>
                     </div>
                     <div class="orders-list">
                         <?php if (empty($recentOrders)): ?>
                             <div class="empty-state">
-                                <p>No orders yet. Start shopping in our marketplace!</p>
+                                <p>No pending orders. Start shopping in our marketplace!</p>
                                 <a href="/agri_system/public/marketplace" class="btn-primary">Browse Products</a>
                             </div>
                         <?php else: ?>
@@ -1418,59 +1426,118 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_profile'])) {
     </main>
 
     <!-- Avatar Selection Modal -->
-<div id="avatarModal" class="modal" style="display: none;">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h2>Choose Your Avatar</h2>
-            <button class="modal-close" onclick="closeAvatarModal()">&times;</button>
-        </div>
-        
-        <!-- Upload Custom Avatar Section -->
-        <div class="upload-section">
-            <input type="file" 
-                   id="customAvatarInput" 
-                   accept="image/jpeg,image/jpg,image/png,image/gif" 
-                   onchange="handleCustomFileSelect(event)" 
-                   style="display: none;">
+    <div id="avatarModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Choose Your Avatar</h2>
+                <button class="modal-close" onclick="closeAvatarModal()">&times;</button>
+            </div>
             
-            <button class="upload-btn" onclick="triggerFileInput()">
-                <span class="upload-icon">📤</span>
-                <span>Upload Custom Avatar</span>
-                <span class="upload-hint">JPEG, PNG, GIF (Max 2MB)</span>
-            </button>
+            <!-- Upload Custom Avatar Section -->
+            <div class="upload-section">
+                <input type="file" 
+                       id="customAvatarInput" 
+                       accept="image/jpeg,image/jpg,image/png,image/gif" 
+                       onchange="handleCustomFileSelect(event)" 
+                       style="display: none;">
+                
+                <button class="upload-btn" onclick="triggerFileInput()">
+                    <span class="upload-icon">📤</span>
+                    <span>Upload Custom Avatar</span>
+                    <span class="upload-hint">JPEG, PNG, GIF (Max 2MB)</span>
+                </button>
+                
+                <!-- Upload Preview -->
+                <div id="uploadPreview" class="upload-preview" style="display: none;">
+                    <img id="uploadPreviewImg" src="" alt="Preview">
+                    <p class="preview-label">Preview</p>
+                </div>
+            </div>
             
-            <!-- Upload Preview -->
-            <div id="uploadPreview" class="upload-preview" style="display: none;">
-                <img id="uploadPreviewImg" src="" alt="Preview">
-                <p class="preview-label">Preview</p>
+            <div class="divider">
+                <span>Or choose from preset avatars</span>
+            </div>
+            
+            <!-- Preset Avatars Grid -->
+            <div class="avatar-grid">
+                <?php
+                $availableAvatars = $profileController->getAvailableAvatars();
+                foreach ($availableAvatars as $avatarPath):
+                    $isSelected = ($user['avatar'] === $avatarPath) ? 'selected' : '';
+                ?>
+                    <img src="/agri_system/public<?php echo $avatarPath; ?>"
+                        alt="Avatar"
+                        class="avatar-option <?php echo $isSelected; ?>"
+                        data-avatar="<?php echo htmlspecialchars($avatarPath); ?>"
+                        onclick="selectAvatar('<?php echo htmlspecialchars($avatarPath); ?>', this)">
+                <?php endforeach; ?>
+            </div>
+            
+            <div class="modal-footer">
+                <button class="btn-cancel" onclick="closeAvatarModal()">Cancel</button>
+                <button class="btn-save" id="saveAvatarBtn" onclick="saveAvatar()">Save Avatar</button>
             </div>
         </div>
-        
-        <div class="divider">
-            <span>Or choose from preset avatars</span>
-        </div>
-        
-        <!-- Preset Avatars Grid -->
-        <div class="avatar-grid">
-            <?php
-            $availableAvatars = $profileController->getAvailableAvatars();
-            foreach ($availableAvatars as $avatarPath):
-                $isSelected = ($user['avatar'] === $avatarPath) ? 'selected' : '';
-            ?>
-                <img src="/agri_system/public<?php echo $avatarPath; ?>"
-                    alt="Avatar"
-                    class="avatar-option <?php echo $isSelected; ?>"
-                    data-avatar="<?php echo htmlspecialchars($avatarPath); ?>"
-                    onclick="selectAvatar('<?php echo htmlspecialchars($avatarPath); ?>', this)">
-            <?php endforeach; ?>
-        </div>
-        
-        <div class="modal-footer">
-            <button class="btn-cancel" onclick="closeAvatarModal()">Cancel</button>
-            <button class="btn-save" id="saveAvatarBtn" onclick="saveAvatar()">Save Avatar</button>
+    </div>
+
+    <!-- Address Modal -->
+    <div id="addressModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="addressModalTitle">Add New Address</h2>
+                <button class="modal-close" onclick="closeAddressModal()">&times;</button>
+            </div>
+            
+            <form id="addressForm" onsubmit="saveAddress(event)">
+                <input type="hidden" id="addressID" value="">
+                
+                <div class="form-body" style="padding: 30px;">
+                    <div class="form-group">
+                        <label>Complete Address *</label>
+                        <textarea id="addressField" 
+                                  required 
+                                  placeholder="House/Unit No., Street, Barangay"
+                                  style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-family: inherit; min-height: 80px;"></textarea>
+                    </div>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <div class="form-group">
+                            <label>Municipality *</label>
+                            <input type="text" 
+                                   id="municipalityField" 
+                                   required 
+                                   placeholder="e.g., San Pablo City"
+                                   style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-family: inherit;">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Province *</label>
+                            <input type="text" 
+                                   id="provinceField" 
+                                   required 
+                                   placeholder="e.g., Laguna"
+                                   style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-family: inherit;">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Postal Code *</label>
+                        <input type="text" 
+                               id="postalCodeField" 
+                               required 
+                               placeholder="e.g., 4000"
+                               maxlength="10"
+                               style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-family: inherit;">
+                    </div>
+                </div>
+                
+                <div class="modal-footer">
+                    <button type="button" class="btn-cancel" onclick="closeAddressModal()">Cancel</button>
+                    <button type="submit" class="btn-save">Save Address</button>
+                </div>
+            </form>
         </div>
     </div>
-</div>
 
     <?php include BASE_PATH . '/app/views/marketplace/marketnav.php'; ?>
 

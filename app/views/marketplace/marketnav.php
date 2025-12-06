@@ -91,7 +91,6 @@ switch ($userRole) {
 
 <body>
     <!-- SIDEBAR -->
-    <!-- SIDEBAR -->
     <aside class="sidebar" id="sidebar">
 
         <!-- SIDEBAR HEADER -->

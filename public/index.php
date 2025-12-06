@@ -24,6 +24,7 @@ $routes = [
     'auth/logout' => BASE_PATH . '/app/views/auth/logout.php',
     'auth/pass-reset' => BASE_PATH . '/app/views/auth/pass-reset.php',
     'auth/register' => BASE_PATH . '/app/views/auth/register.php',
+    'auth/debug-otp' => BASE_PATH . '/app/views/auth/debug-otp.php',
     
     // Marketplace (can be accessed without login)
     'marketplace' => BASE_PATH . '/app/views/marketplace/marketplace.php',

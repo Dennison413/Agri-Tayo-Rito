@@ -1,63 +1,37 @@
-// Password Reset Multi-Step Form Handling
-const appState = {
-    currentStep: 1,
-    email: '',
-    verificationCode: '',
-    resetToken: ''
-};
+// Password Reset Multi-Step Flow
+let currentStep = 1;
+let userEmail = '';
 
-// ==========================================
-// NAVIGATION FUNCTIONS
-// ==========================================
-
-/**
- * Navigate to a specific step
- * @param {number} stepNumber - Step number (1, 2, or 3)
- */
-function goToStep(stepNumber) {
-    // Hide all steps
-    document.querySelectorAll('.step').forEach(step => {
-        step.classList.remove('active');
-    });
+// Toast notification helper
+function showToast(message, type = 'success') {
+    const toast = document.getElementById('toast-box');
+    toast.textContent = message;
+    toast.className = type;
+    toast.style.opacity = '1';
     
-    // Show target step
-    const targetStep = document.getElementById(`step-${getStepName(stepNumber)}`);
-    if (targetStep) {
-        targetStep.classList.add('active');
-        appState.currentStep = stepNumber;
-        
-        // Update progress dots
-        updateProgressDots(stepNumber);
-        
-        // Focus first input
-        const firstInput = targetStep.querySelector('input');
-        if (firstInput) {
-            setTimeout(() => firstInput.focus(), 300);
-        }
+    setTimeout(() => {
+        toast.style.opacity = '0';
+    }, 3000);
+}
+
+// Toggle password visibility
+function togglePassword(fieldId) {
+    const input = document.getElementById(fieldId);
+    const icon = input.nextElementSibling;
+    
+    if (input.type === 'password') {
+        input.type = 'text';
+        icon.textContent = '🙈';
+    } else {
+        input.type = 'password';
+        icon.textContent = '👁️';
     }
 }
 
-/**
- * Get step name from number
- * @param {number} stepNumber - Step number
- * @returns {string} - Step name
- */
-function getStepName(stepNumber) {
-    const steps = {
-        1: 'email',
-        2: 'verify',
-        3: 'reset'
-    };
-    return steps[stepNumber] || 'email';
-}
-
-/**
- * Update progress indicator dots
- * @param {number} activeStep - Current active step
- */
-function updateProgressDots(activeStep) {
+// Update progress indicator
+function updateProgress(step) {
     document.querySelectorAll('.progress-dot').forEach((dot, index) => {
-        if (index + 1 === activeStep) {
+        if (index < step) {
             dot.classList.add('active');
         } else {
             dot.classList.remove('active');
@@ -65,341 +39,250 @@ function updateProgressDots(activeStep) {
     });
 }
 
-// ==========================================
-// UTILITY FUNCTIONS
-// ==========================================
-
-/**
- * Show toast notification
- * @param {string} message - Message to display
- * @param {string} type - Type: 'success', 'error', 'loading'
- */
-function showToast(message, type = 'success') {
-    const toast = document.getElementById('toast-box');
-    toast.textContent = message;
-    toast.className = type;
+// Show specific step
+function showStep(step) {
+    document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
     
-    // Auto-hide after 3 seconds
-    setTimeout(() => {
-        toast.classList.remove(type);
-    }, 3000);
-}
-
-/**
- * Validate email format
- * @param {string} email - Email to validate
- * @returns {boolean} - True if valid
- */
-function validateEmail(email) {
-    const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return regex.test(email);
-}
-
-/**
- * Toggle password visibility
- * @param {string} inputId - Password input ID
- */
-function togglePassword(inputId) {
-    const input = document.getElementById(inputId);
-    const icon = input.parentElement.querySelector('.toggle-password');
+    switch(step) {
+        case 1:
+            document.getElementById('step-email').classList.add('active');
+            break;
+        case 2:
+            document.getElementById('step-verify').classList.add('active');
+            break;
+        case 3:
+            document.getElementById('step-reset').classList.add('active');
+            break;
+    }
     
-    if (input.type === 'password') {
-        input.type = 'text';
-        icon.textContent = '👁️‍🗨️';
-    } else {
-        input.type = 'password';
-        icon.textContent = '👁️';
-    }
+    currentStep = step;
+    updateProgress(step);
 }
 
-/**
- * Validate password strength
- * @param {string} password - Password to validate
- * @returns {object} - Validation result
- */
-function validatePassword(password) {
-    if (password.length < 8) {
-        return {
-            isValid: false,
-            message: 'Password must be at least 8 characters long'
-        };
-    }
-    if (!/[A-Z]/.test(password)) {
-        return {
-            isValid: false,
-            message: 'Password must contain at least one uppercase letter'
-        };
-    }
-    if (!/[a-z]/.test(password)) {
-        return {
-            isValid: false,
-            message: 'Password must contain at least one lowercase letter'
-        };
-    }
-    if (!/[0-9]/.test(password)) {
-        return {
-            isValid: false,
-            message: 'Password must contain at least one number'
-        };
-    }
-    return { isValid: true, message: 'Strong password' };
-}
-
-// ==========================================
-// STEP 1: EMAIL SUBMISSION
-// ==========================================
-
+// STEP 1: Send OTP
 document.getElementById('emailForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     
-    const emailInput = document.getElementById('email');
-    const email = emailInput.value.trim();
+    const email = document.getElementById('email').value.trim();
     
-    // Validate email
-    if (!validateEmail(email)) {
-        showToast('Please enter a valid email address', 'error');
+    if (!email) {
+        showToast('Please enter your email', 'error');
         return;
     }
     
+    // Show loading
     const submitBtn = e.target.querySelector('.submit-btn');
     const originalText = submitBtn.textContent;
-    submitBtn.textContent = 'SENDING...';
+    submitBtn.textContent = 'Sending...';
     submitBtn.disabled = true;
     
     try {
-        // Send request to backend
-        const response = await fetch('../backend/forgot-password.php', {
+        const formData = new FormData();
+        formData.append('action', 'send_otp');
+        formData.append('email', email);
+        
+        const response = await fetch('/agri_system/public/auth/pass-reset', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email: email })
+            body: formData
         });
         
-        const data = await response.json();
+        const result = await response.json();
         
-        if (data.success) {
-            // Save email to state
-            appState.email = email;
-            
-            // Update display email in step 2
+        if (result.success) {
+            userEmail = email;
             document.getElementById('displayEmail').textContent = email;
-            
-            showToast('Verification code sent to your email!', 'success');
-            
-            // Move to verification step
-            setTimeout(() => {
-                goToStep(2);
-                submitBtn.textContent = originalText;
-                submitBtn.disabled = false;
-            }, 1500);
+            showToast('OTP sent to your email! Check your inbox.', 'success');
+            setTimeout(() => showStep(2), 1500);
         } else {
-            showToast(data.message || 'Email not found', 'error');
-            submitBtn.textContent = originalText;
-            submitBtn.disabled = false;
+            showToast(result.message || 'Failed to send OTP', 'error');
         }
     } catch (error) {
         console.error('Error:', error);
-        showToast('Something went wrong. Please try again.', 'error');
+        showToast('An error occurred. Please try again.', 'error');
+    } finally {
         submitBtn.textContent = originalText;
         submitBtn.disabled = false;
     }
 });
 
-// ==========================================
-// STEP 2: CODE VERIFICATION
-// ==========================================
-
+// STEP 2: OTP Input Handling
 const codeInputs = document.querySelectorAll('.code-input');
 
-// Auto-focus and navigation between code inputs
 codeInputs.forEach((input, index) => {
-    // Move to next on input
+    // Auto-focus next input
     input.addEventListener('input', (e) => {
-        const value = e.target.value;
-        
-        // Only allow digits
-        if (!/^\d$/.test(value)) {
-            e.target.value = '';
-            return;
-        }
-        
-        // Move to next input
-        if (value && index < codeInputs.length - 1) {
+        if (e.target.value.length === 1 && index < codeInputs.length - 1) {
             codeInputs[index + 1].focus();
         }
     });
     
-    // Move to previous on backspace
+    // Handle backspace
     input.addEventListener('keydown', (e) => {
         if (e.key === 'Backspace' && !e.target.value && index > 0) {
             codeInputs[index - 1].focus();
         }
     });
     
+    // Only allow numbers
+    input.addEventListener('input', (e) => {
+        e.target.value = e.target.value.replace(/[^0-9]/g, '');
+    });
+
     // Handle paste
     input.addEventListener('paste', (e) => {
         e.preventDefault();
-        const pastedData = e.clipboardData.getData('text').trim();
+        const pastedData = e.clipboardData.getData('text').replace(/[^0-9]/g, '');
         
-        if (/^\d{4}$/.test(pastedData)) {
-            pastedData.split('').forEach((digit, i) => {
-                if (codeInputs[i]) {
-                    codeInputs[i].value = digit;
-                }
+        if (pastedData.length === 4) {
+            codeInputs.forEach((inp, idx) => {
+                inp.value = pastedData[idx] || '';
             });
             codeInputs[3].focus();
         }
     });
 });
 
-// Verify code form submission
+// STEP 2: Verify OTP
 document.getElementById('verifyForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     
-    const code = Array.from(codeInputs).map(input => input.value).join('');
+    const otp = Array.from(codeInputs).map(input => input.value).join('');
     
-    if (code.length !== 4) {
+    console.log('🔍 OTP Debug:');
+    console.log('- OTP entered:', otp);
+    console.log('- OTP length:', otp.length);
+    console.log('- Individual values:', Array.from(codeInputs).map(input => input.value));
+    
+    if (otp.length !== 4) {
         showToast('Please enter the complete 4-digit code', 'error');
+        return;
+    }
+    
+    // Validate that all characters are digits
+    if (!/^\d{4}$/.test(otp)) {
+        showToast('OTP must contain only numbers', 'error');
         return;
     }
     
     const submitBtn = e.target.querySelector('.submit-btn');
     const originalText = submitBtn.textContent;
-    submitBtn.textContent = 'VERIFYING...';
+    submitBtn.textContent = 'Verifying...';
     submitBtn.disabled = true;
     
     try {
-        const response = await fetch('../backend/verify-code.php', {
+        const formData = new FormData();
+        formData.append('action', 'verify_otp');
+        formData.append('otp', otp);
+        
+        console.log('📤 Sending FormData:');
+        for (let pair of formData.entries()) {
+            console.log('- ' + pair[0] + ': ' + pair[1]);
+        }
+        
+        const response = await fetch('/agri_system/public/auth/pass-reset', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                email: appState.email,
-                code: code
-            })
+            body: formData
         });
         
-        const data = await response.json();
+        console.log('📥 Response status:', response.status);
         
-        if (data.success) {
-            // Save token
-            appState.resetToken = data.token;
-            appState.verificationCode = code;
-            
-            showToast('Code verified successfully!', 'success');
-            
-            // Move to reset password step
-            setTimeout(() => {
-                goToStep(3);
-                submitBtn.textContent = originalText;
-                submitBtn.disabled = false;
-            }, 1500);
+        const responseText = await response.text();
+        console.log('📥 Raw response:', responseText);
+        
+        let result;
+        try {
+            result = JSON.parse(responseText);
+            console.log('📥 Parsed result:', result);
+        } catch (parseError) {
+            console.error('❌ JSON parse error:', parseError);
+            console.error('Response was:', responseText);
+            showToast('Server error. Check console for details.', 'error');
+            return;
+        }
+        
+        if (result.success) {
+            showToast('OTP verified successfully! ✓', 'success');
+            setTimeout(() => showStep(3), 1000);
         } else {
-            showToast(data.message || 'Invalid or expired code', 'error');
-            
+            showToast(result.message || 'Invalid OTP', 'error');
             // Clear inputs
             codeInputs.forEach(input => input.value = '');
             codeInputs[0].focus();
-            
-            submitBtn.textContent = originalText;
-            submitBtn.disabled = false;
         }
     } catch (error) {
-        console.error('Error:', error);
-        showToast('Something went wrong. Please try again.', 'error');
+        console.error('❌ Verification error:', error);
+        showToast('Verification failed. Please try again.', 'error');
+    } finally {
         submitBtn.textContent = originalText;
         submitBtn.disabled = false;
     }
 });
 
-// Resend code functionality
+// Resend OTP
 document.getElementById('resendCode').addEventListener('click', async (e) => {
     e.preventDefault();
     
-    const resendBtn = e.target;
-    let countdown = 60;
+    const link = e.target;
+    const originalText = link.textContent;
+    link.textContent = 'Sending...';
+    link.style.pointerEvents = 'none';
     
-    // Check if already in countdown
-    if (resendBtn.dataset.countdown === 'active') {
-        return;
-    }
+    showToast('Resending OTP...', 'loading');
     
     try {
-        showToast('Resending code...', 'loading');
+        const formData = new FormData();
+        formData.append('action', 'resend_otp');
         
-        const response = await fetch('../backend/forgot-password.php', {
+        const response = await fetch('/agri_system/public/auth/pass-reset', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email: appState.email })
+            body: formData
         });
         
-        const data = await response.json();
+        const result = await response.json();
         
-        if (data.success) {
-            showToast('New code sent to your email!', 'success');
-            
-            // Start countdown
-            resendBtn.dataset.countdown = 'active';
-            resendBtn.style.pointerEvents = 'none';
-            resendBtn.style.opacity = '0.5';
-            const originalText = resendBtn.textContent;
-            
-            const interval = setInterval(() => {
-                countdown--;
-                resendBtn.textContent = `Resend Code (${countdown}s)`;
-                
-                if (countdown <= 0) {
-                    clearInterval(interval);
-                    resendBtn.textContent = originalText;
-                    resendBtn.style.pointerEvents = 'auto';
-                    resendBtn.style.opacity = '1';
-                    delete resendBtn.dataset.countdown;
-                }
-            }, 1000);
+        if (result.success) {
+            showToast('New OTP sent to your email!', 'success');
+            codeInputs.forEach(input => input.value = '');
+            codeInputs[0].focus();
         } else {
-            showToast(data.message || 'Failed to resend code', 'error');
+            showToast(result.message || 'Failed to resend OTP', 'error');
         }
     } catch (error) {
         console.error('Error:', error);
-        showToast('Something went wrong. Please try again.', 'error');
+        showToast('Failed to resend OTP', 'error');
+    } finally {
+        link.textContent = originalText;
+        link.style.pointerEvents = 'auto';
     }
 });
 
-// ==========================================
-// STEP 3: RESET PASSWORD
-// ==========================================
-
-const confirmPasswordInput = document.getElementById('confirm_password');
-
-// Real-time password match indicator
-confirmPasswordInput.addEventListener('input', () => {
-    const newPassword = document.getElementById('new_password').value;
-    const confirmPassword = confirmPasswordInput.value;
+// Start Over - Go back to Step 1
+document.getElementById('startOver').addEventListener('click', (e) => {
+    e.preventDefault();
     
-    if (confirmPassword.length > 0) {
-        if (newPassword === confirmPassword) {
-            confirmPasswordInput.style.borderColor = '#4caf50';
-        } else {
-            confirmPasswordInput.style.borderColor = '#c62828';
-        }
-    } else {
-        confirmPasswordInput.style.borderColor = '#e0e0e0';
-    }
+    // Clear all inputs
+    document.getElementById('email').value = '';
+    codeInputs.forEach(input => input.value = '');
+    document.getElementById('new_password').value = '';
+    document.getElementById('confirm_password').value = '';
+    
+    // Reset to step 1
+    showStep(1);
+    showToast('Starting fresh. Enter your email.', 'loading');
 });
 
-// Reset password form submission
+// STEP 3: Reset Password
 document.getElementById('resetForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     
     const newPassword = document.getElementById('new_password').value;
     const confirmPassword = document.getElementById('confirm_password').value;
     
-    // Validate password strength
-    const validation = validatePassword(newPassword);
-    if (!validation.isValid) {
-        showToast(validation.message, 'error');
+    if (newPassword.length < 8) {
+        showToast('Password must be at least 8 characters', 'error');
         return;
     }
     
-    // Check password match
     if (newPassword !== confirmPassword) {
         showToast('Passwords do not match', 'error');
         return;
@@ -407,57 +290,70 @@ document.getElementById('resetForm').addEventListener('submit', async (e) => {
     
     const submitBtn = e.target.querySelector('.submit-btn');
     const originalText = submitBtn.textContent;
-    submitBtn.textContent = 'UPDATING...';
+    submitBtn.textContent = 'Resetting...';
     submitBtn.disabled = true;
     
     try {
-        const response = await fetch('../backend/reset-password.php', {
+        const formData = new FormData();
+        formData.append('action', 'reset_password');
+        formData.append('new_password', newPassword);
+        formData.append('confirm_password', confirmPassword);
+        
+        const response = await fetch('/agri_system/public/auth/pass-reset', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                email: appState.email,
-                token: appState.resetToken,
-                new_password: newPassword
-            })
+            body: formData
         });
         
-        const data = await response.json();
+        const result = await response.json();
         
-        if (data.success) {
-            showToast('Password reset successfully!', 'success');
-            
-            // Clear state
-            appState.email = '';
-            appState.verificationCode = '';
-            appState.resetToken = '';
-            
-            // Redirect to login
+        if (result.success) {
+            showToast('Password reset successful! Redirecting...', 'success');
             setTimeout(() => {
-                window.location.href = 'login.php';
+                window.location.href = '/agri_system/public/auth/login';
             }, 2000);
         } else {
-            showToast(data.message || 'Failed to reset password', 'error');
-            submitBtn.textContent = originalText;
-            submitBtn.disabled = false;
+            showToast(result.message || 'Failed to reset password', 'error');
         }
     } catch (error) {
         console.error('Error:', error);
-        showToast('Something went wrong. Please try again.', 'error');
+        showToast('An error occurred. Please try again.', 'error');
+    } finally {
         submitBtn.textContent = originalText;
         submitBtn.disabled = false;
     }
 });
 
-// ==========================================
-// INITIALIZE
-// ==========================================
-document.addEventListener('DOMContentLoaded', () => {
-    // Start at step 1
-    goToStep(1);
+// Password strength indicator
+document.getElementById('new_password').addEventListener('input', function() {
+    const password = this.value;
     
-    // Prevent going back to reload the page
-    window.history.pushState(null, null, window.location.href);
-    window.onpopstate = () => {
-        window.history.pushState(null, null, window.location.href);
-    };
+    if (password.length >= 8) {
+        this.style.borderColor = '#51cf66';
+    } else if (password.length > 0) {
+        this.style.borderColor = '#ffa94d';
+    } else {
+        this.style.borderColor = '';
+    }
+});
+
+// Password match indicator
+document.getElementById('confirm_password').addEventListener('input', function() {
+    const newPassword = document.getElementById('new_password').value;
+    const confirmPassword = this.value;
+    
+    if (confirmPassword && newPassword) {
+        if (newPassword === confirmPassword) {
+            this.style.borderColor = '#51cf66';
+        } else {
+            this.style.borderColor = '#ff6b6b';
+        }
+    } else {
+        this.style.borderColor = '';
+    }
+});
+
+// Initialize
+document.addEventListener('DOMContentLoaded', () => {
+    showStep(1);
+    document.getElementById('email').focus();
 });

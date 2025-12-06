@@ -35,6 +35,155 @@ class ProfileController
         return $this->userModel->getUserById($userID);
     }
 
+    // ✅ NEW METHOD: Get user statistics
+    public function getUserStats($userID)
+    {
+        try {
+            $db = new Database();
+            $conn = $db->connect();
+
+            // Get total orders
+            $ordersQuery = "SELECT COUNT(*) as total_orders FROM orders WHERE buyerID = ?";
+            $stmt = $conn->prepare($ordersQuery);
+            $stmt->execute([$userID]);
+            $ordersResult = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            // Get completed orders
+            $completedQuery = "SELECT COUNT(*) as completed_orders 
+                              FROM orders 
+                              WHERE buyerID = ? AND order_status = 'delivered'";
+            $stmt = $conn->prepare($completedQuery);
+            $stmt->execute([$userID]);
+            $completedResult = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            // Get wishlist count
+            $wishlistQuery = "SELECT COUNT(*) as wishlist_count FROM wishlist WHERE buyerID = ?";
+            $stmt = $conn->prepare($wishlistQuery);
+            $stmt->execute([$userID]);
+            $wishlistResult = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            // Get reviews count
+            $reviewsQuery = "SELECT COUNT(*) as reviews_count FROM reviews WHERE buyerID = ?";
+            $stmt = $conn->prepare($reviewsQuery);
+            $stmt->execute([$userID]);
+            $reviewsResult = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            return [
+                'total_orders' => $ordersResult['total_orders'] ?? 0,
+                'completed_orders' => $completedResult['completed_orders'] ?? 0,
+                'wishlist_count' => $wishlistResult['wishlist_count'] ?? 0,
+                'reviews_count' => $reviewsResult['reviews_count'] ?? 0
+            ];
+
+        } catch (Exception $e) {
+            error_log("Get user stats error: " . $e->getMessage());
+            return [
+                'total_orders' => 0,
+                'completed_orders' => 0,
+                'wishlist_count' => 0,
+                'reviews_count' => 0
+            ];
+        }
+    }
+
+    // ✅ NEW METHOD: Get recent orders
+    public function getRecentOrders($userID, $limit = 5)
+    {
+        try {
+            $db = new Database();
+            $conn = $db->connect();
+
+            $query = "SELECT 
+                        o.orderID,
+                        o.order_date as created_at,
+                        o.total_amount,
+                        o.order_status as status,
+                        GROUP_CONCAT(p.product_name SEPARATOR ', ') as product_name,
+                        MIN(pi.image_path) as image
+                      FROM orders o
+                      JOIN order_items oi ON o.orderID = oi.orderID
+                      JOIN products p ON oi.productID = p.productID
+                      LEFT JOIN product_images pi ON p.productID = pi.productID AND pi.is_main = 1
+                      WHERE o.buyerID = ?
+                      GROUP BY o.orderID
+                      ORDER BY o.order_date DESC
+                      LIMIT ?";
+
+            $stmt = $conn->prepare($query);
+            $stmt->execute([$userID, $limit]);
+            $orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            // Format image paths
+            foreach ($orders as &$order) {
+                if (empty($order['image'])) {
+                    $order['image'] = '/agri_system/public/images/placeholder-product.jpg';
+                } else {
+                    $order['image'] = '/agri_system/public' . $order['image'];
+                }
+            }
+
+            return $orders;
+
+        } catch (Exception $e) {
+            error_log("Get recent orders error: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    // ✅ NEW METHOD: Format date for display
+    public function formatDate($dateString)
+    {
+        if (empty($dateString)) {
+            return 'N/A';
+        }
+
+        try {
+            $date = new DateTime($dateString);
+            return $date->format('F j, Y');
+        } catch (Exception $e) {
+            return 'Invalid date';
+        }
+    }
+
+    // ✅ NEW METHOD: Format phone number
+    public function formatPhone($phone)
+    {
+        if (empty($phone)) {
+            return 'Not provided';
+        }
+
+        // Format: 0912-345-6789
+        if (strlen($phone) === 11 && substr($phone, 0, 2) === '09') {
+            return substr($phone, 0, 4) . '-' . substr($phone, 4, 3) . '-' . substr($phone, 7);
+        }
+
+        return $phone;
+    }
+
+    // ✅ NEW METHOD: Get full address
+    public function getFullAddress($user)
+    {
+        $parts = [];
+
+        if (!empty($user['address'])) {
+            $parts[] = $user['address'];
+        }
+
+        if (!empty($user['municipality'])) {
+            $parts[] = $user['municipality'];
+        }
+
+        if (!empty($user['province'])) {
+            $parts[] = $user['province'];
+        }
+
+        if (!empty($user['postal_code'])) {
+            $parts[] = $user['postal_code'];
+        }
+
+        return !empty($parts) ? implode(', ', $parts) : 'Not provided';
+    }
+
     public function updateProfile()
     {
         if (!CSRF::validateRequest()) {
@@ -591,7 +740,7 @@ class ProfileController
         exit;
     }
 
-    // accoumt deletion
+    // account deletion
 
     public function requestAccountDeletion()
     {
