@@ -1,10 +1,13 @@
 <?php
 /**
  * Cover Photo Upload Endpoint
- * Handles file uploads for user cover photos
- * 
  * File location: /agri_system/public/api/upload-cover.php
  */
+
+// Error logging for debugging
+error_reporting(E_ALL);
+ini_set('display_errors', 0);
+ini_set('log_errors', 1);
 
 // Start session
 session_start();
@@ -86,7 +89,7 @@ try {
     }
     
     // Validate file size (5MB max)
-    $maxFileSize = 5 * 1024 * 1024; // 5MB
+    $maxFileSize = 5 * 1024 * 1024;
     if ($file['size'] > $maxFileSize) {
         echo json_encode([
             'success' => false,
@@ -108,7 +111,13 @@ try {
     // Create upload directory if it doesn't exist
     $uploadDir = $_SERVER['DOCUMENT_ROOT'] . '/agri_system/public/uploads/profiles/';
     if (!is_dir($uploadDir)) {
-        mkdir($uploadDir, 0755, true);
+        if (!mkdir($uploadDir, 0755, true)) {
+            echo json_encode([
+                'success' => false,
+                'message' => 'Failed to create upload directory'
+            ]);
+            exit();
+        }
     }
     
     // Generate unique filename
@@ -117,7 +126,7 @@ try {
     $fullPath = $uploadDir . $filename;
     $dbPath = '/uploads/profiles/' . $filename;
     
-    // Process and resize image (1200x400 for cover)
+    // Process and resize image
     if (!processAndSaveCoverImage($file['tmp_name'], $fullPath, $extension)) {
         echo json_encode([
             'success' => false,
@@ -196,14 +205,11 @@ try {
  */
 function processAndSaveCoverImage($sourcePath, $destinationPath, $extension) {
     try {
-        // Get original image dimensions
         list($width, $height) = getimagesize($sourcePath);
         
-        // Target dimensions for cover (16:9 aspect ratio recommended)
         $targetWidth = 1200;
         $targetHeight = 400;
         
-        // Create image resource based on file type
         switch ($extension) {
             case 'jpg':
             case 'jpeg':
@@ -220,28 +226,23 @@ function processAndSaveCoverImage($sourcePath, $destinationPath, $extension) {
             return false;
         }
         
-        // Calculate crop dimensions to maintain aspect ratio
         $sourceAspect = $width / $height;
         $targetAspect = $targetWidth / $targetHeight;
         
         if ($sourceAspect > $targetAspect) {
-            // Image is wider - crop width
             $newHeight = $height;
             $newWidth = $height * $targetAspect;
             $cropX = ($width - $newWidth) / 2;
             $cropY = 0;
         } else {
-            // Image is taller - crop height
             $newWidth = $width;
             $newHeight = $width / $targetAspect;
             $cropX = 0;
             $cropY = ($height - $newHeight) / 2;
         }
         
-        // Create new image
         $newImage = imagecreatetruecolor($targetWidth, $targetHeight);
         
-        // Preserve transparency for PNG
         if ($extension === 'png') {
             imagealphablending($newImage, false);
             imagesavealpha($newImage, true);
@@ -249,7 +250,6 @@ function processAndSaveCoverImage($sourcePath, $destinationPath, $extension) {
             imagefilledrectangle($newImage, 0, 0, $targetWidth, $targetHeight, $transparent);
         }
         
-        // Resize and crop image
         imagecopyresampled(
             $newImage, $sourceImage,
             0, 0,
@@ -258,7 +258,6 @@ function processAndSaveCoverImage($sourcePath, $destinationPath, $extension) {
             $newWidth, $newHeight
         );
         
-        // Save image based on file type
         $result = false;
         switch ($extension) {
             case 'jpg':
@@ -270,7 +269,6 @@ function processAndSaveCoverImage($sourcePath, $destinationPath, $extension) {
                 break;
         }
         
-        // Free memory
         imagedestroy($sourceImage);
         imagedestroy($newImage);
         

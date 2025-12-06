@@ -71,7 +71,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_profile'])) {
         }
 
         .main-content {
-            margin-top: 50px;
+            margin-top: 20px;
             margin-bottom: 70px;
             padding: 20px;
             max-width: 1400px;
@@ -165,19 +165,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_profile'])) {
         }
 
         .profile-avatar {
-            width: 120px;
-            height: 120px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #2d5016, #4a7c25);
-            border: 5px solid white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 3rem;
-            color: white;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-        }
-
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    border: 5px solid white;
+    object-fit: cover;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
         .edit-avatar-btn {
             position: absolute;
             bottom: 5px;
@@ -862,235 +856,106 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_profile'])) {
 
         /* Modal Overlay */
         .modal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.7);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 9999;
-            animation: fadeIn 0.3s ease;
-        }
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    animation: fadeIn 0.3s ease;
+}
 
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-            }
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
 
-            to {
-                opacity: 1;
-            }
-        }
+/* Modal Content Container - IMPROVED SIZE */
+.modal-content {
+    background: white;
+    border-radius: 16px;
+    padding: 0;
+    width: 90%;
+    max-width: 800px;  /* Increased from 650px */
+    max-height: 90vh;
+    overflow: hidden;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    animation: slideUp 0.3s ease;
+}
 
-        /* Modal Content Container */
-        .modal-content {
-            background: white;
-            border-radius: 16px;
-            padding: 0;
-            width: 90%;
-            max-width: 650px;
-            max-height: 85vh;
-            overflow: hidden;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
-            animation: slideUp 0.3s ease;
-        }
+@keyframes slideUp {
+    from {
+        transform: translateY(50px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
 
-        @keyframes slideUp {
-            from {
-                transform: translateY(50px);
-                opacity: 0;
-            }
-
-            to {
-                transform: translateY(0);
-                opacity: 1;
-            }
-        }
-
-        /* Modal Header */
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 25px 30px;
-            border-bottom: 2px solid #f0f0f0;
-            background: linear-gradient(135deg, #f8f9fa, #ffffff);
-        }
-
-        .modal-header h2 {
-            font-size: 1.4rem;
-            font-weight: 700;
-            color: #2d5016;
-            margin: 0;
-        }
-
-        /* Modal Close Button */
-        .modal-close {
-            background: none;
-            border: none;
-            font-size: 2rem;
-            color: #999;
-            cursor: pointer;
-            padding: 0;
-            width: 40px;
-            height: 40px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 50%;
-            transition: all 0.3s;
-            line-height: 1;
-        }
-
-        .modal-close:hover {
-            background: #f5f5f5;
-            color: #333;
-            transform: rotate(90deg);
-        }
-
-        /* Avatar Grid */
-        .avatar-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-            gap: 20px;
-            padding: 30px;
-            max-height: 55vh;
-            overflow-y: auto;
-        }
-
-        /* Custom Scrollbar for Avatar Grid */
-        .avatar-grid::-webkit-scrollbar {
-            width: 8px;
-        }
-
-        .avatar-grid::-webkit-scrollbar-track {
-            background: #f1f1f1;
-            border-radius: 10px;
-        }
-
-        .avatar-grid::-webkit-scrollbar-thumb {
-            background: #2d5016;
-            border-radius: 10px;
-        }
-
-        .avatar-grid::-webkit-scrollbar-thumb:hover {
-            background: #4a7c25;
-        }
-
-        /* Avatar Options */
-        .avatar-option {
-            width: 100px;
-            height: 100px;
-            border-radius: 50%;
-            cursor: pointer;
-            border: 4px solid transparent;
-            transition: all 0.3s ease;
-            object-fit: cover;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        }
-
-        .avatar-option:hover {
-            border-color: #4a7c25;
-            transform: scale(1.1);
-            box-shadow: 0 6px 20px rgba(74, 124, 37, 0.4);
-        }
-
-        .avatar-option.selected {
-            border-color: #2d5016;
-            box-shadow: 0 0 0 4px rgba(45, 80, 22, 0.2);
-            transform: scale(1.05);
-        }
-
-        /* Modal Footer */
-        .modal-footer {
-            display: flex;
-            gap: 12px;
-            padding: 20px 30px;
-            border-top: 2px solid #f0f0f0;
-            justify-content: flex-end;
-            background: #f8f9fa;
-        }
-
-        /* Profile Avatar (Update existing style or add if not present) */
-        .profile-avatar {
-            width: 120px;
-            height: 120px;
-            border-radius: 50%;
-            border: 5px solid white;
-            object-fit: cover;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-        }
-
-        /* ============================================
-   RESPONSIVE STYLES FOR AVATAR MODAL
-   ============================================ */
-
-        @media (max-width: 768px) {
-            .modal-content {
-                width: 95%;
-                max-height: 90vh;
-            }
-
-            .avatar-grid {
-                grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
-                gap: 15px;
-                padding: 20px;
-            }
-
-            .avatar-option {
-                width: 80px;
-                height: 80px;
-            }
-
-            .modal-header {
-                padding: 20px;
-            }
-
-            .modal-header h2 {
-                font-size: 1.2rem;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .avatar-grid {
-                grid-template-columns: repeat(3, 1fr);
-                gap: 12px;
-                padding: 15px;
-            }
-
-            .avatar-option {
-                width: 70px;
-                height: 70px;
-            }
-
-            .modal-footer {
-                flex-direction: column;
-            }
-
-            .modal-footer button {
-                width: 100%;
-            }
-        }
-        .upload-section {
+/* Modal Header */
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     padding: 20px 30px;
+    border-bottom: 2px solid #f0f0f0;
+    background: linear-gradient(135deg, #f8f9fa, #ffffff);
+}
+
+.modal-header h2 {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #2d5016;
+    margin: 0;
+}
+
+/* Modal Close Button */
+.modal-close {
+    background: none;
+    border: none;
+    font-size: 2rem;
+    color: #999;
+    cursor: pointer;
+    padding: 0;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.3s;
+    line-height: 1;
+}
+
+.modal-close:hover {
+    background: #f5f5f5;
+    color: #333;
+    transform: rotate(90deg);
+}
+        .upload-section {
+    padding: 15px 30px;
     background: #f8f9fa;
-    border-bottom: 2px solid #e0e0e0;
+    border-bottom: 1px solid #e0e0e0;
 }
 
 .upload-btn {
     width: 100%;
-    padding: 20px;
+    padding: 15px;  /* Reduced from 20px */
     background: white;
-    border: 3px dashed #2d5016;
-    border-radius: 12px;
+    border: 2px dashed #2d5016;
+    border-radius: 10px;
     cursor: pointer;
     display: flex;
-    flex-direction: column;
+    flex-direction: row;  /* Changed from column to row */
     align-items: center;
-    gap: 8px;
+    justify-content: center;
+    gap: 12px;
     transition: all 0.3s;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
@@ -1103,45 +968,46 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_profile'])) {
 }
 
 .upload-icon {
-    font-size: 2.5rem;
+    font-size: 1.8rem;  /* Reduced from 2.5rem */
 }
 
 .upload-btn span:nth-child(2) {
-    font-size: 1rem;
+    font-size: 0.9rem;  /* Reduced from 1rem */
     font-weight: 700;
     color: #2d5016;
 }
 
 .upload-hint {
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     color: #666;
 }
 
 .upload-preview {
-    margin-top: 15px;
+    margin-top: 12px;
     display: flex;
-    flex-direction: column;
     align-items: center;
-    gap: 10px;
+    justify-content: center;
+    gap: 12px;
 }
 
 .upload-preview img {
-    width: 120px;
-    height: 120px;
+    width: 80px;  /* Reduced from 120px */
+    height: 80px;
     border-radius: 50%;
     object-fit: cover;
-    border: 4px solid #2d5016;
+    border: 3px solid #2d5016;
     box-shadow: 0 4px 12px rgba(45, 80, 22, 0.3);
 }
 
 .preview-label {
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     font-weight: 600;
     color: #2d5016;
 }
 
+/* Divider - MADE COMPACT */
 .divider {
-    padding: 15px 30px;
+    padding: 12px 30px;  /* Reduced from 15px */
     text-align: center;
     position: relative;
     background: white;
@@ -1151,7 +1017,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_profile'])) {
     background: white;
     padding: 0 15px;
     color: #999;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     font-weight: 600;
     position: relative;
     z-index: 1;
@@ -1163,10 +1029,76 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_profile'])) {
     left: 30px;
     right: 30px;
     top: 50%;
-    height: 2px;
+    height: 1px;
     background: #e0e0e0;
 }
 
+.avatar-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);  /* Show 6 per row on desktop */
+    gap: 20px;
+    padding: 25px 30px;
+    max-height: 50vh;  /* Reduced from 55vh */
+    overflow-y: auto;
+}
+
+/* Custom Scrollbar */
+.avatar-grid::-webkit-scrollbar {
+    width: 8px;
+}
+
+.avatar-grid::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+}
+
+.avatar-grid::-webkit-scrollbar-thumb {
+    background: #2d5016;
+    border-radius: 10px;
+}
+
+.avatar-grid::-webkit-scrollbar-thumb:hover {
+    background: #4a7c25;
+}
+
+/* Avatar Options */
+.avatar-option {
+    width: 100%;
+    aspect-ratio: 1;  /* Maintains square shape */
+    border-radius: 50%;
+    cursor: pointer;
+    border: 3px solid transparent;
+    transition: all 0.3s ease;
+    object-fit: cover;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.avatar-option:hover {
+    border-color: #4a7c25;
+    transform: scale(1.1);
+    box-shadow: 0 6px 20px rgba(74, 124, 37, 0.4);
+}
+
+.avatar-option.selected {
+    border-color: #2d5016;
+    box-shadow: 0 0 0 4px rgba(45, 80, 22, 0.2);
+    transform: scale(1.05);
+}
+
+.modal-footer {
+    display: flex;
+    gap: 12px;
+    padding: 20px 30px;
+    border-top: 2px solid #f0f0f0;
+    justify-content: flex-end;
+    background: #f8f9fa;
+    position: sticky;
+    bottom: 0;
+}
+
+.modal-footer button {
+    min-width: 120px;
+}
 /* Responsive adjustments */
 @media (max-width: 768px) {
     .upload-section {
@@ -1450,7 +1382,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_profile'])) {
                 <!-- Upload Preview -->
                 <div id="uploadPreview" class="upload-preview" style="display: none;">
                     <img id="uploadPreviewImg" src="" alt="Preview">
-                    <p class="preview-label">Preview</p>
                 </div>
             </div>
             

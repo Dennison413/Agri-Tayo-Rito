@@ -1,8 +1,6 @@
 <?php
 /**
  * Custom Avatar Upload Endpoint
- * Handles file uploads for custom user avatars
- * 
  * File location: /agri_system/public/api/upload-avatar.php
  */
 

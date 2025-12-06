@@ -1067,3 +1067,74 @@ a:focus,
 a:active {
     text-decoration: none;
 }
+
+/* ============================================
+   🔥 AVATAR FIX - Add to end of marketplace.css
+   ============================================ */
+
+/* Override existing user-avatar styles */
+.sidebar .user-avatar {
+    position: relative !important;
+    width: 50px !important;
+    height: 50px !important;
+    min-width: 50px !important;
+    min-height: 50px !important;
+    border-radius: 50% !important;
+    overflow: hidden !important;
+    flex-shrink: 0 !important;
+    border: 3px solid rgba(255, 255, 255, 0.3) !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2) !important;
+    background: linear-gradient(135deg, #2d5016, #4a7c25) !important;
+}
+
+/* ✅ THE CRITICAL FIX: Style the actual <img> tag */
+.sidebar .user-avatar img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+    display: block !important;
+    border-radius: 50%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 1;
+}
+
+/* Fallback emoji when image is loading/missing */
+.sidebar .user-avatar::before {
+    content: '👤';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 1.8rem;
+    color: white;
+    z-index: 0;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+    .sidebar .user-avatar {
+        width: 45px !important;
+        height: 45px !important;
+        min-width: 45px !important;
+        min-height: 45px !important;
+    }
+
+    .sidebar .user-avatar::before {
+        font-size: 1.5rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .sidebar .user-avatar {
+        width: 40px !important;
+        height: 40px !important;
+        min-width: 40px !important;
+        min-height: 40px !important;
+    }
+
+    .sidebar .user-avatar::before {
+        font-size: 1.3rem;
+    }
+}

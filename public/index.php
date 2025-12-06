@@ -14,10 +14,18 @@ $url = trim($url, '/');
 $routes = [
     '' => BASE_PATH . '/app/views/landing.php',
     
-    // API Routes
+   'api/address' => BASE_PATH . '/public/api/address.php',
+    'api/update-avatar' => BASE_PATH . '/public/api/update-avatar.php',
+    'api/upload-avatar' => BASE_PATH . '/public/api/upload-avatar.php',
+    'api/upload-cover' => BASE_PATH . '/public/api/upload-cover.php',
     'api/cart' => BASE_PATH . '/app/controllers/CartController.php',
     'api/checkout' => BASE_PATH . '/app/controllers/OrderController.php',
     'api/delivery-status' => BASE_PATH . '/app/controllers/OrderController.php',
+
+    // ✅ FIX: Add profile API routes
+    'profile/update-avatar.php' => BASE_PATH . '/public/profile/update-avatar.php',
+    'profile/upload-avatar.php' => BASE_PATH . '/public/profile/upload-avatar.php',
+    'profile/upload-cover.php' => BASE_PATH . '/public/profile/upload-cover.php',
 
     // Auth
     'auth/login' => BASE_PATH . '/app/views/auth/login.php',
@@ -53,7 +61,7 @@ $routes = [
     // User Profile (general)
     'profile/user' => BASE_PATH . '/app/views/marketplace/profile.php',
     
-    // ✅ Seller Routes
+    // Seller Routes
     'profile/seller/dashboard' => BASE_PATH . '/app/views/profile/seller/dashboard.php',
     'profile/seller/profile-info' => BASE_PATH . '/app/views/profile/seller/shop-profile.php',
     'profile/seller/products' => BASE_PATH . '/app/views/profile/seller/my-products.php',
@@ -74,7 +82,6 @@ $routes = [
     'settings/language-settings' => BASE_PATH . '/app/views/settings/language.php',
     'settings' => BASE_PATH . '/app/views/settings/settings.php',
 
-
     // Controllers Routes
     'withdrawal' => BASE_PATH . '/app/controllers/WithDrawalController.php',
 ];
@@ -83,8 +90,12 @@ if (isset($routes[$url])) {
     if (file_exists($routes[$url])) {
         require_once $routes[$url];
     } else {
-        echo "File not found: " . $routes[$url];
+        http_response_code(500);
+        echo "File not found: " . htmlspecialchars($routes[$url]);
+        error_log("Route file missing: " . $routes[$url]);
     }
 } else {
-    echo "404 - Page not found. URL: '$url'";
+    http_response_code(404);
+    echo "404 - Page not found. URL: '" . htmlspecialchars($url) . "'";
+    error_log("404 error for URL: " . $url);
 }

@@ -24,10 +24,25 @@ let selectedAvatarFile = null;
 let selectedCustomFile = null;
 
 /**
+ * Edit avatar - opens modal
+ */
+function editAvatar() {
+    console.log('🎨 Opening avatar modal');
+    openAvatarModal();
+}
+
+/**
  * Open avatar selection modal
  */
 function openAvatarModal() {
-    document.getElementById('avatarModal').style.display = 'flex';
+    const modal = document.getElementById('avatarModal');
+    if (!modal) {
+        console.error('❌ Avatar modal not found');
+        return;
+    }
+    
+    console.log('✅ Avatar modal found, opening...');
+    modal.style.display = 'flex';
     document.body.style.overflow = 'hidden';
     
     // Reset custom file input
@@ -42,26 +57,36 @@ function openAvatarModal() {
     if (preview) {
         preview.style.display = 'none';
     }
+    
+    // Check if save button exists
+    const saveBtn = document.getElementById('saveAvatarBtn');
+    console.log('💾 Save button found:', !!saveBtn);
 }
 
 /**
  * Close avatar selection modal
  */
 function closeAvatarModal() {
-    document.getElementById('avatarModal').style.display = 'none';
+    const modal = document.getElementById('avatarModal');
+    if (!modal) return;
+    
+    modal.style.display = 'none';
     document.body.style.overflow = 'auto';
     selectedAvatarFile = null;
     selectedCustomFile = null;
     
     // Reset selection to current avatar
-    const currentAvatar = document.getElementById('currentAvatar').src;
-    document.querySelectorAll('.avatar-option').forEach(img => {
-        if (img.src === currentAvatar) {
-            img.classList.add('selected');
-        } else {
-            img.classList.remove('selected');
-        }
-    });
+    const currentAvatar = document.getElementById('currentAvatar');
+    if (currentAvatar) {
+        const currentSrc = currentAvatar.src;
+        document.querySelectorAll('.avatar-option').forEach(img => {
+            if (img.src === currentSrc) {
+                img.classList.add('selected');
+            } else {
+                img.classList.remove('selected');
+            }
+        });
+    }
     
     // Hide preview
     const preview = document.getElementById('uploadPreview');
@@ -71,17 +96,13 @@ function closeAvatarModal() {
 }
 
 /**
- * Edit avatar - opens modal
- */
-function editAvatar() {
-    openAvatarModal();
-}
-
-/**
  * Edit cover photo
  */
 function editCover() {
-    document.getElementById('coverInput').click();
+    const coverInput = document.getElementById('coverInput');
+    if (coverInput) {
+        coverInput.click();
+    }
 }
 
 /**
@@ -93,6 +114,8 @@ function handleCoverUpload(event) {
     if (!file) {
         return;
     }
+    
+    console.log('📸 Cover upload started:', file.name);
     
     // Validate file type
     const validTypes = ['image/jpeg', 'image/jpg', 'image/png'];
@@ -116,23 +139,42 @@ function handleCoverUpload(event) {
     
     showNotification('Uploading cover photo...', 'info');
     
-    fetch('/agri_system/public/profile/upload-cover.php', {
+    // Use correct path
+    const uploadUrl = window.API_BASE_PATH + 'profile/upload-cover.php';
+    console.log('🔗 Upload URL:', uploadUrl);
+    
+    fetch(uploadUrl, {
         method: 'POST',
-        body: formData
+        body: formData,
+        credentials: 'include'
     })
-    .then(response => response.json())
+    .then(response => {
+        console.log('📡 Response status:', response.status);
+        return response.text().then(text => {
+            console.log('📄 Raw response:', text);
+            try {
+                return JSON.parse(text);
+            } catch (e) {
+                console.error('❌ JSON parse error:', e);
+                throw new Error('Invalid server response: ' + text.substring(0, 100));
+            }
+        });
+    })
     .then(data => {
+        console.log('✅ Parsed data:', data);
         if (data.success) {
-            // Update the cover image
-            document.querySelector('.cover-img').src = data.displayPath;
+            const coverImg = document.querySelector('.cover-img');
+            if (coverImg) {
+                coverImg.src = data.displayPath;
+            }
             showNotification('Cover photo updated successfully!', 'success');
         } else {
             showNotification(data.message || 'Failed to upload cover photo', 'error');
         }
     })
     .catch(error => {
-        console.error('Error:', error);
-        showNotification('An error occurred while uploading', 'error');
+        console.error('❌ Upload error:', error);
+        showNotification('An error occurred while uploading: ' + error.message, 'error');
     })
     .finally(() => {
         event.target.value = '';
@@ -143,6 +185,8 @@ function handleCoverUpload(event) {
  * Select a preset avatar
  */
 function selectAvatar(avatarPath, element) {
+    console.log('✅ Avatar selected:', avatarPath);
+    
     // Remove selected class from all avatars
     document.querySelectorAll('.avatar-option').forEach(img => {
         img.classList.remove('selected');
@@ -164,7 +208,10 @@ function selectAvatar(avatarPath, element) {
  * Trigger file input click
  */
 function triggerFileInput() {
-    document.getElementById('customAvatarInput').click();
+    const fileInput = document.getElementById('customAvatarInput');
+    if (fileInput) {
+        fileInput.click();
+    }
 }
 
 /**
@@ -176,6 +223,8 @@ function handleCustomFileSelect(event) {
     if (!file) {
         return;
     }
+    
+    console.log('🎨 Custom avatar selected:', file.name);
     
     // Validate file type
     const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
@@ -210,7 +259,8 @@ function handleCustomFileSelect(event) {
         
         if (preview && previewImg) {
             previewImg.src = e.target.result;
-            preview.style.display = 'block';
+            preview.style.display = 'flex';
+            console.log('✅ Preview displayed');
         }
     };
     reader.readAsDataURL(file);
@@ -220,12 +270,21 @@ function handleCustomFileSelect(event) {
  * Save selected avatar
  */
 function saveAvatar() {
+    console.log('💾 Save avatar clicked');
+    console.log('📁 Selected file:', selectedAvatarFile);
+    console.log('📁 Custom file:', selectedCustomFile);
+    
     if (!selectedAvatarFile && !selectedCustomFile) {
         showNotification('Please select an avatar or upload a custom image', 'error');
         return;
     }
     
     const saveBtn = document.getElementById('saveAvatarBtn');
+    if (!saveBtn) {
+        console.error('❌ Save button not found!');
+        return;
+    }
+    
     const originalText = saveBtn.textContent;
     saveBtn.disabled = true;
     saveBtn.textContent = 'Saving...';
@@ -241,18 +300,28 @@ function saveAvatar() {
  * Save preset avatar
  */
 function savePresetAvatar(avatarPath, saveBtn, originalText) {
-    fetch('/agri_system/public/profile/update-avatar.php', {
+    console.log('💾 Saving preset avatar:', avatarPath);
+    
+    const url = window.API_BASE_PATH + 'profile/update-avatar.php';
+    console.log('🔗 Update URL:', url);
+    
+    fetch(url, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify({ avatar: avatarPath })
     })
     .then(response => response.json())
     .then(data => {
+        console.log('✅ Update response:', data);
         if (data.success) {
-            const displayPath = data.displayPath || '/agri_system/public' + avatarPath;
-            document.getElementById('currentAvatar').src = displayPath;
+            const displayPath = data.displayPath || window.API_BASE_PATH + avatarPath;
+            const currentAvatar = document.getElementById('currentAvatar');
+            if (currentAvatar) {
+                currentAvatar.src = displayPath;
+            }
             closeAvatarModal();
             showNotification(data.message || 'Avatar updated successfully!', 'success');
         } else {
@@ -260,7 +329,7 @@ function savePresetAvatar(avatarPath, saveBtn, originalText) {
         }
     })
     .catch(error => {
-        console.error('Error:', error);
+        console.error('❌ Error:', error);
         showNotification('An error occurred while updating avatar', 'error');
     })
     .finally(() => {
@@ -273,18 +342,28 @@ function savePresetAvatar(avatarPath, saveBtn, originalText) {
  * Upload custom avatar
  */
 function uploadCustomAvatar(file, saveBtn, originalText) {
+    console.log('📤 Uploading custom avatar:', file.name);
+    
     const formData = new FormData();
     formData.append('avatar', file);
     
-    fetch('/agri_system/public/profile/upload-avatar.php', {
+    const url = window.API_BASE_PATH + 'profile/upload-avatar.php';
+    console.log('🔗 Upload URL:', url);
+    
+    fetch(url, {
         method: 'POST',
-        body: formData
+        body: formData,
+        credentials: 'include'
     })
     .then(response => response.json())
     .then(data => {
+        console.log('✅ Upload response:', data);
         if (data.success) {
-            const displayPath = data.displayPath || '/agri_system/public' + data.avatar;
-            document.getElementById('currentAvatar').src = displayPath;
+            const displayPath = data.displayPath || window.API_BASE_PATH + data.avatar;
+            const currentAvatar = document.getElementById('currentAvatar');
+            if (currentAvatar) {
+                currentAvatar.src = displayPath;
+            }
             closeAvatarModal();
             showNotification(data.message || 'Custom avatar uploaded successfully!', 'success');
         } else {
@@ -292,7 +371,7 @@ function uploadCustomAvatar(file, saveBtn, originalText) {
         }
     })
     .catch(error => {
-        console.error('Error:', error);
+        console.error('❌ Error:', error);
         showNotification('An error occurred while uploading avatar', 'error');
     })
     .finally(() => {
@@ -306,25 +385,62 @@ function uploadCustomAvatar(file, saveBtn, originalText) {
 // ============================================
 
 /**
+ * Get CSRF token from page
+ */
+function getCSRFToken() {
+    const tokenInput = document.querySelector('input[name="csrf_token"]');
+    const tokenMeta = document.querySelector('meta[name="csrf-token"]');
+    
+    if (tokenInput) {
+        return tokenInput.value;
+    } else if (tokenMeta) {
+        return tokenMeta.getAttribute('content');
+    }
+    
+    console.warn('⚠️ CSRF token not found');
+    return null;
+}
+
+/**
  * Load user addresses
  */
 function loadAddresses() {
-    fetch('/agri_system/public/api/address.php?action=list', {
+    console.log('📍 Loading addresses...');
+    
+    fetch(window.API_BASE_PATH + 'api/address.php?action=list', {
         method: 'GET',
         credentials: 'include'
     })
-    .then(response => response.json())
+    .then(response => {
+        console.log('📡 Address response status:', response.status);
+        return response.json();
+    })
     .then(data => {
+        console.log('✅ Addresses loaded:', data);
         if (data.success) {
             displayAddresses(data.addresses);
         } else {
-            console.error('Failed to load addresses:', data.message);
-            showNotification('Failed to load addresses', 'error');
+            console.error('❌ Failed to load addresses:', data.message);
+            const container = document.getElementById('addressesContainer');
+            if (container) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <p>Failed to load addresses: ${escapeHtml(data.message)}</p>
+                    </div>
+                `;
+            }
         }
     })
     .catch(error => {
-        console.error('Error loading addresses:', error);
-        showNotification('Error loading addresses', 'error');
+        console.error('❌ Error loading addresses:', error);
+        const container = document.getElementById('addressesContainer');
+        if (container) {
+            container.innerHTML = `
+                <div class="empty-state">
+                    <p>Error loading addresses. Please refresh the page.</p>
+                </div>
+            `;
+        }
     });
 }
 
@@ -335,11 +451,11 @@ function displayAddresses(addresses) {
     const container = document.getElementById('addressesContainer');
     
     if (!container) {
-        console.error('Address container not found');
+        console.error('❌ Address container not found');
         return;
     }
     
-    if (addresses.length === 0) {
+    if (!addresses || addresses.length === 0) {
         container.innerHTML = `
             <div class="empty-state">
                 <p>No addresses saved yet.</p>
@@ -373,20 +489,40 @@ function displayAddresses(addresses) {
  * Open add address modal
  */
 function openAddAddressModal() {
-    document.getElementById('addressModal').style.display = 'flex';
+    const modal = document.getElementById('addressModal');
+    if (!modal) {
+        console.error('❌ Address modal not found');
+        return;
+    }
+    
+    modal.style.display = 'flex';
     document.body.style.overflow = 'hidden';
     
     // Reset form
-    document.getElementById('addressForm').reset();
-    document.getElementById('addressModalTitle').textContent = 'Add New Address';
-    document.getElementById('addressID').value = '';
+    const form = document.getElementById('addressForm');
+    if (form) {
+        form.reset();
+    }
+    
+    const title = document.getElementById('addressModalTitle');
+    if (title) {
+        title.textContent = 'Add New Address';
+    }
+    
+    const idField = document.getElementById('addressID');
+    if (idField) {
+        idField.value = '';
+    }
 }
 
 /**
  * Close address modal
  */
 function closeAddressModal() {
-    document.getElementById('addressModal').style.display = 'none';
+    const modal = document.getElementById('addressModal');
+    if (!modal) return;
+    
+    modal.style.display = 'none';
     document.body.style.overflow = 'auto';
 }
 
@@ -394,7 +530,9 @@ function closeAddressModal() {
  * Edit address
  */
 function editAddress(addressID) {
-    fetch(`/agri_system/public/api/address.php?action=get&id=${addressID}`, {
+    console.log('✏️ Editing address:', addressID);
+    
+    fetch(window.API_BASE_PATH + `api/address.php?action=get&id=${addressID}`, {
         method: 'GET',
         credentials: 'include'
     })
@@ -404,24 +542,39 @@ function editAddress(addressID) {
             const addr = data.address;
             
             // Fill form
-            document.getElementById('addressID').value = addr.addressID;
-            document.getElementById('addressField').value = addr.address;
-            document.getElementById('municipalityField').value = addr.municipality;
-            document.getElementById('provinceField').value = addr.province;
-            document.getElementById('postalCodeField').value = addr.postal_code;
+            const fields = {
+                'addressID': addr.addressID,
+                'addressField': addr.address,
+                'municipalityField': addr.municipality,
+                'provinceField': addr.province,
+                'postalCodeField': addr.postal_code
+            };
+            
+            for (const [id, value] of Object.entries(fields)) {
+                const field = document.getElementById(id);
+                if (field) {
+                    field.value = value;
+                }
+            }
             
             // Change modal title
-            document.getElementById('addressModalTitle').textContent = 'Edit Address';
+            const title = document.getElementById('addressModalTitle');
+            if (title) {
+                title.textContent = 'Edit Address';
+            }
             
             // Open modal
-            document.getElementById('addressModal').style.display = 'flex';
-            document.body.style.overflow = 'hidden';
+            const modal = document.getElementById('addressModal');
+            if (modal) {
+                modal.style.display = 'flex';
+                document.body.style.overflow = 'hidden';
+            }
         } else {
             showNotification('Failed to load address details', 'error');
         }
     })
     .catch(error => {
-        console.error('Error:', error);
+        console.error('❌ Error:', error);
         showNotification('Error loading address', 'error');
     });
 }
@@ -432,15 +585,17 @@ function editAddress(addressID) {
 function saveAddress(event) {
     event.preventDefault();
     
-    const addressID = document.getElementById('addressID').value;
+    console.log('💾 Saving address...');
+    
+    const addressID = document.getElementById('addressID')?.value;
     const action = addressID ? 'update' : 'add';
     
     const data = {
         action: action,
-        address: document.getElementById('addressField').value.trim(),
-        municipality: document.getElementById('municipalityField').value.trim(),
-        province: document.getElementById('provinceField').value.trim(),
-        postal_code: document.getElementById('postalCodeField').value.trim()
+        address: document.getElementById('addressField')?.value.trim() || '',
+        municipality: document.getElementById('municipalityField')?.value.trim() || '',
+        province: document.getElementById('provinceField')?.value.trim() || '',
+        postal_code: document.getElementById('postalCodeField')?.value.trim() || ''
     };
     
     if (addressID) {
@@ -454,11 +609,21 @@ function saveAddress(event) {
     }
     
     const saveBtn = event.target.querySelector('button[type="submit"]');
+    if (!saveBtn) return;
+    
     const originalText = saveBtn.textContent;
     saveBtn.disabled = true;
     saveBtn.textContent = 'Saving...';
     
-    fetch('/agri_system/public/api/address.php', {
+    // Get CSRF token
+    const csrfToken = getCSRFToken();
+    if (csrfToken) {
+        data.csrf_token = csrfToken;
+    }
+    
+    console.log('📤 Sending data:', data);
+    
+    fetch(window.API_BASE_PATH + 'api/address.php', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -466,18 +631,27 @@ function saveAddress(event) {
         credentials: 'include',
         body: JSON.stringify(data)
     })
-    .then(response => response.json())
+    .then(response => {
+        console.log('📡 Response status:', response.status);
+        return response.json();
+    })
     .then(result => {
+        console.log('✅ Save result:', result);
         if (result.success) {
             showNotification(result.message || 'Address saved successfully', 'success');
             closeAddressModal();
             loadAddresses();
+            
+            // Update CSRF token if provided
+            if (result.csrf_token) {
+                updateCSRFToken(result.csrf_token);
+            }
         } else {
             showNotification(result.message || 'Failed to save address', 'error');
         }
     })
     .catch(error => {
-        console.error('Error:', error);
+        console.error('❌ Error:', error);
         showNotification('An error occurred', 'error');
     })
     .finally(() => {
@@ -494,30 +668,63 @@ function deleteAddress(addressID) {
         return;
     }
     
-    fetch('/agri_system/public/api/address.php', {
+    console.log('🗑️ Deleting address:', addressID);
+    
+    const data = {
+        action: 'delete',
+        addressID: addressID
+    };
+    
+    // Get CSRF token
+    const csrfToken = getCSRFToken();
+    if (csrfToken) {
+        data.csrf_token = csrfToken;
+    }
+    
+    fetch(window.API_BASE_PATH + 'api/address.php', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
         },
         credentials: 'include',
-        body: JSON.stringify({
-            action: 'delete',
-            addressID: addressID
-        })
+        body: JSON.stringify(data)
     })
     .then(response => response.json())
     .then(data => {
+        console.log('✅ Delete result:', data);
         if (data.success) {
             showNotification('Address deleted successfully', 'success');
             loadAddresses();
+            
+            // Update CSRF token if provided
+            if (data.csrf_token) {
+                updateCSRFToken(data.csrf_token);
+            }
         } else {
             showNotification(data.message || 'Failed to delete address', 'error');
         }
     })
     .catch(error => {
-        console.error('Error:', error);
+        console.error('❌ Error:', error);
         showNotification('An error occurred', 'error');
     });
+}
+
+/**
+ * Update CSRF token in the page
+ */
+function updateCSRFToken(newToken) {
+    const tokenInput = document.querySelector('input[name="csrf_token"]');
+    const tokenMeta = document.querySelector('meta[name="csrf-token"]');
+    
+    if (tokenInput) {
+        tokenInput.value = newToken;
+    }
+    if (tokenMeta) {
+        tokenMeta.setAttribute('content', newToken);
+    }
+    
+    console.log('🔒 CSRF token updated');
 }
 
 // ============================================
@@ -525,7 +732,7 @@ function deleteAddress(addressID) {
 // ============================================
 
 function changePassword() {
-    window.location.href = '/agri_system/public/profile/security';
+    window.location.href = window.API_BASE_PATH + 'auth/pass-reset';
 }
 
 function enable2FA() {
@@ -548,20 +755,7 @@ function escapeHtml(text) {
         '"': '&quot;',
         "'": '&#039;'
     };
-    return text.replace(/[&<>"']/g, m => map[m]);
-}
-
-/**
- * Format phone number
- */
-function formatPhone(phone) {
-    if (!phone) return 'Not provided';
-    
-    if (phone.length === 11 && phone.startsWith('09')) {
-        return phone.substring(0, 4) + '-' + phone.substring(4, 7) + '-' + phone.substring(7);
-    }
-    
-    return phone;
+    return String(text).replace(/[&<>"']/g, m => map[m]);
 }
 
 /**
@@ -601,7 +795,7 @@ function showNotification(message, type) {
  * View order details
  */
 function viewOrderDetails(orderID) {
-    window.location.href = `/agri_system/public/marketplace/myorders`;
+    window.location.href = window.API_BASE_PATH + 'marketplace/myorders';
 }
 
 // ============================================
@@ -609,11 +803,27 @@ function viewOrderDetails(orderID) {
 // ============================================
 
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('🚀 Profile.js loaded');
+    
+    // Set default API base path if not set
+    if (!window.API_BASE_PATH) {
+        window.API_BASE_PATH = '/agri_system/public/';
+        console.log('📁 API_BASE_PATH set to:', window.API_BASE_PATH);
+    }
+    
+    // Debug: Check for modal elements
+    const avatarModal = document.getElementById('avatarModal');
+    const saveBtn = document.getElementById('saveAvatarBtn');
+    console.log('🔍 Avatar modal found:', !!avatarModal);
+    console.log('🔍 Save button found:', !!saveBtn);
     
     // Load addresses on page load
     const addressContainer = document.getElementById('addressesContainer');
     if (addressContainer) {
+        console.log('📍 Address container found, loading addresses...');
         loadAddresses();
+    } else {
+        console.warn('⚠️ Address container not found');
     }
     
     // Auto-hide alerts
