@@ -165,37 +165,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             width: 24px;
             border-radius: 4px;
         }
-
-        /* Toast notifications */
-        #toast-box {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            padding: 12px 24px;
-            border-radius: 8px;
-            color: white;
-            font-weight: 500;
-            font-size: 14px;
-            opacity: 0;
-            transition: opacity 0.3s;
-            z-index: 9999;
-            max-width: 350px;
-            min-width: 200px;
-            text-align: center;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        }
-
-        #toast-box.success {
-            background: #51cf66;
-        }
-
-        #toast-box.error {
-            background: #ff6b6b;
-        }
-
-        #toast-box.loading {
-            background: #4dabf7;
-        }
     </style>
 </head>
 <body>

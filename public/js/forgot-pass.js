@@ -1,18 +1,17 @@
-// Forgot Password Form Submission Handling
 document.getElementById("forgotPasswordForm").addEventListener("submit", function(e) {
     e.preventDefault();
 
     const email = document.getElementById("email").value.trim();
 
     if (!validateEmail(email)) {
-        showToast("Please enter a valid email address.");
+        showToast("Invalid email address", "error");
         return;
     }
 
-    showToast("Sending verification code...", "loading");
+    showToast("Sending code...", "loading");
 
     setTimeout(() => {
-        showToast("Verification code sent successfully ✅", "success");
+        showToast("Code sent! ✓", "success");
         // Here you will redirect to Verify Code Page later
         // window.location.href = "verify-code.php";
     }, 1500);
@@ -32,10 +31,20 @@ function showToast(message, type = "error") {
         document.body.appendChild(toast);
     }
 
-    toast.innerText = message;
-    toast.className = type;
+    // Clear previous classes
+    toast.className = '';
     
-    setTimeout(() => {
-        toast.className = "";
-    }, 3000);
+    // Add new type class
+    toast.classList.add(type);
+    
+    // Set message
+    toast.textContent = message;
+    toast.style.opacity = '1';
+    
+    // Auto-hide after 3 seconds (except for loading)
+    if (type !== "loading") {
+        setTimeout(() => {
+            toast.style.opacity = '0';
+        }, 3000);
+    }
 }

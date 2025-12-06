@@ -432,36 +432,95 @@ input[type="text"]:focus {
     display: block;
 }
 
+/* ========================================
+   STEP VISIBILITY & PROGRESS (from pass-reset.php)
+   ======================================== */
+
+.step {
+    display: none;
+    animation: fadeIn 0.4s ease;
+}
+
+.step.active {
+    display: block;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.progress-dots {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 20px;
+}
+
+.progress-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #e0e0e0;
+    transition: all 0.3s;
+}
+
+.progress-dot.active {
+    background: #2d5016;
+    width: 24px;
+    border-radius: 4px;
+}
+
+/* ========================================
+   SIMPLE SMALL RECTANGULAR TOAST
+   ======================================== */
+
 #toast-box {
     position: fixed;
-    bottom: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    padding: 10px 18px;
-    font-size: 0.75rem;
-    border-radius: 6px;
-    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
-    color: #fff;
+    top: 20px;
+    right: 20px;
+    padding: 10px 20px;
+    border-radius: 4px;
+    color: white;
+    font-size: 14px;
+    font-weight: 500;
     opacity: 0;
+    transition: opacity 0.3s ease;
+    z-index: 9999;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    min-width: 150px;
+    max-width: 250px;
+    text-align: center;
     pointer-events: none;
-    transition: opacity 0.3s;
-    z-index: 1000;
 }
 
 #toast-box.success {
     background: #2d5016;
     opacity: 1;
+    pointer-events: auto;
 }
 
 #toast-box.error {
-    background: #c62828;
+    background: #d22d2d;
     opacity: 1;
+    pointer-events: auto;
 }
 
 #toast-box.loading {
-    background: #4a7c25;
+    background: #2980c7;
     opacity: 1;
+    pointer-events: auto;
 }
+
+/* ========================================
+   MOBILE RESPONSIVE
+   ======================================== */
 
 @media (max-width: 480px) {
     .form-container,
@@ -514,5 +573,14 @@ input[type="text"]:focus {
         width: 32px;
         height: 32px;
         font-size: 1.2rem;
+    }
+
+    /* Toast mobile adjustments */
+    #toast-box {
+        right: 10px;
+        top: 10px;
+        font-size: 13px;
+        padding: 8px 16px;
+        max-width: 200px;
     }
 }

@@ -2,16 +2,26 @@
 let currentStep = 1;
 let userEmail = '';
 
-// Toast notification helper
+// Compact Toast notification helper
 function showToast(message, type = 'success') {
     const toast = document.getElementById('toast-box');
+    
+    // Remove previous classes
+    toast.className = '';
+    
+    // Add new type class
+    toast.classList.add(type);
+    
+    // Set message
     toast.textContent = message;
-    toast.className = type;
     toast.style.opacity = '1';
     
-    setTimeout(() => {
-        toast.style.opacity = '0';
-    }, 3000);
+    // Auto hide after 3 seconds (except for loading)
+    if (type !== 'loading') {
+        setTimeout(() => {
+            toast.style.opacity = '0';
+        }, 3000);
+    }
 }
 
 // Toggle password visibility
@@ -66,7 +76,7 @@ document.getElementById('emailForm').addEventListener('submit', async (e) => {
     const email = document.getElementById('email').value.trim();
     
     if (!email) {
-        showToast('Please enter your email', 'error');
+        showToast('Enter your email', 'error');
         return;
     }
     
@@ -75,6 +85,8 @@ document.getElementById('emailForm').addEventListener('submit', async (e) => {
     const originalText = submitBtn.textContent;
     submitBtn.textContent = 'Sending...';
     submitBtn.disabled = true;
+    
+    showToast('Sending code...', 'loading');
     
     try {
         const formData = new FormData();
@@ -91,14 +103,14 @@ document.getElementById('emailForm').addEventListener('submit', async (e) => {
         if (result.success) {
             userEmail = email;
             document.getElementById('displayEmail').textContent = email;
-            showToast('OTP sent to your email! Check your inbox.', 'success');
+            showToast('Code sent! Check email', 'success');
             setTimeout(() => showStep(2), 1500);
         } else {
-            showToast(result.message || 'Failed to send OTP', 'error');
+            showToast(result.message || 'Failed to send', 'error');
         }
     } catch (error) {
         console.error('Error:', error);
-        showToast('An error occurred. Please try again.', 'error');
+        showToast('Network error', 'error');
     } finally {
         submitBtn.textContent = originalText;
         submitBtn.disabled = false;
@@ -154,13 +166,13 @@ document.getElementById('verifyForm').addEventListener('submit', async (e) => {
     console.log('- Individual values:', Array.from(codeInputs).map(input => input.value));
     
     if (otp.length !== 4) {
-        showToast('Please enter the complete 4-digit code', 'error');
+        showToast('Enter 4-digit code', 'error');
         return;
     }
     
     // Validate that all characters are digits
     if (!/^\d{4}$/.test(otp)) {
-        showToast('OTP must contain only numbers', 'error');
+        showToast('Numbers only', 'error');
         return;
     }
     
@@ -168,6 +180,8 @@ document.getElementById('verifyForm').addEventListener('submit', async (e) => {
     const originalText = submitBtn.textContent;
     submitBtn.textContent = 'Verifying...';
     submitBtn.disabled = true;
+    
+    showToast('Verifying...', 'loading');
     
     try {
         const formData = new FormData();
@@ -196,22 +210,22 @@ document.getElementById('verifyForm').addEventListener('submit', async (e) => {
         } catch (parseError) {
             console.error('❌ JSON parse error:', parseError);
             console.error('Response was:', responseText);
-            showToast('Server error. Check console for details.', 'error');
+            showToast('Server error', 'error');
             return;
         }
         
         if (result.success) {
-            showToast('OTP verified successfully! ✓', 'success');
+            showToast('Verified! ✓', 'success');
             setTimeout(() => showStep(3), 1000);
         } else {
-            showToast(result.message || 'Invalid OTP', 'error');
+            showToast(result.message || 'Invalid code', 'error');
             // Clear inputs
             codeInputs.forEach(input => input.value = '');
             codeInputs[0].focus();
         }
     } catch (error) {
         console.error('❌ Verification error:', error);
-        showToast('Verification failed. Please try again.', 'error');
+        showToast('Network error', 'error');
     } finally {
         submitBtn.textContent = originalText;
         submitBtn.disabled = false;
@@ -227,7 +241,7 @@ document.getElementById('resendCode').addEventListener('click', async (e) => {
     link.textContent = 'Sending...';
     link.style.pointerEvents = 'none';
     
-    showToast('Resending OTP...', 'loading');
+    showToast('Resending...', 'loading');
     
     try {
         const formData = new FormData();
@@ -241,15 +255,15 @@ document.getElementById('resendCode').addEventListener('click', async (e) => {
         const result = await response.json();
         
         if (result.success) {
-            showToast('New OTP sent to your email!', 'success');
+            showToast('New code sent!', 'success');
             codeInputs.forEach(input => input.value = '');
             codeInputs[0].focus();
         } else {
-            showToast(result.message || 'Failed to resend OTP', 'error');
+            showToast(result.message || 'Resend failed', 'error');
         }
     } catch (error) {
         console.error('Error:', error);
-        showToast('Failed to resend OTP', 'error');
+        showToast('Network error', 'error');
     } finally {
         link.textContent = originalText;
         link.style.pointerEvents = 'auto';
@@ -268,7 +282,7 @@ document.getElementById('startOver').addEventListener('click', (e) => {
     
     // Reset to step 1
     showStep(1);
-    showToast('Starting fresh. Enter your email.', 'loading');
+    showToast('Starting over...', 'loading');
 });
 
 // STEP 3: Reset Password
@@ -279,12 +293,12 @@ document.getElementById('resetForm').addEventListener('submit', async (e) => {
     const confirmPassword = document.getElementById('confirm_password').value;
     
     if (newPassword.length < 8) {
-        showToast('Password must be at least 8 characters', 'error');
+        showToast('Password needs 8+ chars', 'error');
         return;
     }
     
     if (newPassword !== confirmPassword) {
-        showToast('Passwords do not match', 'error');
+        showToast('Passwords don\'t match', 'error');
         return;
     }
     
@@ -292,6 +306,8 @@ document.getElementById('resetForm').addEventListener('submit', async (e) => {
     const originalText = submitBtn.textContent;
     submitBtn.textContent = 'Resetting...';
     submitBtn.disabled = true;
+    
+    showToast('Resetting password...', 'loading');
     
     try {
         const formData = new FormData();
@@ -307,16 +323,16 @@ document.getElementById('resetForm').addEventListener('submit', async (e) => {
         const result = await response.json();
         
         if (result.success) {
-            showToast('Password reset successful! Redirecting...', 'success');
+            showToast('Success! Redirecting...', 'success');
             setTimeout(() => {
                 window.location.href = '/agri_system/public/auth/login';
             }, 2000);
         } else {
-            showToast(result.message || 'Failed to reset password', 'error');
+            showToast(result.message || 'Reset failed', 'error');
         }
     } catch (error) {
         console.error('Error:', error);
-        showToast('An error occurred. Please try again.', 'error');
+        showToast('Network error', 'error');
     } finally {
         submitBtn.textContent = originalText;
         submitBtn.disabled = false;
