@@ -260,16 +260,17 @@ class Cart
 }
 
     // Get cart item count
-    public function getCartCount($buyerID) 
-    {
-        $query = "SELECT SUM(quantity) as total FROM {$this->table} 
-                 WHERE buyerID = ?";
-        $stmt = $this->conn->prepare($query);
-        $stmt->execute([$buyerID]);
-        
-        $result = $stmt->fetch(PDO::FETCH_ASSOC);
-        return (int)($result['total'] ?? 0);
-    }
+public function getCartCount($buyerID) 
+{
+    // Count distinct products, not total quantity
+    $query = "SELECT COUNT(*) as total FROM {$this->table} 
+             WHERE buyerID = ?";
+    $stmt = $this->conn->prepare($query);
+    $stmt->execute([$buyerID]);
+    
+    $result = $stmt->fetch(PDO::FETCH_ASSOC);
+    return (int)($result['total'] ?? 0);
+}
 
     // Get cart total amount
    public function getCartTotal($buyerID) 
@@ -284,6 +285,18 @@ class Cart
     $result = $stmt->fetch(PDO::FETCH_ASSOC);
     
     return $result['total'] ?? 0;
+}
+
+public function getCartTotalQuantity($buyerID) 
+{
+    // Sum all quantities
+    $query = "SELECT SUM(quantity) as total FROM {$this->table} 
+             WHERE buyerID = ?";
+    $stmt = $this->conn->prepare($query);
+    $stmt->execute([$buyerID]);
+    
+    $result = $stmt->fetch(PDO::FETCH_ASSOC);
+    return (int)($result['total'] ?? 0);
 }
 
     // Validate cart before checkout
