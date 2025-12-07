@@ -1,6 +1,7 @@
 <?php
 // app/models/Cart.php
-// Buyer's Cart and Wishlist Management Model
+// FIXED: Changed image_order = 0 to is_main = 1 for proper image loading
+
 require_once __DIR__ . '/../../config/database.php';
 
 class Cart 
@@ -15,8 +16,7 @@ class Cart
     }
 
     // Get cart items grouped by shop
-    // Returns items organized by shopID for checkout display
-     
+    // Uses is_main = 1 to get primary image
     public function getCartItemsGroupedByShop($buyerID) 
     {
         $query = "
@@ -39,7 +39,7 @@ class Cart
             FROM {$this->table} c
             INNER JOIN products p ON c.productID = p.productID
             INNER JOIN shops s ON p.shopID = s.shopID
-            LEFT JOIN product_images pi ON p.productID = pi.productID AND pi.image_order = 0
+            LEFT JOIN product_images pi ON p.productID = pi.productID AND pi.is_main = 1
             WHERE c.buyerID = :buyerID AND p.is_available = 1
             ORDER BY s.shop_name, c.added_at DESC
         ";
@@ -70,6 +70,7 @@ class Cart
     }
 
     // Get cart items (flat list)
+    // Uses is_main = 1 to get primary image
     public function getCartItems($buyerID) 
     {
         $query = "
@@ -89,7 +90,7 @@ class Cart
                 (p.price * c.quantity) as item_subtotal
             FROM {$this->table} c
             INNER JOIN products p ON c.productID = p.productID
-            LEFT JOIN product_images pi ON p.productID = pi.productID AND pi.image_order = 0
+            LEFT JOIN product_images pi ON p.productID = pi.productID AND pi.is_main = 1
             WHERE c.buyerID = :buyerID
             ORDER BY c.added_at DESC
         ";
@@ -253,103 +254,141 @@ class Cart
 
     // Clear entire cart
     public function clearCart($buyerID) 
-{
-    $query = "DELETE FROM cart WHERE buyerID = ?";
-    $stmt = $this->conn->prepare($query);
-    return $stmt->execute([$buyerID]);
-}
+    {
+        $query = "DELETE FROM cart WHERE buyerID = ?";
+        $stmt = $this->conn->prepare($query);
+        return $stmt->execute([$buyerID]);
+    }
 
     // Get cart item count
-public function getCartCount($buyerID) 
-{
-    // Count distinct products, not total quantity
-    $query = "SELECT COUNT(*) as total FROM {$this->table} 
-             WHERE buyerID = ?";
-    $stmt = $this->conn->prepare($query);
-    $stmt->execute([$buyerID]);
-    
-    $result = $stmt->fetch(PDO::FETCH_ASSOC);
-    return (int)($result['total'] ?? 0);
-}
+    public function getCartCount($buyerID) 
+    {
+        // Count distinct products, not total quantity
+        $query = "SELECT COUNT(*) as total FROM {$this->table} 
+                 WHERE buyerID = ?";
+        $stmt = $this->conn->prepare($query);
+        $stmt->execute([$buyerID]);
+        
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        return (int)($result['total'] ?? 0);
+    }
 
     // Get cart total amount
-   public function getCartTotal($buyerID) 
-{
-    $query = "SELECT SUM(c.quantity * p.price) as total
-             FROM cart c
-             JOIN products p ON c.productID = p.productID
-             WHERE c.buyerID = ?";
-    
-    $stmt = $this->conn->prepare($query);
-    $stmt->execute([$buyerID]);
-    $result = $stmt->fetch(PDO::FETCH_ASSOC);
-    
-    return $result['total'] ?? 0;
-}
+    public function getCartTotal($buyerID) 
+    {
+        $query = "SELECT SUM(c.quantity * p.price) as total
+                 FROM cart c
+                 JOIN products p ON c.productID = p.productID
+                 WHERE c.buyerID = ?";
+        
+        $stmt = $this->conn->prepare($query);
+        $stmt->execute([$buyerID]);
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        return $result['total'] ?? 0;
+    }
 
-public function getCartTotalQuantity($buyerID) 
-{
-    // Sum all quantities
-    $query = "SELECT SUM(quantity) as total FROM {$this->table} 
-             WHERE buyerID = ?";
-    $stmt = $this->conn->prepare($query);
-    $stmt->execute([$buyerID]);
-    
-    $result = $stmt->fetch(PDO::FETCH_ASSOC);
-    return (int)($result['total'] ?? 0);
-}
+    public function getCartTotalQuantity($buyerID) 
+    {
+        // Sum all quantities
+        $query = "SELECT SUM(quantity) as total FROM {$this->table} 
+                 WHERE buyerID = ?";
+        $stmt = $this->conn->prepare($query);
+        $stmt->execute([$buyerID]);
+        
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        return (int)($result['total'] ?? 0);
+    }
 
     // Validate cart before checkout
-    // Checks stock availability for all items
     public function validateCartForCheckout($buyerID) 
-{
-    $query = "SELECT 
-                c.cartID,
-                c.productID,
-                c.quantity,
-                p.product_name,
+    {
+        $query = "SELECT 
+                    c.cartID,
+                    c.productID,
+                    c.quantity,
+                    p.product_name,
+                    p.stock_quantity,
+                    p.reserved_quantity,
+                    p.is_available,
+                    (p.stock_quantity - p.reserved_quantity) as available_quantity
+                 FROM cart c
+                 JOIN products p ON c.productID = p.productID
+                 WHERE c.buyerID = ?";
+        
+        $stmt = $this->conn->prepare($query);
+        $stmt->execute([$buyerID]);
+        $items = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        $errors = [];
+        $valid = true;
+        
+        foreach ($items as $item) {
+            // Check if product is available
+            if (!$item['is_available']) {
+                $errors[] = "{$item['product_name']} is no longer available";
+                $valid = false;
+                continue;
+            }
+            
+            // Check if sufficient stock
+            if ($item['available_quantity'] < $item['quantity']) {
+                $errors[] = "Insufficient stock for {$item['product_name']}. Only {$item['available_quantity']} available";
+                $valid = false;
+            }
+        }
+        
+        return [
+            'valid' => $valid,
+            'errors' => $errors
+        ];
+    }
+
+    // Get wishlist items
+    // Uses is_main = 1 to get primary image
+    public function getWishlistItems($buyerID) 
+    {
+        $query = "
+            SELECT 
+                w.wishlistID,
+                w.productID,
+                w.added_at,
+                p.product_name, 
+                p.description, 
+                p.price, 
+                p.unit,
                 p.stock_quantity,
                 p.reserved_quantity,
                 p.is_available,
-                (p.stock_quantity - p.reserved_quantity) as available_quantity
-             FROM cart c
-             JOIN products p ON c.productID = p.productID
-             WHERE c.buyerID = ?";
-    
-    $stmt = $this->conn->prepare($query);
-    $stmt->execute([$buyerID]);
-    $items = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    
-    $errors = [];
-    $valid = true;
-    
-    foreach ($items as $item) {
-        // Check if product is available
-        if (!$item['is_available']) {
-            $errors[] = "{$item['product_name']} is no longer available";
-            $valid = false;
-            continue;
-        }
+                p.shopID,
+                c.category AS category_name,
+                s.shop_name,
+                s.shop_slug,
+                pi.image_path AS primary_image
+            FROM wishlist w
+            INNER JOIN products p ON w.productID = p.productID
+            INNER JOIN categories c ON p.categoryID = c.categoryID
+            INNER JOIN shops s ON p.shopID = s.shopID
+            LEFT JOIN product_images pi ON p.productID = pi.productID AND pi.is_main = 1
+            WHERE w.buyerID = ?
+            ORDER BY w.added_at DESC
+        ";
         
-        // Check if sufficient stock
-        if ($item['available_quantity'] < $item['quantity']) {
-            $errors[] = "Insufficient stock for {$item['product_name']}. Only {$item['available_quantity']} available";
-            $valid = false;
+        try {
+            $stmt = $this->conn->prepare($query);
+            $stmt->execute([$buyerID]);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            error_log("Get wishlist items error: " . $e->getMessage());
+            return [];
         }
     }
-    
-    return [
-        'valid' => $valid,
-        'errors' => $errors
-    ];
-}
 
-    // Add to wishlist
+    // Wishlist methods remain the same...
     public function addToWishlist($buyerID, $productID) 
     {
         try {
-            // Check if already in wishlist
-            $checkQuery = "SELECT wishlistID FROM {$this->table} 
+            $checkQuery = "SELECT wishlistID FROM wishlist 
                           WHERE buyerID = ? AND productID = ?";
             $stmt = $this->conn->prepare($checkQuery);
             $stmt->execute([$buyerID, $productID]);
@@ -361,7 +400,7 @@ public function getCartTotalQuantity($buyerID)
                 ];
             }
 
-            $insertQuery = "INSERT INTO {$this->table} (buyerID, productID) VALUES (?, ?)";
+            $insertQuery = "INSERT INTO wishlist (buyerID, productID) VALUES (?, ?)";
             $insertStmt = $this->conn->prepare($insertQuery);
             $result = $insertStmt->execute([$buyerID, $productID]);
             
@@ -375,10 +414,9 @@ public function getCartTotalQuantity($buyerID)
         }
     }
 
-    // Remove from wishlist
     public function removeFromWishlist($buyerID, $productID) 
     {
-        $query = "DELETE FROM {$this->table} WHERE buyerID = ? AND productID = ?";
+        $query = "DELETE FROM wishlist WHERE buyerID = ? AND productID = ?";
         $stmt = $this->conn->prepare($query);
         $result = $stmt->execute([$buyerID, $productID]);
         
@@ -388,10 +426,9 @@ public function getCartTotalQuantity($buyerID)
         ];
     }
 
-    // Check if item is in wishlist
     public function isInWishlist($buyerID, $productID) 
     {
-        $query = "SELECT wishlistID FROM {$this->table} 
+        $query = "SELECT wishlistID FROM wishlist 
                  WHERE buyerID = ? AND productID = ? LIMIT 1";
         $stmt = $this->conn->prepare($query);
         $stmt->execute([$buyerID, $productID]);
@@ -399,10 +436,9 @@ public function getCartTotalQuantity($buyerID)
         return $stmt->fetch() !== false;
     }
 
-    // Get wishlist item count
     public function getWishlistCount($buyerID) 
     {
-        $query = "SELECT COUNT(*) as total FROM {$this->table} WHERE buyerID = ?";
+        $query = "SELECT COUNT(*) as total FROM wishlist WHERE buyerID = ?";
         $stmt = $this->conn->prepare($query);
         $stmt->execute([$buyerID]);
         
@@ -410,12 +446,10 @@ public function getCartTotalQuantity($buyerID)
         return (int)($result['total'] ?? 0);
     }
 
-    // Move item from wishlist to cart
     public function moveToCart($buyerID, $productID) 
     {
         try {
-            $cartModel = new Cart();
-            $addResult = $cartModel->addToCart($buyerID, $productID, 1);
+            $addResult = $this->addToCart($buyerID, $productID, 1);
             
             if ($addResult['success']) {
                 $this->removeFromWishlist($buyerID, $productID);
@@ -431,68 +465,17 @@ public function getCartTotalQuantity($buyerID)
             return ['success' => false, 'message' => 'Failed to move to cart'];
         }
     }
-    // inside class Wishlist { ... }
 
-/**
- * Clear entire wishlist for a buyer
- * @param int $buyerID
- * @return bool
- */
-public function clearAll($buyerID)
-{
-    try {
-        $query = "DELETE FROM {$this->table} WHERE buyerID = ?";
-        $stmt = $this->conn->prepare($query);
-        return $stmt->execute([$buyerID]);
-    } catch (PDOException $e) {
-        error_log("Clear wishlist error: " . $e->getMessage());
-        return false;
+    public function clearAll($buyerID)
+    {
+        try {
+            $query = "DELETE FROM wishlist WHERE buyerID = ?";
+            $stmt = $this->conn->prepare($query);
+            return $stmt->execute([$buyerID]);
+        } catch (PDOException $e) {
+            error_log("Clear wishlist error: " . $e->getMessage());
+            return false;
+        }
     }
-}
-
-/**
- * Get a wishlist row by wishlistID (scoped to buyer)
- * @param int $buyerID
- * @param int $wishlistID
- * @return array|false
- */
-public function getWishlistItems($buyerID) 
-{
-    $query = "
-        SELECT 
-            w.wishlistID,
-            w.productID,
-            w.added_at,
-            p.product_name, 
-            p.description, 
-            p.price, 
-            p.unit,
-            p.stock_quantity,
-            p.reserved_quantity,
-            p.is_available,
-            p.shopID,
-            c.category AS category_name,
-            s.shop_name,
-            s.shop_slug,
-            pi.image_path AS primary_image
-        FROM wishlist w
-        INNER JOIN products p ON w.productID = p.productID
-        INNER JOIN categories c ON p.categoryID = c.categoryID
-        INNER JOIN shops s ON p.shopID = s.shopID
-        LEFT JOIN product_images pi ON p.productID = pi.productID AND pi.image_order = 0
-        WHERE w.buyerID = ?
-        ORDER BY w.added_at DESC
-    ";
-    
-    try {
-        $stmt = $this->conn->prepare($query);
-        $stmt->execute([$buyerID]);
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
-    } catch (PDOException $e) {
-        error_log("Get wishlist items error: " . $e->getMessage());
-        return [];
-    }
-}
-
 }
 ?>
