@@ -1,5 +1,6 @@
 <?php
 // app/controllers/ProductController.php
+// UPDATED: Removed rating system - reviews are comment-only
 require_once __DIR__ . '/../models/Product.php';
 require_once __DIR__ . '/../models/Category.php';
 require_once __DIR__ . '/../models/User.php'; 
@@ -71,8 +72,7 @@ class ProductController
         );
     }
 
-    //product details page
-
+    // product details page
     public function details()
     {
         $productID = $_GET['id'];
@@ -187,7 +187,7 @@ class ProductController
         echo json_encode($result);
     }
 
-    // reviews or comments
+    // reviews or comments (NO RATING - comment only)
     public function submitReview()
     {
         $buyerID = $_SESSION['userID'];
@@ -195,7 +195,6 @@ class ProductController
         $data = [
             'productID'   => $_POST['productID'],
             'orderID'     => $_POST['orderID'],
-            'rating'      => $_POST['rating'],
             'review_text' => $_POST['review_text'] ?? null,
         ];
 
@@ -226,10 +225,13 @@ class ProductController
         echo json_encode($result);
     }
 
-    public function reviewStats()
+    // Review count only (no rating stats)
+    public function reviewCount()
     {
         $productID = $_GET['productID'];
 
-        echo json_encode($this->productModel->getReviewStats($productID));
+        echo json_encode([
+            'review_count' => $this->productModel->getProductReviewCount($productID)
+        ]);
     }
 }

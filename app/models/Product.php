@@ -1,6 +1,7 @@
 <?php
 // app/models/Product.php
 // Category, Product, and Reviews Management, Images, and Stock Control
+// UPDATED: Removed rating system - reviews are now comment-only
 require_once __DIR__ . '/../../config/database.php';
 
 class Product 
@@ -163,9 +164,9 @@ class Product
             // Get main image separately for convenience
             $product['main_image'] = $this->getMainImage($productID);
             
-            // Get reviews
+            // Get reviews (comment-only, no ratings)
             $product['reviews'] = $this->getProductReviews($productID);
-            $product['review_stats'] = $this->getReviewStats($productID);
+            $product['review_count'] = $this->getProductReviewCount($productID);
         }
 
         return $product;
@@ -367,7 +368,7 @@ class Product
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    // ==================== IMAGE MANAGEMENT (UPDATED) ====================
+    // ==================== IMAGE MANAGEMENT ====================
 
     // Get main image for a product
     public function getMainImage($productID) 
@@ -407,7 +408,6 @@ class Product
     }
 
     // Add product image
-    // $isMain: true for main image, false for gallery image
     public function addProductImage($productID, $sellerID, $imagePath, $isMain = false, $imageOrder = null) 
     {
         if (!$this->verifyProductOwnership($productID, $sellerID)) {
@@ -439,7 +439,6 @@ class Product
                 ];
             }
         } catch (PDOException $e) {
-            // Check for trigger errors
             if (strpos($e->getMessage(), 'already has a main image') !== false) {
                 return ['success' => false, 'message' => 'Product already has a main image'];
             }
@@ -452,7 +451,7 @@ class Product
         return ['success' => false, 'message' => 'Failed to add image'];
     }
 
-    // Update main image (swap main image with another)
+    // Update main image
     public function updateMainImage($productID, $sellerID, $newMainImageID) 
     {
         if (!$this->verifyProductOwnership($productID, $sellerID)) {
@@ -462,14 +461,12 @@ class Product
         try {
             $this->conn->beginTransaction();
 
-            // Unset current main image
             $unsetQuery = "UPDATE {$this->imagesTable} 
                           SET is_main = 0 
                           WHERE productID = ? AND is_main = 1";
             $unsetStmt = $this->conn->prepare($unsetQuery);
             $unsetStmt->execute([$productID]);
 
-            // Set new main image
             $setQuery = "UPDATE {$this->imagesTable} 
                         SET is_main = 1 
                         WHERE imageID = ? AND productID = ?";
@@ -490,7 +487,6 @@ class Product
     // Delete product image
     public function deleteProductImage($imageID, $sellerID) 
     {
-        // Get image details and verify ownership
         $query = "SELECT pi.image_path, pi.is_main, p.productID 
                  FROM {$this->imagesTable} pi
                  JOIN {$this->table} p ON pi.productID = p.productID
@@ -503,7 +499,6 @@ class Product
             return ['success' => false, 'message' => 'Image not found or unauthorized'];
         }
 
-        // Prevent deleting main image if it's the only image
         if ($image['is_main']) {
             $countQuery = "SELECT COUNT(*) as count FROM {$this->imagesTable} WHERE productID = ?";
             $countStmt = $this->conn->prepare($countQuery);
@@ -511,10 +506,9 @@ class Product
             $count = $countStmt->fetch(PDO::FETCH_ASSOC)['count'];
 
             if ($count <= 1) {
-                return ['success' => false, 'message' => 'Cannot delete the only image. Product must have at least one image.'];
+                return ['success' => false, 'message' => 'Cannot delete the only image.'];
             }
 
-            // If deleting main image and there are others, promote the first gallery image
             $promoteQuery = "UPDATE {$this->imagesTable} 
                            SET is_main = 1 
                            WHERE productID = ? AND is_main = 0 
@@ -524,13 +518,11 @@ class Product
             $promoteStmt->execute([$image['productID']]);
         }
 
-        // Delete from database
         $deleteQuery = "DELETE FROM {$this->imagesTable} WHERE imageID = ?";
         $deleteStmt = $this->conn->prepare($deleteQuery);
         $result = $deleteStmt->execute([$imageID]);
 
         if ($result) {
-            // Delete physical file
             $fullPath = $_SERVER['DOCUMENT_ROOT'] . '/agri_system/public' . $image['image_path'];
             if (file_exists($fullPath)) {
                 unlink($fullPath);
@@ -542,7 +534,7 @@ class Product
         return ['success' => false, 'message' => 'Failed to delete image'];
     }
 
-    // ==================== REVIEWS ====================
+    // ==================== REVIEWS (COMMENT-ONLY, NO RATINGS) ====================
 
     // Get reviews for a product
     public function getProductReviews($productID, $limit = 10, $offset = 0) 
@@ -563,24 +555,15 @@ class Product
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    // Get review statistics for a product
-    public function getReviewStats($productID) 
+    // Get total review count for a product
+    public function getProductReviewCount($productID) 
     {
-        $query = "SELECT 
-                    COUNT(*) as total_reviews,
-                    AVG(rating) as average_rating,
-                    SUM(CASE WHEN rating = 5 THEN 1 ELSE 0 END) as five_star,
-                    SUM(CASE WHEN rating = 4 THEN 1 ELSE 0 END) as four_star,
-                    SUM(CASE WHEN rating = 3 THEN 1 ELSE 0 END) as three_star,
-                    SUM(CASE WHEN rating = 2 THEN 1 ELSE 0 END) as two_star,
-                    SUM(CASE WHEN rating = 1 THEN 1 ELSE 0 END) as one_star
-                 FROM reviews
-                 WHERE productID = ?";
-        
+        $query = "SELECT COUNT(*) as count FROM reviews WHERE productID = ?";
         $stmt = $this->conn->prepare($query);
         $stmt->execute([$productID]);
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
         
-        return $stmt->fetch(PDO::FETCH_ASSOC);
+        return $result['count'] ?? 0;
     }
 
     // ==================== UTILITY METHODS ====================
@@ -649,10 +632,9 @@ class Review
         $this->conn = $database->connect();
     }
 
-    // ==================== REVIEW CRUD ====================
+    // ==================== REVIEW CRUD (COMMENT-ONLY) ====================
 
-    // Create review
-    // Buyers can only review products they have purchased and received
+    // Create review (comment only, no rating)
     public function createReview($buyerID, $data) 
     {
         try {
@@ -687,17 +669,16 @@ class Review
                 ];
             }
 
-            // Insert review
+            // Insert review (comment only)
             $query = "INSERT INTO {$this->table} 
-                     (productID, buyerID, orderID, rating, review_text, is_verified_purchase) 
-                     VALUES (?, ?, ?, ?, ?, 1)";
+                     (productID, buyerID, orderID, review_text, is_verified_purchase) 
+                     VALUES (?, ?, ?, ?, 1)";
             
             $stmt = $this->conn->prepare($query);
             $result = $stmt->execute([
                 $data['productID'],
                 $buyerID,
                 $data['orderID'],
-                $data['rating'],
                 $data['review_text'] ?? null
             ]);
 
@@ -716,40 +697,22 @@ class Review
         return ['success' => false, 'message' => 'Failed to submit review'];
     }
 
-    /**
-     * Update review
-     * Buyers can edit their own reviews
-     */
+    // Update review
     public function updateReview($reviewID, $buyerID, $data) 
     {
-        // Verify ownership
         if (!$this->verifyReviewOwnership($reviewID, $buyerID)) {
             return ['success' => false, 'message' => 'Unauthorized'];
         }
 
-        $fields = [];
-        $params = [];
-
-        if (isset($data['rating'])) {
-            $fields[] = "rating = ?";
-            $params[] = $data['rating'];
+        if (empty($data['review_text'])) {
+            return ['success' => false, 'message' => 'Review text is required'];
         }
 
-        if (isset($data['review_text'])) {
-            $fields[] = "review_text = ?";
-            $params[] = $data['review_text'];
-        }
-
-        if (empty($fields)) {
-            return ['success' => false, 'message' => 'No fields to update'];
-        }
-
-        $query = "UPDATE {$this->table} SET " . implode(', ', $fields) . " WHERE reviewID = ?";
-        $params[] = $reviewID;
+        $query = "UPDATE {$this->table} SET review_text = ? WHERE reviewID = ?";
 
         try {
             $stmt = $this->conn->prepare($query);
-            $result = $stmt->execute($params);
+            $result = $stmt->execute([$data['review_text'], $reviewID]);
 
             if ($result) {
                 return ['success' => true, 'message' => 'Review updated successfully'];
@@ -761,9 +724,7 @@ class Review
         return ['success' => false, 'message' => 'Failed to update review'];
     }
 
-    /**
-     * Delete review
-     */
+    // Delete review
     public function deleteReview($reviewID, $buyerID) 
     {
         if (!$this->verifyReviewOwnership($reviewID, $buyerID)) {
@@ -788,9 +749,7 @@ class Review
 
     // ==================== REVIEW RETRIEVAL ====================
 
-    /**
-     * Get review by ID
-     */
+    // Get review by ID
     public function getReviewById($reviewID) 
     {
         $query = "SELECT r.*, 
@@ -807,10 +766,7 @@ class Review
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
-    /**
-     * Get reviews for a product
-     * With pagination and filtering
-     */
+    // Get reviews for a product
     public function getProductReviews($productID, $filters = [], $limit = 10, $offset = 0) 
     {
         $query = "SELECT r.*, 
@@ -821,23 +777,15 @@ class Review
         
         $params = [$productID];
 
-        // Filter by rating
-        if (!empty($filters['rating'])) {
-            $query .= " AND r.rating = ?";
-            $params[] = $filters['rating'];
-        }
-
         // Filter by verified purchase
         if (isset($filters['verified_only']) && $filters['verified_only']) {
             $query .= " AND r.is_verified_purchase = 1";
         }
 
-        // Sorting
+        // Sorting (newest/oldest only, no rating sorting)
         $sortOptions = [
             'newest' => 'r.review_date DESC',
-            'oldest' => 'r.review_date ASC',
-            'highest_rating' => 'r.rating DESC',
-            'lowest_rating' => 'r.rating ASC'
+            'oldest' => 'r.review_date ASC'
         ];
         
         $sortBy = $filters['sort'] ?? 'newest';
@@ -853,9 +801,7 @@ class Review
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    /**
-     * Get reviews by buyer
-     */
+    // Get reviews by buyer
     public function getBuyerReviews($buyerID, $limit = 20, $offset = 0) 
     {
         $query = "SELECT r.*, 
@@ -879,9 +825,7 @@ class Review
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    /**
-     * Get reviews for seller's products
-     */
+    // Get reviews for seller's products
     public function getSellerReviews($sellerID, $limit = 20, $offset = 0) 
     {
         $query = "SELECT r.*, 
@@ -899,86 +843,6 @@ class Review
         $stmt->bindValue(2, $limit, PDO::PARAM_INT);
         $stmt->bindValue(3, $offset, PDO::PARAM_INT);
         $stmt->execute();
-        
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
-    }
-
-    // ==================== REVIEW STATISTICS ====================
-
-    /**
-     * Get review statistics for a product
-     */
-    public function getReviewStats($productID) 
-    {
-        $query = "SELECT 
-                    COUNT(*) as total_reviews,
-                    AVG(rating) as average_rating,
-                    SUM(CASE WHEN rating = 5 THEN 1 ELSE 0 END) as five_star,
-                    SUM(CASE WHEN rating = 4 THEN 1 ELSE 0 END) as four_star,
-                    SUM(CASE WHEN rating = 3 THEN 1 ELSE 0 END) as three_star,
-                    SUM(CASE WHEN rating = 2 THEN 1 ELSE 0 END) as two_star,
-                    SUM(CASE WHEN rating = 1 THEN 1 ELSE 0 END) as one_star
-                 FROM {$this->table}
-                 WHERE productID = ?";
-        
-        $stmt = $this->conn->prepare($query);
-        $stmt->execute([$productID]);
-        $stats = $stmt->fetch(PDO::FETCH_ASSOC);
-
-        // Calculate percentage for each rating
-        if ($stats['total_reviews'] > 0) {
-            $stats['five_star_percent'] = round(($stats['five_star'] / $stats['total_reviews']) * 100, 1);
-            $stats['four_star_percent'] = round(($stats['four_star'] / $stats['total_reviews']) * 100, 1);
-            $stats['three_star_percent'] = round(($stats['three_star'] / $stats['total_reviews']) * 100, 1);
-            $stats['two_star_percent'] = round(($stats['two_star'] / $stats['total_reviews']) * 100, 1);
-            $stats['one_star_percent'] = round(($stats['one_star'] / $stats['total_reviews']) * 100, 1);
-            $stats['average_rating'] = round($stats['average_rating'], 1);
-        } else {
-            $stats['average_rating'] = 0.0;
-        }
-
-        return $stats;
-    }
-
-    /**
-     * Get seller's overall review statistics
-     */
-    public function getSellerReviewStats($sellerID) 
-    {
-        $query = "SELECT 
-                    COUNT(*) as total_reviews,
-                    AVG(r.rating) as average_rating,
-                    COUNT(DISTINCT r.productID) as products_reviewed
-                 FROM {$this->table} r
-                 JOIN products p ON r.productID = p.productID
-                 WHERE p.sellerID = ?";
-        
-        $stmt = $this->conn->prepare($query);
-        $stmt->execute([$sellerID]);
-        $stats = $stmt->fetch(PDO::FETCH_ASSOC);
-
-        if ($stats['average_rating']) {
-            $stats['average_rating'] = round($stats['average_rating'], 1);
-        } else {
-            $stats['average_rating'] = 0.0;
-        }
-
-        return $stats;
-    }
-
-    /**
-     * Get count of reviews by rating for a product
-     */
-    public function getRatingDistribution($productID) 
-    {
-        $query = "SELECT rating, COUNT(*) as count
-                 FROM {$this->table}
-                 WHERE productID = ?
-                 GROUP BY rating
-                 ORDER BY rating DESC";
-        
-        $stmt = $this->conn->prepare($query);
-        $stmt->execute([$productID]);
         
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
@@ -1099,29 +963,8 @@ class Review
                  JOIN products p ON r.productID = p.productID
                  LEFT JOIN product_images pi ON p.productID = pi.productID AND pi.image_order = 0
                  JOIN shops s ON p.shopID = s.shopID
+                 WHERE r.review_text IS NOT NULL
                  ORDER BY r.review_date DESC
-                 LIMIT ?";
-        
-        $stmt = $this->conn->prepare($query);
-        $stmt->bindValue(1, $limit, PDO::PARAM_INT);
-        $stmt->execute();
-        
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
-    }
-
-    // Get top-rated reviews (4 stars and above)
-    public function getTopRatedReviews($limit = 10) 
-    {
-        $query = "SELECT r.*, 
-                        u.full_name, u.avatar,
-                        p.product_name, p.productID,
-                        pi.image_path as product_image
-                 FROM {$this->table} r
-                 JOIN users u ON r.buyerID = u.userID
-                 JOIN products p ON r.productID = p.productID
-                 LEFT JOIN product_images pi ON p.productID = pi.productID AND pi.image_order = 0
-                 WHERE r.rating >= 4 AND r.review_text IS NOT NULL
-                 ORDER BY r.rating DESC, r.review_date DESC
                  LIMIT ?";
         
         $stmt = $this->conn->prepare($query);
@@ -1152,17 +995,6 @@ class Review
         $result = $stmt->fetch(PDO::FETCH_ASSOC);
         
         return $result['count'] > 0;
-    }
-
-    // Get average rating for a product
-    public function getAverageRating($productID) 
-    {
-        $query = "SELECT AVG(rating) as average_rating FROM {$this->table} WHERE productID = ?";
-        $stmt = $this->conn->prepare($query);
-        $stmt->execute([$productID]);
-        $result = $stmt->fetch(PDO::FETCH_ASSOC);
-        
-        return $result['average_rating'] ? round($result['average_rating'], 1) : 0.0;
     }
 }
 ?>

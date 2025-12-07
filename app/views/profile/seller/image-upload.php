@@ -1,13 +1,15 @@
 <?php
 // app/views/profile/seller/image-upload.php
+// FIXED: Proper action URLs for image management
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
 require_once __DIR__ . '/../../../../config/config.php';
 require_once __DIR__ . '/../../../../config/database.php';
+require_once __DIR__ . '/../../../models/Product.php';
 
-// Check if user is logged in and is seller
+// Check authentication
 $isLoggedIn = isset($_SESSION['logged_in']) && $_SESSION['logged_in'];
 $userRole = $_SESSION['user_role'] ?? null;
 $userID = $_SESSION['user_id'] ?? null;
@@ -26,25 +28,169 @@ $stmt->execute([$userID]);
 $sellerProfile = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$sellerProfile) {
-    die("Seller profile not found. Please contact administrator.");
+    die("Seller profile not found");
 }
 
 $sellerID = $sellerProfile['sellerID'];
 
-// Get seller's products for image upload
+// Get seller's products
 $stmt = $conn->prepare("SELECT productID, product_name FROM products WHERE sellerID = ? ORDER BY product_name ASC");
 $stmt->execute([$sellerID]);
 $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// Get product ID from URL if specified
+// Get product ID from URL
 $selectedProductID = $_GET['product'] ?? null;
 
 // Get images for selected product
 $productImages = [];
 if ($selectedProductID) {
-    $stmt = $conn->prepare("SELECT * FROM product_images WHERE productID = ? ORDER BY image_order ASC");
+    $stmt = $conn->prepare("SELECT * FROM product_images WHERE productID = ? ORDER BY is_main DESC, image_order ASC");
     $stmt->execute([$selectedProductID]);
     $productImages = $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+
+// HANDLE SET MAIN IMAGE
+if (isset($_GET['action']) && $_GET['action'] === 'set_main' && isset($_GET['imageID'])) {
+    $imageID = (int)$_GET['imageID'];
+    $productID = (int)$_GET['productID'];
+    
+    $productModel = new Product();
+    $result = $productModel->updateMainImage($productID, $sellerID, $imageID);
+    
+    if ($result['success']) {
+        $_SESSION['success'] = 'Main image updated successfully';
+    } else {
+        $_SESSION['error'] = $result['message'];
+    }
+    
+    header('Location: ' . BASE_URL . 'profile/seller/image-upload?product=' . $productID);
+    exit;
+}
+
+// HANDLE DELETE IMAGE
+if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['imageID'])) {
+    $imageID = (int)$_GET['imageID'];
+    $productID = (int)$_GET['productID'];
+    
+    $productModel = new Product();
+    $result = $productModel->deleteProductImage($imageID, $sellerID);
+    
+    if ($result['success']) {
+        $_SESSION['success'] = 'Image deleted successfully';
+    } else {
+        $_SESSION['error'] = $result['message'];
+    }
+    
+    header('Location: ' . BASE_URL . 'profile/seller/image-upload?product=' . $productID);
+    exit;
+}
+
+// HANDLE IMAGE UPLOAD
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'upload_images') {
+    $productModel = new Product();
+    
+    $productID = $_POST['productID'] ?? null;
+    
+    if (!$productID) {
+        $_SESSION['error'] = 'Product ID required';
+        header('Location: ' . BASE_URL . 'profile/seller/image-upload');
+        exit;
+    }
+    
+    // Verify ownership
+    $stmt = $conn->prepare("SELECT productID FROM products WHERE productID = ? AND sellerID = ?");
+    $stmt->execute([$productID, $sellerID]);
+    if (!$stmt->fetch()) {
+        $_SESSION['error'] = 'Unauthorized';
+        header('Location: ' . BASE_URL . 'profile/seller/image-upload');
+        exit;
+    }
+    
+    // Check current image count
+    $stmt = $conn->prepare("SELECT COUNT(*) as count FROM product_images WHERE productID = ?");
+    $stmt->execute([$productID]);
+    $currentCount = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
+    
+    if (!isset($_FILES['images']) || empty($_FILES['images']['name'][0])) {
+        $_SESSION['error'] = 'No images uploaded';
+        header('Location: ' . BASE_URL . 'profile/seller/image-upload?product=' . $productID);
+        exit;
+    }
+    
+    $uploadDir = $_SERVER['DOCUMENT_ROOT'] . '/agri_system/public/uploads/products/';
+    if (!file_exists($uploadDir)) {
+        mkdir($uploadDir, 0777, true);
+    }
+    
+    $maxFileSize = 5242880; // 5MB
+    $allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    $maxImages = 5;
+    
+    $files = $_FILES['images'];
+    $fileCount = count($files['name']);
+    
+    if (($currentCount + $fileCount) > $maxImages) {
+        $_SESSION['error'] = "Cannot upload {$fileCount} images. Maximum {$maxImages} images allowed (currently have {$currentCount})";
+        header('Location: ' . BASE_URL . 'profile/seller/image-upload?product=' . $productID);
+        exit;
+    }
+    
+    $uploadedCount = 0;
+    $errors = [];
+    
+    for ($i = 0; $i < $fileCount; $i++) {
+        $fileName = $files['name'][$i];
+        $fileTmp = $files['tmp_name'][$i];
+        $fileSize = $files['size'][$i];
+        $fileError = $files['error'][$i];
+        $fileType = $files['type'][$i];
+        
+        if ($fileError !== UPLOAD_ERR_OK) {
+            $errors[] = "{$fileName}: Upload error";
+            continue;
+        }
+        
+        if ($fileSize > $maxFileSize) {
+            $errors[] = "{$fileName}: File too large (max 5MB)";
+            continue;
+        }
+        
+        if (!in_array($fileType, $allowedTypes)) {
+            $errors[] = "{$fileName}: Invalid file type";
+            continue;
+        }
+        
+        $extension = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
+        $newFileName = 'product_' . $productID . '_' . uniqid() . '.' . $extension;
+        $targetPath = $uploadDir . $newFileName;
+        
+        if (move_uploaded_file($fileTmp, $targetPath)) {
+            $relativePath = '/uploads/products/' . $newFileName;
+            $isMain = ($currentCount == 0 && $i == 0) ? 1 : 0;
+            
+            $result = $productModel->addProductImage($productID, $sellerID, $relativePath, $isMain, null);
+            
+            if ($result['success']) {
+                $uploadedCount++;
+                $currentCount++;
+            } else {
+                unlink($targetPath);
+                $errors[] = "{$fileName}: " . $result['message'];
+            }
+        } else {
+            $errors[] = "{$fileName}: Failed to move file";
+        }
+    }
+    
+    if ($uploadedCount > 0) {
+        $_SESSION['success'] = "{$uploadedCount} image(s) uploaded successfully";
+    }
+    if (!empty($errors)) {
+        $_SESSION['error'] = implode('<br>', $errors);
+    }
+    
+    header('Location: ' . BASE_URL . 'profile/seller/image-upload?product=' . $productID);
+    exit;
 }
 ?>
 <!DOCTYPE html>
@@ -67,7 +213,6 @@ if ($selectedProductID) {
         <div class="alert alert-error"><?php echo $_SESSION['error']; unset($_SESSION['error']); ?></div>
     <?php endif; ?>
 
-    <!-- Main Content -->
     <main class="main-content">
         <div class="page-header">
             <h1 class="page-title">🖼️ Product Images</h1>
@@ -100,7 +245,7 @@ if ($selectedProductID) {
                 <h2 class="section-title">Upload New Images</h2>
             </div>
             
-            <form method="POST" action="<?php echo BASE_URL; ?>app/controllers/ProductController.php" enctype="multipart/form-data">
+            <form method="POST" enctype="multipart/form-data">
                 <input type="hidden" name="action" value="upload_images">
                 <input type="hidden" name="productID" value="<?php echo $selectedProductID; ?>">
                 
@@ -109,7 +254,7 @@ if ($selectedProductID) {
                     <label for="imageFiles" class="upload-label">
                         <div class="upload-icon">📁</div>
                         <p>Click to select images or drag and drop</p>
-                        <small>Maximum 5 images, 5MB each (JPG, PNG, WEBP)</small>
+                        <small>Maximum 5 images total, 5MB each (JPG, PNG, WEBP)</small>
                     </label>
                 </div>
 
@@ -127,7 +272,7 @@ if ($selectedProductID) {
         <section class="content-section">
             <div class="section-header">
                 <h2 class="section-title">Current Images</h2>
-                <p class="section-subtitle"><?php echo count($productImages); ?> image(s) uploaded</p>
+                <p class="section-subtitle"><?php echo count($productImages); ?> of 5 image(s) uploaded</p>
             </div>
 
             <?php if (count($productImages) > 0): ?>
@@ -135,17 +280,18 @@ if ($selectedProductID) {
                     <?php foreach ($productImages as $index => $image): ?>
                         <div class="image-card">
                             <img src="<?php echo BASE_URL . htmlspecialchars($image['image_path']); ?>" 
-                                 alt="Product Image <?php echo $index + 1; ?>">
+                                 alt="Product Image <?php echo $index + 1; ?>"
+                                 onerror="this.src='<?php echo BASE_URL; ?>images/placeholder.jpg'">
                             <div class="image-card-overlay">
-                                <span class="image-order-badge"><?php echo $image['image_order'] == 0 ? 'Main' : '#' . ($image['image_order'] + 1); ?></span>
+                                <span class="image-order-badge"><?php echo $image['is_main'] ? '⭐ Main' : 'Image #' . ($index + 1); ?></span>
                                 <div class="image-actions">
-                                    <?php if ($image['image_order'] != 0): ?>
-                                        <button class="btn-icon-small" onclick="setMainImage(<?php echo $image['imageID']; ?>)" title="Set as Main">
-                                            ⭐
+                                    <?php if (!$image['is_main']): ?>
+                                        <button class="btn-icon-small" onclick="setMainImage(<?php echo $image['imageID']; ?>, <?php echo $selectedProductID; ?>)" title="Set as Main">
+                                            ⭐ Set Main
                                         </button>
                                     <?php endif; ?>
-                                    <button class="btn-icon-small btn-danger" onclick="deleteImage(<?php echo $image['imageID']; ?>)" title="Delete">
-                                        🗑️
+                                    <button class="btn-icon-small btn-danger" onclick="deleteImage(<?php echo $image['imageID']; ?>, <?php echo $selectedProductID; ?>)" title="Delete">
+                                        🗑️ Delete
                                     </button>
                                 </div>
                             </div>
@@ -169,6 +315,25 @@ if ($selectedProductID) {
     </main>
 
     <style>
+        .alert {
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            font-weight: 500;
+        }
+
+        .alert-success {
+            background: #d1fae5;
+            color: #065f46;
+            border-left: 4px solid #10b981;
+        }
+
+        .alert-error {
+            background: #fee2e2;
+            color: #991b1b;
+            border-left: 4px solid #ef4444;
+        }
+
         .form-select {
             width: 100%;
             padding: 12px;
@@ -271,6 +436,7 @@ if ($selectedProductID) {
         .image-actions {
             display: flex;
             gap: 8px;
+            flex-direction: column;
             justify-content: center;
         }
 
@@ -280,17 +446,29 @@ if ($selectedProductID) {
             padding: 8px 12px;
             border-radius: 6px;
             cursor: pointer;
-            font-size: 1rem;
+            font-size: 0.85rem;
+            font-weight: 600;
         }
 
         .btn-icon-small.btn-danger {
             background: #ef4444;
+            color: white;
         }
 
         .form-actions {
             display: flex;
             gap: 15px;
             margin-top: 20px;
+        }
+
+        .btn-primary {
+            padding: 12px 30px;
+            background: linear-gradient(135deg, #2d5016 0%, #4a7c25 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
         }
 
         .section-subtitle {
@@ -315,7 +493,7 @@ if ($selectedProductID) {
             font-size: 0.9rem;
         }
 
-        @media (max-width: 768px) {
+        @media (max-width: 480px) {
             .images-grid {
                 grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
             }
@@ -331,19 +509,19 @@ if ($selectedProductID) {
             }
         }
 
-        function setMainImage(imageID) {
+        function setMainImage(imageID, productID) {
             if (confirm('Set this as the main product image?')) {
-                window.location.href = `<?php echo BASE_URL; ?>app/controllers/ProductImageController.php?action=set_main&imageID=${imageID}&productID=<?php echo $selectedProductID; ?>`;
+                window.location.href = `<?php echo BASE_URL; ?>profile/seller/image-upload?action=set_main&imageID=${imageID}&productID=${productID}`;
             }
         }
 
-        function deleteImage(imageID) {
+        function deleteImage(imageID, productID) {
             if (confirm('Are you sure you want to delete this image?')) {
-                window.location.href = `<?php echo BASE_URL; ?>app/controllers/ProductImageController.php?action=delete&imageID=${imageID}&productID=<?php echo $selectedProductID; ?>`;
+                window.location.href = `<?php echo BASE_URL; ?>profile/seller/image-upload?action=delete&imageID=${imageID}&productID=${productID}`;
             }
         }
 
-        // Image preview functionality
+        // Image preview
         document.getElementById('imageFiles').addEventListener('change', function(e) {
             const previewContainer = document.getElementById('imagePreview');
             previewContainer.innerHTML = '';

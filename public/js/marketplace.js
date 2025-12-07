@@ -201,7 +201,7 @@ async function loadWishlistState() {
     const wishlistBtns = document.querySelectorAll('.wishlist-btn[data-product-id]');
     
     if (wishlistBtns.length === 0) {
-        console.log('📝 No wishlist buttons found on page');
+        console.log('🔍 No wishlist buttons found on page');
         return;
     }
     
@@ -322,10 +322,16 @@ function slideCategories(direction) {
 }
 
 // ========================================
-// PRODUCT DETAIL VIEW
+// PRODUCT DETAIL VIEW - FIXED
 // ========================================
 function viewProduct(productId) {
-    window.location.href = `${window.marketplaceData.baseUrl}item-handling/product?id=${productId}`;
+    // ✅ FIX: Get base URL safely - handle both marketplaceData and productData
+    const baseUrl = window.marketplaceData?.baseUrl || 
+                    window.productData?.baseUrl || 
+                    window.shopData?.baseUrl || 
+                    '/agri_system/public/';
+    
+    window.location.href = `${baseUrl}marketplace/product?id=${productId}`;
 }
 
 // Alias for compatibility

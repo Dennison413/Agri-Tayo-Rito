@@ -1,5 +1,6 @@
 <?php
-// app/views/profile/seller/my-products.php
+// app/views/profile/seller/my-products.php - FIXED VERSION
+// Corrected action buttons: View, Edit, Toggle Status, Manage Images
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
@@ -9,7 +10,7 @@ require_once __DIR__ . '/../../../../config/database.php';
 require_once __DIR__ . '/../../../models/Product.php';
 require_once __DIR__ . '/../../../models/Category.php';
 
-// Check if user is logged in and is seller
+// Check authentication
 $isLoggedIn = isset($_SESSION['logged_in']) && $_SESSION['logged_in'];
 $userRole = $_SESSION['user_role'] ?? null;
 $userID = $_SESSION['user_id'] ?? null;
@@ -32,6 +33,33 @@ if (!$sellerProfile) {
 }
 
 $sellerID = $sellerProfile['sellerID'];
+
+// Handle toggle status action
+if (isset($_GET['action']) && $_GET['action'] === 'toggle_status' && isset($_GET['id'])) {
+    $productID = (int)$_GET['id'];
+    
+    // Get current status
+    $stmt = $conn->prepare("SELECT is_available FROM products WHERE productID = ? AND sellerID = ?");
+    $stmt->execute([$productID, $sellerID]);
+    $product = $stmt->fetch(PDO::FETCH_ASSOC);
+    
+    if ($product) {
+        $newStatus = $product['is_available'] ? 0 : 1;
+        $stmt = $conn->prepare("UPDATE products SET is_available = ? WHERE productID = ? AND sellerID = ?");
+        $result = $stmt->execute([$newStatus, $productID, $sellerID]);
+        
+        if ($result) {
+            $_SESSION['success'] = 'Product status updated successfully';
+        } else {
+            $_SESSION['error'] = 'Failed to update product status';
+        }
+    } else {
+        $_SESSION['error'] = 'Product not found';
+    }
+    
+    header('Location: ' . BASE_URL . 'profile/seller/products');
+    exit;
+}
 
 // Initialize models
 $productModel = new Product();
@@ -68,9 +96,11 @@ $stats = $productModel->getSellerProductStats($sellerID);
     <main class="main-content">
         <div class="page-header">
             <h1 class="page-title">📦 My Products</h1>
-            <button class="btn-primary" onclick="openAddProductModal()">
-                ➕ Add New Product
-            </button>
+            <a href="<?php echo BASE_URL; ?>profile/seller/add-product">
+                <button class="btn-primary">
+                    ➕ Add New Product
+                </button>
+            </a>
         </div>
 
         <!-- Product Stats -->
@@ -153,7 +183,6 @@ $stats = $productModel->getSellerProductStats($sellerID);
                             <th>Category</th>
                             <th>Price</th>
                             <th>Stock</th>
-                            <th>Available</th>
                             <th>Status</th>
                             <th>Actions</th>
                         </tr>
@@ -166,7 +195,8 @@ $stats = $productModel->getSellerProductStats($sellerID);
                                 <td>
                                     <img src="<?php echo BASE_URL . ($product['main_image'] ?? 'images/default-product.jpg'); ?>" 
                                          alt="<?php echo htmlspecialchars($product['product_name']); ?>"
-                                         class="product-thumbnail">
+                                         class="product-thumbnail"
+                                         onerror="this.src='<?php echo BASE_URL; ?>images/placeholder.jpg'">
                                 </td>
                                 <td>
                                     <strong><?php echo htmlspecialchars($product['product_name']); ?></strong>
@@ -176,10 +206,9 @@ $stats = $productModel->getSellerProductStats($sellerID);
                                 <td>₱<?php echo number_format($product['price'], 2); ?></td>
                                 <td>
                                     <span class="stock-badge <?php echo $product['available_stock'] <= 10 ? 'low-stock' : ''; ?>">
-                                        <?php echo $product['available_stock']; ?> / <?php echo $product['stock_quantity']; ?>
+                                        <?php echo $product['available_stock']; ?>
                                     </span>
                                 </td>
-                                <td><?php echo $product['available_stock']; ?></td>
                                 <td>
                                     <span class="status-badge <?php echo $product['is_available'] ? 'status-active' : 'status-inactive'; ?>">
                                         <?php echo $product['is_available'] ? 'Active' : 'Inactive'; ?>
@@ -187,13 +216,31 @@ $stats = $productModel->getSellerProductStats($sellerID);
                                 </td>
                                 <td>
                                     <div class="action-buttons">
-                                        <button class="btn-icon" onclick="editProduct(<?php echo $product['productID']; ?>)" title="Edit">
+                                        <!-- VIEW PRODUCT (Marketplace View) -->
+                                        <button class="btn-icon" 
+                                                onclick="viewProduct(<?php echo $product['productID']; ?>)" 
+                                                title="View Product">
+                                            👁️
+                                        </button>
+                                        
+                                        <!-- EDIT PRODUCT -->
+                                        <button class="btn-icon" 
+                                                onclick="editProduct(<?php echo $product['productID']; ?>)" 
+                                                title="Edit Product">
                                             ✏️
                                         </button>
-                                        <button class="btn-icon" onclick="toggleProductStatus(<?php echo $product['productID']; ?>, <?php echo $product['is_available']; ?>)" title="Toggle Status">
-                                            <?php echo $product['is_available'] ? '👁️' : '🚫'; ?>
+                                        
+                                        <!-- TOGGLE STATUS (Active/Inactive) -->
+                                        <button class="btn-icon" 
+                                                onclick="toggleProductStatus(<?php echo $product['productID']; ?>, <?php echo $product['is_available']; ?>)" 
+                                                title="<?php echo $product['is_available'] ? 'Deactivate' : 'Activate'; ?> Product">
+                                            <?php echo $product['is_available'] ? '✅' : '🚫'; ?>
                                         </button>
-                                        <button class="btn-icon" onclick="manageImages(<?php echo $product['productID']; ?>)" title="Manage Images">
+                                        
+                                        <!-- MANAGE IMAGES -->
+                                        <button class="btn-icon" 
+                                                onclick="manageImages(<?php echo $product['productID']; ?>)" 
+                                                title="Manage Images">
                                             🖼️
                                         </button>
                                     </div>
@@ -201,11 +248,13 @@ $stats = $productModel->getSellerProductStats($sellerID);
                             </tr>
                         <?php endforeach; ?>
                     </tbody>
-</table>
+                </table>
                 <?php else: ?>
                 <div class="empty-state">
                     <p>📦 No products yet</p>
-                    <button class="btn-primary" onclick="openAddProductModal()">Add Your First Product</button>
+                    <a href="<?php echo BASE_URL; ?>profile/seller/add-product">
+                        <button class="btn-primary">Add Your First Product</button>
+                    </a>
                 </div>
                 <?php endif; ?>
             </div>
@@ -259,6 +308,7 @@ $stats = $productModel->getSellerProductStats($sellerID);
             font-size: 1.2rem;
             cursor: pointer;
             padding: 5px;
+            transition: transform 0.2s;
         }
 
         .btn-icon:hover {
@@ -309,20 +359,25 @@ $stats = $productModel->getSellerProductStats($sellerID);
             });
         }
 
-        function openAddProductModal() {
-            window.location.href = '<?php echo BASE_URL; ?>profile/seller/products?action=add';
+        // VIEW PRODUCT (Navigate to marketplace product detail page)
+        function viewProduct(productID) {
+            window.location.href = `<?php echo BASE_URL; ?>marketplace/product?id=${productID}`;
         }
 
+        // EDIT PRODUCT (Navigate to edit form)
         function editProduct(productID) {
-            window.location.href = `<?php echo BASE_URL; ?>profile/seller/products?action=edit&id=${productID}`;
+            window.location.href = `<?php echo BASE_URL; ?>profile/seller/edit-product?id=${productID}`;
         }
 
+        // TOGGLE STATUS (Activate/Deactivate product)
         function toggleProductStatus(productID, currentStatus) {
-            if (confirm('Are you sure you want to ' + (currentStatus ? 'deactivate' : 'activate') + ' this product?')) {
-                window.location.href = `<?php echo BASE_URL; ?>app/controllers/ProductController.php?action=toggle_status&id=${productID}`;
+            const action = currentStatus ? 'deactivate' : 'activate';
+            if (confirm(`Are you sure you want to ${action} this product?`)) {
+                window.location.href = `<?php echo BASE_URL; ?>profile/seller/products?action=toggle_status&id=${productID}`;
             }
         }
 
+        // MANAGE IMAGES (Navigate to image upload page)
         function manageImages(productID) {
             window.location.href = `<?php echo BASE_URL; ?>profile/seller/image-upload?product=${productID}`;
         }

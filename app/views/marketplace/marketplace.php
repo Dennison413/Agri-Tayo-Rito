@@ -419,26 +419,27 @@ if (!empty($filters['search'])) {
     <?php endif; ?>
 
     <!-- ==================== JAVASCRIPT DATA ==================== -->
-    <script>
-        // Pass PHP data to JavaScript
-        window.marketplaceData = {
-            isLoggedIn: <?php echo $isLoggedIn ? 'true' : 'false'; ?>,
-            userRole: <?php echo json_encode($userRole); ?>,
-            userId: <?php echo $userId ?? 'null'; ?>,
-            cartCount: <?php echo $cartCount; ?>,
-            wishlistCount: <?php echo $wishlistCount; ?>,
-            csrfToken: <?php echo json_encode($csrfToken); ?>,
-            baseUrl: <?php echo json_encode(BASE_URL); ?>,
-            currentCategory: <?php echo json_encode($filters['categoryID'] ?? null); ?>,
-            currentSort: <?php echo json_encode($filters['sort'] ?? 'newest'); ?>,
-            currentPage: <?php echo $page; ?>
-        };
-        
-        console.log('🌾 Agri Tayo Rito Marketplace Loaded');
-        console.log('👤 User Role:', window.marketplaceData.userRole);
-        console.log('📦 Products:', <?php echo count($products); ?>);
-        console.log('🏷️ Categories:', <?php echo count($categories); ?>);
-    </script>
+   <script>
+    // Pass PHP data to JavaScript
+    window.marketplaceData = {
+        isLoggedIn: <?php echo $isLoggedIn ? 'true' : 'false'; ?>,
+        userRole: <?php echo json_encode($userRole); ?>,
+        userId: <?php echo $userId ?? 'null'; ?>,
+        cartCount: <?php echo $cartCount; ?>,
+        wishlistCount: <?php echo $wishlistCount; ?>,
+        csrfToken: <?php echo json_encode($csrfToken); ?>,
+        baseUrl: '<?php echo BASE_URL; ?>',  // ✅ Fixed: Added quotes
+        currentCategory: <?php echo json_encode($filters['categoryID'] ?? null); ?>,
+        currentSort: <?php echo json_encode($filters['sort'] ?? 'newest'); ?>,
+        currentPage: <?php echo $page; ?>
+    };
+    
+    console.log('🌾 Agri Tayo Rito Marketplace Loaded');
+    console.log('👤 User Role:', window.marketplaceData.userRole);
+    console.log('🔗 Base URL:', window.marketplaceData.baseUrl);
+    console.log('📦 Products:', <?php echo count($products); ?>);
+    console.log('🏷️ Categories:', <?php echo count($categories); ?>);
+</script>
     
     <!-- ==================== MARKETPLACE JAVASCRIPT ==================== -->
     <script src="<?php echo BASE_URL; ?>js/marketplace.js"></script>

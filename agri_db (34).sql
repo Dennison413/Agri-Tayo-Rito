@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Dec 06, 2025 at 02:13 PM
+-- Generation Time: Dec 07, 2025 at 09:58 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -73,9 +73,11 @@ INSERT INTO `cart` (`cartID`, `buyerID`, `productID`, `quantity`, `added_at`, `u
 (11, 8, 9, 3, '2025-11-23 02:16:50', '2025-11-28 01:11:18'),
 (25, 8, 1, 1, '2025-11-29 12:20:03', '2025-11-29 12:20:03'),
 (26, 16, 4, 1, '2025-11-30 01:24:50', '2025-11-30 01:24:50'),
-(68, 2, 9, 1, '2025-12-06 02:57:12', '2025-12-06 02:57:12'),
-(69, 2, 10, 1, '2025-12-06 02:57:13', '2025-12-06 02:57:13'),
-(70, 2, 11, 1, '2025-12-06 02:57:14', '2025-12-06 02:57:14');
+(95, 2, 10, 2, '2025-12-07 08:41:19', '2025-12-07 08:55:25'),
+(96, 2, 9, 1, '2025-12-07 08:41:20', '2025-12-07 08:41:20'),
+(97, 2, 11, 1, '2025-12-07 08:41:21', '2025-12-07 08:41:21'),
+(98, 2, 8, 1, '2025-12-07 08:55:16', '2025-12-07 08:55:16'),
+(99, 2, 1, 2, '2025-12-07 08:55:17', '2025-12-07 08:55:19');
 
 --
 -- Triggers `cart`
@@ -268,7 +270,9 @@ INSERT INTO `orders` (`orderID`, `buyerID`, `order_date`, `total_amount`, `order
 (8, 2, '2025-12-06 02:36:36', 1030.00, 'pending', 'F. Mendoza Street', 'Tiaong', 'Quezon', '4324', 'cash_on_delivery', 'pending', 'cod', 0.00, 'pending_pickup', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, '', '2025-12-06 02:36:36'),
 (9, 2, '2025-12-06 02:43:18', 1280.00, 'pending', 'F. Mendoza Street', 'Tiaong', 'Quezon', '4324', 'cash_on_delivery', 'pending', 'cod', 0.00, 'pending_pickup', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, '', '2025-12-06 02:43:18'),
 (10, 2, '2025-12-06 02:46:41', 1280.00, 'pending', 'F. Mendoza Street', 'Tiaong', 'Quezon', '4324', 'cash_on_delivery', 'pending', 'cod', 0.00, 'pending_pickup', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, '', '2025-12-06 02:46:41'),
-(11, 2, '2025-12-06 02:58:05', 250.00, 'pending', 'F. Mendoza Street', 'Tiaong', 'Quezon', '4324', 'cash_on_delivery', 'pending', 'cod', 0.00, 'pending_pickup', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, '', '2025-12-06 02:58:05');
+(11, 2, '2025-12-06 02:58:05', 250.00, 'pending', 'F. Mendoza Street', 'Tiaong', 'Quezon', '4324', 'cash_on_delivery', 'pending', 'cod', 0.00, 'pending_pickup', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, '', '2025-12-06 02:58:05'),
+(12, 2, '2025-12-06 19:24:06', 50.00, 'pending', 'F. Mendoza Street', 'Tiaong', 'Quezon', '4324', 'cash_on_delivery', 'paid', 'gcash', 0.00, 'pending_pickup', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, '', '2025-12-06 19:24:07'),
+(13, 2, '2025-12-07 04:30:07', 1540.00, 'pending', 'F. Mendoza Street', 'Tiaong', 'Quezon', '4324', 'cash_on_delivery', 'pending', 'cod', 0.00, 'pending_pickup', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, '', '2025-12-07 04:30:07');
 
 --
 -- Triggers `orders`
@@ -383,7 +387,20 @@ INSERT INTO `order_items` (`orderItemID`, `orderID`, `productID`, `quantity`, `u
 (49, 10, 6, 1, 150.00, 150.00),
 (50, 10, 5, 1, 80.00, 80.00),
 (51, 10, 8, 1, 200.00, 200.00),
-(52, 11, 12, 1, 250.00, 250.00);
+(52, 11, 12, 1, 250.00, 250.00),
+(53, 12, 11, 1, 50.00, 50.00),
+(54, 13, 4, 1, 120.00, 120.00),
+(55, 13, 3, 1, 60.00, 60.00),
+(56, 13, 1, 1, 35.00, 35.00),
+(57, 13, 2, 1, 45.00, 45.00),
+(58, 13, 11, 1, 50.00, 50.00),
+(59, 13, 12, 1, 250.00, 250.00),
+(60, 13, 10, 3, 40.00, 120.00),
+(61, 13, 9, 2, 180.00, 360.00),
+(62, 13, 7, 1, 70.00, 70.00),
+(63, 13, 8, 1, 200.00, 200.00),
+(64, 13, 5, 1, 80.00, 80.00),
+(65, 13, 6, 1, 150.00, 150.00);
 
 -- --------------------------------------------------------
 
@@ -400,6 +417,14 @@ CREATE TABLE `password_reset_otps` (
   `verified_at` datetime DEFAULT NULL,
   `created_at` datetime NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `password_reset_otps`
+--
+
+INSERT INTO `password_reset_otps` (`id`, `email`, `otp`, `expires_at`, `is_used`, `verified_at`, `created_at`) VALUES
+(1, 'dennisontenorio11@gmail.com', '8052', '2025-12-07 00:06:04', 0, '2025-12-06 23:26:29', '2025-12-06 23:36:04'),
+(23, 'ichaichatactics1@gmail.com', '5918', '2025-12-07 02:29:07', 1, '2025-12-07 01:59:30', '2025-12-07 01:59:07');
 
 -- --------------------------------------------------------
 
@@ -463,42 +488,18 @@ CREATE TABLE `product_images` (
 --
 
 INSERT INTO `product_images` (`imageID`, `productID`, `image_path`, `is_main`, `image_order`, `file_size_kb`, `uploaded_at`) VALUES
-(1, 1, '/uploads/products/pechay_main.jpg', 1, 0, NULL, '2025-11-18 13:15:08'),
-(2, 1, '/uploads/products/pechay_bunch.jpg', 0, 2, NULL, '2025-11-18 13:15:08'),
-(3, 2, '/uploads/products/sitaw_main.jpg', 1, 0, NULL, '2025-11-18 13:15:08'),
-(4, 2, '/uploads/products/sitaw_fresh.jpg', 0, 4, NULL, '2025-11-18 13:15:08'),
-(5, 2, '/uploads/products/sitaw_harvest.jpg', 0, 5, NULL, '2025-11-18 13:15:08'),
-(6, 3, '/uploads/products/kamote_main.jpg', 1, 0, NULL, '2025-11-18 13:15:08'),
-(7, 3, '/uploads/products/kamote_yellow.jpg', 0, 7, NULL, '2025-11-18 13:15:08'),
-(8, 4, '/uploads/products/tomato_seeds_pack.jpg', 1, 0, NULL, '2025-11-18 13:15:08'),
-(9, 4, '/uploads/products/tomato_seeds_close.jpg', 0, 9, NULL, '2025-11-18 13:15:08'),
-(10, 5, '/uploads/products/lettuce_main.jpg', 1, 0, NULL, '2025-11-18 13:15:08'),
-(11, 5, '/uploads/products/lettuce_fresh.jpg', 0, 11, NULL, '2025-11-18 13:15:08'),
-(12, 5, '/uploads/products/lettuce_organic.jpg', 0, 12, NULL, '2025-11-18 13:15:08'),
-(13, 6, '/uploads/products/cherry_tomato_main.jpg', 1, 0, NULL, '2025-11-18 13:15:08'),
-(14, 6, '/uploads/products/cherry_tomato_bowl.jpg', 0, 14, NULL, '2025-11-18 13:15:08'),
-(15, 7, '/uploads/products/eggplant_main.jpg', 1, 0, NULL, '2025-11-18 13:15:08'),
-(16, 7, '/uploads/products/eggplant_purple.jpg', 0, 16, NULL, '2025-11-18 13:15:08'),
-(17, 7, '/uploads/products/eggplant_bunch.jpg', 0, 17, NULL, '2025-11-18 13:15:08'),
-(18, 8, '/uploads/products/veg_seeds_pack.jpg', 1, 0, NULL, '2025-11-18 13:15:08'),
-(19, 8, '/uploads/products/veg_seeds_variety.jpg', 0, 19, NULL, '2025-11-18 13:15:08'),
-(20, 9, '/uploads/products/mango_main.jpg', 1, 0, NULL, '2025-11-18 13:15:08'),
-(21, 9, '/uploads/products/mango_ripe.jpg', 0, 21, NULL, '2025-11-18 13:15:08'),
-(22, 9, '/uploads/products/mango_export.jpg', 0, 22, NULL, '2025-11-18 13:15:08'),
-(23, 10, '/uploads/products/coconut_main.jpg', 1, 0, NULL, '2025-11-18 13:15:08'),
-(24, 10, '/uploads/products/coconut_juice.jpg', 0, 24, NULL, '2025-11-18 13:15:08'),
-(25, 11, '/uploads/products/papaya_main.jpg', 1, 0, NULL, '2025-11-18 13:15:08'),
-(26, 11, '/uploads/products/papaya_ripe.jpg', 0, 26, NULL, '2025-11-18 13:15:08'),
-(27, 11, '/uploads/products/papaya_sliced.jpg', 0, 27, NULL, '2025-11-18 13:15:08'),
-(28, 12, '/uploads/products/sapling_main.jpg', 1, 0, NULL, '2025-11-18 13:15:08'),
-(29, 12, '/uploads/products/sapling_nursery.jpg', 0, 29, NULL, '2025-11-18 13:15:08'),
-(30, 1, '/uploads/products/pechay_field.jpg', 0, 3, NULL, '2025-11-29 04:09:49'),
-(31, 3, '/uploads/products/kamote_harvest.jpg', 0, 8, NULL, '2025-11-29 04:09:49'),
-(32, 4, '/uploads/products/tomato_seeds_growing.jpg', 0, 10, NULL, '2025-11-29 04:09:49'),
-(33, 6, '/uploads/products/cherry_tomato_vine.jpg', 0, 15, NULL, '2025-11-29 04:09:50'),
-(34, 8, '/uploads/products/veg_seeds_planting.jpg', 0, 20, NULL, '2025-11-29 04:09:50'),
-(35, 10, '/uploads/products/coconut_tree.jpg', 0, 25, NULL, '2025-11-29 04:09:50'),
-(36, 12, '/uploads/products/sapling_planted.jpg', 0, 30, NULL, '2025-11-29 04:09:50');
+(1, 1, '/uploads/products/pechay_main.jpg', 1, 0, NULL, '2025-12-07 04:25:28'),
+(2, 2, '/uploads/products/sitaw_main.jpg', 1, 0, NULL, '2025-12-07 04:25:28'),
+(3, 3, '/uploads/products/kamote_main.jpg', 1, 0, NULL, '2025-12-07 04:25:28'),
+(4, 4, '/uploads/products/tomato_seeds_pack.jpg', 1, 0, NULL, '2025-12-07 04:25:28'),
+(5, 5, '/uploads/products/lettuce_main.jpg', 1, 0, NULL, '2025-12-07 04:25:28'),
+(6, 6, '/uploads/products/cherry_tomato_main.jpg', 1, 0, NULL, '2025-12-07 04:25:28'),
+(7, 7, '/uploads/products/eggplant_main.jpg', 1, 0, NULL, '2025-12-07 04:25:28'),
+(8, 8, '/uploads/products/veg_seeds_pack.jpg', 1, 0, NULL, '2025-12-07 04:25:28'),
+(9, 9, '/uploads/products/mango_main.jpg', 1, 0, NULL, '2025-12-07 04:25:28'),
+(10, 10, '/uploads/products/coconut_main.jpg', 1, 0, NULL, '2025-12-07 04:25:28'),
+(11, 11, '/uploads/products/papaya_main.jpg', 1, 0, NULL, '2025-12-07 04:25:28'),
+(12, 12, '/uploads/products/sapling_main.jpg', 1, 0, NULL, '2025-12-07 04:25:28');
 
 --
 -- Triggers `product_images`
@@ -619,7 +620,6 @@ CREATE TABLE `reviews` (
   `productID` int(11) NOT NULL,
   `buyerID` int(11) NOT NULL,
   `orderID` int(11) NOT NULL,
-  `rating` int(1) NOT NULL CHECK (`rating` between 1 and 5),
   `review_text` text DEFAULT NULL,
   `review_date` timestamp NOT NULL DEFAULT current_timestamp(),
   `is_verified_purchase` tinyint(1) DEFAULT 1
@@ -629,10 +629,10 @@ CREATE TABLE `reviews` (
 -- Dumping data for table `reviews`
 --
 
-INSERT INTO `reviews` (`reviewID`, `productID`, `buyerID`, `orderID`, `rating`, `review_text`, `review_date`, `is_verified_purchase`) VALUES
-(1, 1, 2, 1, 5, 'Very fresh pechay! Perfect for my sinigang. Will order again!', '2025-11-12 08:00:00', 1),
-(2, 5, 2, 1, 5, 'The organic lettuce is crisp and clean. Great quality!', '2025-11-12 08:05:00', 1),
-(3, 6, 2, 1, 4, 'Sweet cherry tomatoes, my kids love them. A bit pricey but worth it.', '2025-11-12 08:10:00', 1);
+INSERT INTO `reviews` (`reviewID`, `productID`, `buyerID`, `orderID`, `review_text`, `review_date`, `is_verified_purchase`) VALUES
+(1, 1, 2, 1, 'Very fresh pechay! Perfect for my sinigang. Will order again!', '2025-11-12 08:00:00', 1),
+(2, 5, 2, 1, 'The organic lettuce is crisp and clean. Great quality!', '2025-11-12 08:05:00', 1),
+(3, 6, 2, 1, 'Sweet cherry tomatoes, my kids love them. A bit pricey but worth it.', '2025-11-12 08:10:00', 1);
 
 -- --------------------------------------------------------
 
@@ -878,7 +878,7 @@ INSERT INTO `users` (`userID`, `email`, `profile_image`, `password_hash`, `full_
 (5, 'juan.delacruz@gmail.com', '/images/avatars/avt5.jpg', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Juan Dela Cruz', '09211234567', '/images/avatars/avt5.jpg', 'seller', 1, '2025-11-18 13:15:07', '2025-12-02 02:46:20'),
 (6, 'rosa.mendoza@yahoo.com', '/images/avatars/avt6.jpg', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Rosa Mendoza', '09221234567', '/images/avatars/avt6.jpg', 'seller', 1, '2025-11-18 13:15:07', '2025-11-25 03:53:48'),
 (7, 'pedro.reyes@gmail.com', '/images/avatars/avt7.jpg', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Pedro Reyes', '09231234567', '/images/avatars/avt7.jpg', 'seller', 1, '2025-11-18 13:15:07', '2025-11-25 03:53:48'),
-(8, 'dennisontenorio11@gmail.com', '/images/avatars/avt13.jpg', '$2y$10$snLkU5e6aQTTYsw1H.Cq6.N2IMK.V68bPd2ukOjSqkotpmzoMMLem', 'Dennison Tenorio', '09121493081', '/images/avatars/avt13.jpg', 'seller', 1, '2025-11-19 04:20:47', '2025-12-04 16:16:23'),
+(8, 'dennisontenorio11@gmail.com', '/images/avatars/avt13.jpg', '$2y$10$WJyCQ2VHuCAVc06Aneaa1OGvWa97IFBjiFM5uZn5UhnW03UxStXui', 'Dennison Tenorio', '09121493081', '/images/avatars/avt13.jpg', 'seller', 1, '2025-11-19 04:20:47', '2025-12-06 14:42:53'),
 (12, 'test@example.com', NULL, '$2y$10$9AVeVnfOo6dqbmLZXwu0Qux0O1y8FdYEz9hzdcj8Lkbx.R4fi/hbG', 'Test User', NULL, '/images/avatars/avt1.jpg', 'buyer', 1, '2025-11-30 00:49:53', '2025-11-30 00:49:53'),
 (13, 'dennis1@gmail.com', NULL, '$2y$10$iHtit/MP1XPCekjBm5EQv.xn9z79lMF/78tBFIGULIyCrsNdteFqa', 'Dennis Tenorio', NULL, '/images/avatars/avt1.jpg', 'buyer', 1, '2025-11-30 01:06:21', '2025-11-30 01:06:21'),
 (14, 'lebron23@gmail.com', NULL, '$2y$10$f9x/ZAzCCmOzDhylpJBV2O1nWziUYYqG57QLBnFDzfLaDHtK72b0i', 'Lebron James', NULL, '/images/avatars/avt1.jpg', 'buyer', 1, '2025-11-30 01:09:45', '2025-11-30 01:09:45'),
@@ -886,7 +886,8 @@ INSERT INTO `users` (`userID`, `email`, `profile_image`, `password_hash`, `full_
 (16, 'kyrie11@gmail.com', NULL, '$2y$10$YYY8XKRoNFIySCaubNND7u8oc2DUxb2aIMJ6ERVm/mbkzOeuAauD6', 'Kyrie Irving', NULL, '/images/avatars/avt1.jpg', 'buyer', 1, '2025-11-30 01:18:33', '2025-11-30 01:18:33'),
 (17, 'fernandz@gmail.com', NULL, '$2y$10$9kfMHxw4D8lGklf632K.GOGIliE6/D8TqF8/UvS5HsAMIjra2iGa6', 'Fernando Cruz', NULL, '/images/avatars/avt1.jpg', 'buyer', 1, '2025-11-30 01:28:19', '2025-11-30 01:28:19'),
 (18, 'kwlenard2@gmail.com', NULL, '$2y$10$f2iqfTr/eMCTHox5hdi8AO8qvb9xghr5lRhxSx/3JePlvqrYJFRSO', 'Kawhi Leonard', NULL, '/images/avatars/avt1.jpg', 'buyer', 1, '2025-12-01 04:40:59', '2025-12-01 04:40:59'),
-(19, 'kuabhouu33@gmail.com', NULL, '$2y$10$9dRJJP.sf./cvYrycU5ooexTcvPnJkvISgRhc2vPn2ezP0xaYQT6O', 'Kuya Bhouu', NULL, '/images/avatars/avt1.jpg', 'buyer', 1, '2025-12-02 10:56:34', '2025-12-02 10:56:34');
+(19, 'kuabhouu33@gmail.com', NULL, '$2y$10$9dRJJP.sf./cvYrycU5ooexTcvPnJkvISgRhc2vPn2ezP0xaYQT6O', 'Kuya Bhouu', NULL, '/images/avatars/avt1.jpg', 'buyer', 1, '2025-12-02 10:56:34', '2025-12-02 10:56:34'),
+(20, 'ichaichatactics1@gmail.com', NULL, '$2y$10$sOXQ/5lvXzWN3pUlqvESdeCzfemPkBOrqmLfatIlP2dPLJf7nSuMO', 'Icha Tactics', NULL, '/images/avatars/avt1.jpg', 'buyer', 1, '2025-12-06 17:58:15', '2025-12-06 17:59:55');
 
 -- --------------------------------------------------------
 
@@ -910,7 +911,6 @@ CREATE TABLE `user_addresses` (
 
 INSERT INTO `user_addresses` (`addressID`, `userID`, `address`, `municipality`, `province`, `postal_code`, `created_at`) VALUES
 (1, 1, 'San Pablo City Hall', 'San Pablo City', 'Laguna', '4000', '2025-11-28 21:13:38'),
-(2, 2, '123 Rizal Avenue, Brgy. II-A', 'Nagcarlan', 'Laguna', '4000', '2025-11-28 21:13:38'),
 (3, 3, '456 Luna Street, Brgy. III-B', 'San Pablo City', 'Laguna', '4000', '2025-11-28 21:13:38'),
 (4, 4, '789 Bonifacio Road, Brgy. VI-C', 'San Pablo City', 'Laguna', '4000', '2025-11-28 21:13:38'),
 (5, 5, 'Sitio Maligaya, Brgy. San Buenaventura', 'San Pablo City', 'Laguna', '4000', '2025-11-28 21:13:38'),
@@ -1130,8 +1130,7 @@ ALTER TABLE `reviews`
   ADD KEY `idx_reviewID` (`reviewID`),
   ADD KEY `idx_productID` (`productID`),
   ADD KEY `idx_buyerID` (`buyerID`),
-  ADD KEY `idx_orderID` (`orderID`),
-  ADD KEY `idx_rating` (`rating`);
+  ADD KEY `idx_orderID` (`orderID`);
 
 --
 -- Indexes for table `seller_applications`
@@ -1239,7 +1238,7 @@ ALTER TABLE `account_deletion_requests`
 -- AUTO_INCREMENT for table `cart`
 --
 ALTER TABLE `cart`
-  MODIFY `cartID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=72;
+  MODIFY `cartID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=100;
 
 --
 -- AUTO_INCREMENT for table `categories`
@@ -1263,19 +1262,19 @@ ALTER TABLE `inventory_logs`
 -- AUTO_INCREMENT for table `orders`
 --
 ALTER TABLE `orders`
-  MODIFY `orderID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
+  MODIFY `orderID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
 
 --
 -- AUTO_INCREMENT for table `order_items`
 --
 ALTER TABLE `order_items`
-  MODIFY `orderItemID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=53;
+  MODIFY `orderItemID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=66;
 
 --
 -- AUTO_INCREMENT for table `password_reset_otps`
 --
 ALTER TABLE `password_reset_otps`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=24;
 
 --
 -- AUTO_INCREMENT for table `products`
@@ -1287,7 +1286,7 @@ ALTER TABLE `products`
 -- AUTO_INCREMENT for table `product_images`
 --
 ALTER TABLE `product_images`
-  MODIFY `imageID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=37;
+  MODIFY `imageID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
 
 --
 -- AUTO_INCREMENT for table `product_images_old`
@@ -1341,7 +1340,7 @@ ALTER TABLE `system_settings`
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
-  MODIFY `userID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=20;
+  MODIFY `userID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=21;
 
 --
 -- AUTO_INCREMENT for table `user_addresses`

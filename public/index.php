@@ -22,7 +22,7 @@ $routes = [
     'api/checkout' => BASE_PATH . '/app/controllers/OrderController.php',
     'api/delivery-status' => BASE_PATH . '/app/controllers/OrderController.php',
 
-    // ✅ FIX: Add profile API routes
+    // API routes
     'profile/update-avatar.php' => BASE_PATH . '/public/profile/update-avatar.php',
     'profile/upload-avatar.php' => BASE_PATH . '/public/profile/upload-avatar.php',
     'profile/upload-cover.php' => BASE_PATH . '/public/profile/upload-cover.php',
@@ -37,6 +37,7 @@ $routes = [
     // Marketplace (can be accessed without login)
     'marketplace' => BASE_PATH . '/app/views/marketplace/marketplace.php',
     'marketplace/product' => BASE_PATH . '/app/views/marketplace/product.php',
+    'marketplace/shop' => BASE_PATH . '/app/views/marketplace/shop.php',
     'marketplace/livestream' => BASE_PATH . '/app/views/marketplace/livestream.php',
     'marketplace/notifications' => BASE_PATH . '/app/views/marketplace/notifications.php',
     'marketplace/messages' => BASE_PATH . '/app/views/marketplace/messages.php',
@@ -65,6 +66,8 @@ $routes = [
     'profile/seller/dashboard' => BASE_PATH . '/app/views/profile/seller/dashboard.php',
     'profile/seller/profile-info' => BASE_PATH . '/app/views/profile/seller/shop-profile.php',
     'profile/seller/products' => BASE_PATH . '/app/views/profile/seller/my-products.php',
+    'profile/seller/add-product' => BASE_PATH . '/app/views/profile/seller/add-product.php', 
+    'profile/seller/edit-product' => BASE_PATH . '/app/views/profile/seller/edit-product.php',
     'profile/seller/orders' => BASE_PATH . '/app/views/profile/seller/orders.php',
     'profile/seller/order-details' => BASE_PATH . '/app/views/profile/seller/order-details.php', 
     'profile/seller/withdrawals' => BASE_PATH . '/app/views/profile/seller/withdrawals.php', 
