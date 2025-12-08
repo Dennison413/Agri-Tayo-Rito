@@ -440,21 +440,36 @@ class OrderItems
     }
 
     public function getOrderItems($orderID) 
-    {
-        $query = "SELECT oi.*, p.product_name, p.unit, 
-                        pi.image_path as primary_image,
-                        s.shop_name, s.shopID
-                 FROM {$this->table} oi
-                 JOIN products p ON oi.productID = p.productID
-                 JOIN shops s ON p.shopID = s.shopID
-                 LEFT JOIN product_images pi ON p.productID = pi.productID AND pi.image_order = 0
-                 WHERE oi.orderID = ?";
-        
-        $stmt = $this->conn->prepare($query);
-        $stmt->execute([$orderID]);
-        
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+{
+    $query = "SELECT oi.*, 
+                    p.product_name, 
+                    p.unit, 
+                    s.shop_name, 
+                    s.shopID,
+                    -- ✅ FIXED: Use is_main instead of image_order
+                    (SELECT pi.image_path 
+                     FROM product_images pi 
+                     WHERE pi.productID = p.productID 
+                     AND pi.is_main = 1 
+                     LIMIT 1) as primary_image
+             FROM {$this->table} oi
+             JOIN products p ON oi.productID = p.productID
+             JOIN shops s ON p.shopID = s.shopID
+             WHERE oi.orderID = ?
+             ORDER BY oi.orderItemID";
+    
+    $stmt = $this->conn->prepare($query);
+    $stmt->execute([$orderID]);
+    
+    $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    
+    // Debug log to verify image paths
+    foreach ($results as $item) {
+        error_log("Order Item: {$item['product_name']}, Image: " . ($item['primary_image'] ?? 'NULL'));
     }
+    
+    return $results;
+}
 }
 
 class DeliveryRiders 

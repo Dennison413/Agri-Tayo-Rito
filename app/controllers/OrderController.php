@@ -187,8 +187,57 @@ class OrderController
 
         if ($action === 'place_order') {
             $this->placeOrderAjax($data);
+        } elseif ($action === 'cancel_order') {
+            $this->cancelOrderAjax($data);
         } else {
             $this->jsonResponse(false, 'Invalid action');
+        }
+    }
+
+    private function cancelOrderAjax($data)
+    {
+        $buyerID = $_SESSION['user_id'];
+        $orderID = $data['order_id'] ?? null;
+
+        if (!$orderID) {
+            $this->jsonResponse(false, 'Order ID is required');
+            return;
+        }
+
+        try {
+            // Get order details
+            $order = $this->ordersModel->getOrderById($orderID);
+
+            if (!$order) {
+                $this->jsonResponse(false, 'Order not found');
+                return;
+            }
+
+            // Verify order belongs to buyer
+            if ($order['buyerID'] != $buyerID) {
+                $this->jsonResponse(false, 'Unauthorized action');
+                return;
+            }
+
+            // Check if order can be cancelled
+            if (!in_array($order['order_status'], ['pending', 'processing'])) {
+                $this->jsonResponse(false, 'This order cannot be cancelled');
+                return;
+            }
+
+            // Cancel the order
+            $result = $this->ordersModel->updateOrderStatus($orderID, 'cancelled');
+
+            if ($result) {
+                $this->jsonResponse(true, 'Order cancelled successfully', [
+                    'orderID' => $orderID
+                ]);
+            } else {
+                $this->jsonResponse(false, 'Failed to cancel order');
+            }
+        } catch (Exception $e) {
+            error_log("Cancel order error: " . $e->getMessage());
+            $this->jsonResponse(false, 'Failed to cancel order: ' . $e->getMessage());
         }
     }
 
@@ -356,5 +405,8 @@ class OrderController
     }
 }
 
-// ✅ REMOVED: Don't handle POST here - let the API endpoint handle it
-// This file should only define the class, not execute code
+// Handle API requests
+if ($_SERVER['REQUEST_METHOD'] === 'POST' || $_SERVER['REQUEST_METHOD'] === 'GET') {
+    $controller = new OrderController();
+    $controller->handleCheckoutRequest();
+}

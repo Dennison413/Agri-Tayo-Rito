@@ -335,6 +335,128 @@ $stats = $ordersModel->getOrderStats($buyerID, 'buyer');
             color: white;
         }
 
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.5);
+            animation: fadeIn 0.3s;
+        }
+
+        .modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background-color: #fff;
+            margin: auto;
+            padding: 0;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 800px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            animation: slideIn 0.3s;
+        }
+
+        .modal-header {
+            padding: 20px;
+            border-bottom: 2px solid #f0f0f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #2d5016;
+            color: white;
+            border-radius: 12px 12px 0 0;
+        }
+
+        .modal-header h2 {
+            margin: 0;
+            font-size: 1.5rem;
+        }
+
+        .close-modal {
+            color: white;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            background: none;
+            border: none;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.2s;
+        }
+
+        .close-modal:hover {
+            transform: scale(1.2);
+        }
+
+        .modal-body {
+            padding: 20px;
+        }
+
+        .detail-section {
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .detail-section:last-child {
+            border-bottom: none;
+        }
+
+        .detail-section h3 {
+            color: #2d5016;
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+        }
+
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            font-size: 0.9rem;
+        }
+
+        .detail-label {
+            color: #666;
+            font-weight: 600;
+        }
+
+        .detail-value {
+            color: #333;
+            text-align: right;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateY(-50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
         @media (max-width: 768px) {
             .orders-container {
                 padding: 15px;
@@ -369,6 +491,11 @@ $stats = $ordersModel->getOrderStats($buyerID, 'buyer');
 
             .btn {
                 width: 100%;
+            }
+
+            .modal-content {
+                width: 95%;
+                margin: 10px;
             }
         }
     </style>
@@ -473,6 +600,19 @@ $stats = $ordersModel->getOrderStats($buyerID, 'buyer');
         </div>
     </div>
 
+    <!-- Order Details Modal -->
+    <div id="orderModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Order Details</h2>
+                <button class="close-modal" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="modalBody">
+                <!-- Content will be loaded here -->
+            </div>
+        </div>
+    </div>
+
     <script>
         function toggleSidebar() {
             const sidebar = document.getElementById('sidebar');
@@ -494,32 +634,122 @@ $stats = $ordersModel->getOrderStats($buyerID, 'buyer');
         }
 
         function viewOrderDetails(orderID) {
-            window.location.href = '<?php echo BASE_URL; ?>profile/buyer/order-details?id=' + orderID;
+            // Get order data from the DOM
+            const orderCard = event.target.closest('.order-card');
+            const orderNumber = orderCard.querySelector('.order-number').textContent;
+            const orderDate = orderCard.querySelector('.order-date').textContent;
+            const statusBadge = orderCard.querySelector('.status-badge').textContent;
+            const orderTotal = orderCard.querySelector('.order-total').textContent;
+            
+            // Get items
+            const items = orderCard.querySelectorAll('.order-item');
+            let itemsHTML = '';
+            items.forEach(item => {
+                const name = item.querySelector('.item-name').textContent;
+                const shop = item.querySelector('.item-shop').textContent;
+                const qty = item.querySelector('.item-quantity').textContent;
+                const price = item.querySelector('.item-price').textContent;
+                const imgSrc = item.querySelector('.item-image').src;
+                
+                itemsHTML += `
+                    <div class="order-item">
+                        <img src="${imgSrc}" alt="${name}" class="item-image">
+                        <div class="item-details">
+                            <div class="item-name">${name}</div>
+                            <div class="item-shop">${shop}</div>
+                            <div class="item-quantity">${qty}</div>
+                        </div>
+                        <div class="item-price">${price}</div>
+                    </div>
+                `;
+            });
+            
+            // Build modal content
+            const modalContent = `
+                <div class="detail-section">
+                    <h3>${orderNumber}</h3>
+                    <div class="detail-row">
+                        <span class="detail-label">Order Date:</span>
+                        <span class="detail-value">${orderDate}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Status:</span>
+                        <span class="detail-value">${statusBadge}</span>
+                    </div>
+                </div>
+                
+                <div class="detail-section">
+                    <h3>Order Items</h3>
+                    ${itemsHTML}
+                </div>
+                
+                <div class="detail-section">
+                    <h3>Order Summary</h3>
+                    <div class="detail-row">
+                        <span class="detail-label">Subtotal:</span>
+                        <span class="detail-value">${orderTotal.replace('Total: ', '')}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Shipping Fee:</span>
+                        <span class="detail-value">₱0.00</span>
+                    </div>
+                    <div class="detail-row" style="border-top: 2px solid #2d5016; margin-top: 10px; padding-top: 10px; font-size: 1.1rem;">
+                        <span class="detail-label" style="color: #2d5016; font-weight: 700;">Total:</span>
+                        <span class="detail-value" style="color: #2d5016; font-weight: 700;">${orderTotal.replace('Total: ', '')}</span>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('modalBody').innerHTML = modalContent;
+            document.getElementById('orderModal').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('orderModal').classList.remove('active');
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('orderModal');
+            if (event.target === modal) {
+                closeModal();
+            }
         }
 
         function cancelOrder(orderID) {
             if (confirm('Are you sure you want to cancel this order?')) {
-                const form = document.createElement('form');
-                form.method = 'POST';
-                form.action = '<?php echo BASE_URL; ?>app/controllers/OrderController.php';
-
-                const csrfField = document.querySelector('[name="csrf_token"]').cloneNode();
-                const actionField = document.createElement('input');
-                actionField.type = 'hidden';
-                actionField.name = 'action';
-                actionField.value = 'cancel_order';
-
-                const orderField = document.createElement('input');
-                orderField.type = 'hidden';
-                orderField.name = 'order_id';
-                orderField.value = orderID;
-
-                form.appendChild(csrfField);
-                form.appendChild(actionField);
-                form.appendChild(orderField);
-
-                document.body.appendChild(form);
-                form.submit();
+                // Show loading state
+                event.target.disabled = true;
+                event.target.textContent = 'Cancelling...';
+                
+                fetch('<?php echo BASE_URL; ?>api/checkout', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        action: 'cancel_order',
+                        order_id: orderID,
+                        csrf_token: document.querySelector('[name="csrf_token"]').value
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Order cancelled successfully!');
+                        location.reload();
+                    } else {
+                        alert('Error: ' + data.message);
+                        event.target.disabled = false;
+                        event.target.textContent = 'Cancel Order';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Failed to cancel order. Please try again.');
+                    event.target.disabled = false;
+                    event.target.textContent = 'Cancel Order';
+                });
             }
         }
     </script>
@@ -538,7 +768,7 @@ function renderOrderCard($order, $items) {
     <div class="order-card">
         <div class="order-header">
             <div>
-                <div class="order-number">Order #<?php echo $order['orderID']; ?></div>
+                <div class="order-number">Order ID : <?php echo $order['orderID']; ?></div>
                 <div class="order-date">
                     <?php echo date('F d, Y g:i A', strtotime($order['order_date'])); ?>
                 </div>
