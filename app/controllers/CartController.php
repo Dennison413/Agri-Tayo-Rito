@@ -18,16 +18,11 @@ class CartController
         $this->cartModel = new Cart();
     }
 
-    /**
-     * Handle AJAX cart operations with CSRF validation
-     */
     public function handleAjaxRequest() 
     {
-        // Set JSON response headers
         header('Content-Type: application/json');
         header('Access-Control-Allow-Credentials: true');
 
-        // Check API rate limit (60 requests per minute)
         $rateCheck = RateLimiter::checkApiRate('cart');
         if (!$rateCheck['allowed']) {
             $this->jsonResponse(false, 'Too many requests. Please wait a moment.', [
@@ -37,7 +32,6 @@ class CartController
             return;
         }
 
-        // Check authentication
         if (!$this->isLoggedIn()) {
             $this->jsonResponse(false, 'Please login first', [
                 'redirect' => '/agri_system/public/auth/login'
@@ -45,13 +39,11 @@ class CartController
             return;
         }
 
-        // Check if user is a buyer
         if ($_SESSION['user_role'] !== 'buyer') {
             $this->jsonResponse(false, 'Only buyers can access cart');
             return;
         }
 
-        // Get JSON input
         $rawInput = file_get_contents('php://input');
         $data = json_decode($rawInput, true);
 
@@ -60,7 +52,6 @@ class CartController
             return;
         }
 
-        // CSRF validation using existing class
         if (!CSRF::validateJsonRequest()) {
             CSRF::handleFailure(true);
             return;
@@ -118,9 +109,7 @@ class CartController
         }
     }
 
-    /**
-     * Add item to cart
-     */
+    // add item to cart
     private function addToCart($buyerID, $data) 
     {
         $productID = filter_var($data['productID'] ?? null, FILTER_VALIDATE_INT);
@@ -145,9 +134,7 @@ class CartController
         ]);
     }
 
-    /**
-     * Update cart item quantity
-     */
+    // update cart item quantity
     private function updateQuantity($buyerID, $data) 
     {
         $productID = filter_var($data['productID'] ?? null, FILTER_VALIDATE_INT);
@@ -171,7 +158,6 @@ class CartController
         $result = $this->cartModel->updateCartQuantity($buyerID, $productID, $quantity);
         $cartCount = $this->cartModel->getCartCount($buyerID);
 
-        // Get updated cart total
         $cartTotal = $this->cartModel->getCartTotal($buyerID);
 
         $this->jsonResponse($result['success'], $result['message'], [
@@ -182,9 +168,7 @@ class CartController
         ]);
     }
 
-    /**
-     * Remove item from cart
-     */
+    // remove item from cart
     private function removeFromCart($buyerID, $data) 
     {
         $productID = filter_var($data['productID'] ?? null, FILTER_VALIDATE_INT);
@@ -205,9 +189,7 @@ class CartController
         ]);
     }
 
-    /**
-     * Get cart items grouped by shop
-     */
+    // get cart items grouped by shop
     private function getCart($buyerID) 
     {
         $items = $this->cartModel->getCartItemsGroupedByShop($buyerID);
@@ -222,9 +204,7 @@ class CartController
         ]);
     }
 
-    /**
-     * Get cart item count only
-     */
+    // Get cart item count only
     private function getCartCount($buyerID) 
     {
         $count = $this->cartModel->getCartCount($buyerID);
@@ -234,12 +214,9 @@ class CartController
         ]);
     }
 
-    /**
-     * Validate cart before checkout
-     */
+    // Validate cart before checkout
     private function validateCheckout($buyerID) 
     {
-        // Check if cart is not empty
         $cartCount = $this->cartModel->getCartCount($buyerID);
         
         if ($cartCount === 0) {
@@ -247,7 +224,6 @@ class CartController
             return;
         }
 
-        // Validate stock availability
         $validation = $this->cartModel->validateCartForCheckout($buyerID);
 
         if ($validation['valid']) {
@@ -261,9 +237,7 @@ class CartController
         }
     }
 
-    /**
-     * Clear entire cart
-     */
+    // clear entire cart
     private function clearEntireCart($buyerID) 
     {
         $result = $this->cartModel->clearCart($buyerID);
@@ -273,10 +247,7 @@ class CartController
         ]);
     }
 
-    /**
-     * Get cart for checkout page (non-AJAX)
-     * Used by checkout.php
-     */
+    // get cart for checkout
     public function getCartForCheckout($buyerID) 
     {
         $validation = $this->cartModel->validateCartForCheckout($buyerID);
@@ -295,31 +266,23 @@ class CartController
             'valid' => true,
             'items' => $items,
             'total' => $total,
-            'shipping_fee' => 0 // LGU handles delivery - zero shipping
+            'shipping_fee' => 0 
         ];
     }
 
-    /**
-     * Clear cart (public method for after checkout)
-     */
+    // clear cart after checkout
     public function clearCart($buyerID) 
     {
         return $this->cartModel->clearCart($buyerID);
     }
 
-    /**
-     * Check if user is logged in
-     */
+    // check if logged in
     private function isLoggedIn() 
     {
         return isset($_SESSION['user_id']) && 
                isset($_SESSION['logged_in']) && 
                $_SESSION['logged_in'] === true;
     }
-
-    /**
-     * Send JSON response
-     */
     private function jsonResponse($success, $message, $data = []) 
     {
         $response = array_merge([
@@ -332,7 +295,6 @@ class CartController
     }
 }
 
-// IMPORTANT: Handle AJAX requests directly
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $controller = new CartController();
     $controller->handleAjaxRequest();

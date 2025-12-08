@@ -1,14 +1,12 @@
-// marketplace.js - PRODUCTION READY with CSRF & Error Handling
+// marketplace.js - FIXED with proper batch wishlist loading
 // ========================================
-// CONFIGURATION
-// ========================================
+
 const API_BASE = '/agri_system/app/controllers/';
 const ENDPOINTS = {
     cart: `${API_BASE}CartController.php`,
     wishlist: `${API_BASE}WishlistController.php`
 };
 
-// Get CSRF token
 function getCSRFToken() {
     return window.marketplaceData?.csrfToken || 
            document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || 
@@ -16,12 +14,11 @@ function getCSRFToken() {
 }
 
 // ========================================
-// ADD TO CART - SECURED
+// ADD TO CART
 // ========================================
 async function addToCart(event, productId) {
     event.stopPropagation();
     
-    // Check login status
     if (!window.marketplaceData?.isLoggedIn) {
         promptLogin(event);
         return;
@@ -49,25 +46,19 @@ async function addToCart(event, productId) {
         });
         
         if (!response.ok) {
-            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            throw new Error(`HTTP ${response.status}`);
         }
         
         const result = await response.json();
-        console.log('✅ Add to cart response:', result);
         
         if (result.success) {
-            // Update CSRF token if provided
             if (result.csrf_token) {
                 updateCSRFToken(result.csrf_token);
             }
             
-            // Update cart count
             updateCartBadges(result.cartCount || 0);
-            
-            // Show success
             showNotification('✅ Added to cart!', 'success');
             
-            // Visual feedback
             button.textContent = '✓ Added';
             button.classList.add('btn-success');
             
@@ -77,12 +68,10 @@ async function addToCart(event, productId) {
                 button.disabled = false;
             }, 1500);
         } else {
-            // Handle failure
             button.textContent = originalText;
             button.disabled = false;
             showNotification(result.message || 'Failed to add item', 'error');
             
-            // If unauthorized, redirect to login
             if (result.redirect) {
                 setTimeout(() => window.location.href = result.redirect, 1500);
             }
@@ -95,7 +84,6 @@ async function addToCart(event, productId) {
     }
 }
 
-// Update cart count badges
 function updateCartBadges(count) {
     const badges = document.querySelectorAll('#cartBadge, .cart-btn .badge, .bottom-nav .cart-badge');
     badges.forEach(badge => {
@@ -103,25 +91,22 @@ function updateCartBadges(count) {
         badge.style.display = count > 0 ? 'inline-block' : 'none';
     });
     
-    // Update global data
     if (window.marketplaceData) {
         window.marketplaceData.cartCount = count;
     }
 }
 
 // ========================================
-// WISHLIST - SECURED
+// WISHLIST
 // ========================================
 async function toggleWishlist(event, productId) {
     event.stopPropagation();
     
-    // Check login status
     if (!window.marketplaceData?.isLoggedIn) {
         promptLogin(event);
         return;
     }
     
-    // Find the button (can be called with button or productId)
     const button = event.target.closest('.wishlist-btn');
     if (!button) return;
     
@@ -144,24 +129,22 @@ async function toggleWishlist(event, productId) {
             })
         });
         
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+        
         const result = await response.json();
-        console.log('✅ Wishlist response:', result);
         
         if (result.success) {
-            // Update CSRF token
             if (result.csrf_token) {
                 updateCSRFToken(result.csrf_token);
             }
             
-            // Update button state
             button.textContent = result.inWishlist ? '❤️' : '🤍';
             button.classList.toggle('active', result.inWishlist);
             button.title = result.inWishlist ? 'Remove from Wishlist' : 'Add to Wishlist';
             
-            // Update wishlist count
             updateWishlistBadges(result.wishlistCount || 0);
-            
-            // Show notification
             showNotification(result.message, 'success');
         } else {
             button.textContent = originalText;
@@ -176,7 +159,6 @@ async function toggleWishlist(event, productId) {
     }
 }
 
-// Update wishlist count badges
 function updateWishlistBadges(count) {
     const badges = document.querySelectorAll('.wishlist-badge, .nav-badge[data-type="wishlist"]');
     badges.forEach(badge => {
@@ -184,14 +166,13 @@ function updateWishlistBadges(count) {
         badge.style.display = count > 0 ? 'inline-block' : 'none';
     });
     
-    // Update global data
     if (window.marketplaceData) {
         window.marketplaceData.wishlistCount = count;
     }
 }
 
 // ========================================
-// LOAD WISHLIST STATE (ON PAGE LOAD)
+// ✅ FIXED: Load wishlist state on page load
 // ========================================
 async function loadWishlistState() {
     if (!window.marketplaceData?.isLoggedIn || window.marketplaceData?.userRole !== 'buyer') {
@@ -207,11 +188,9 @@ async function loadWishlistState() {
     
     console.log(`🔄 Loading wishlist state for ${wishlistBtns.length} products`);
     
-    // Get all product IDs from the page
     const productIds = Array.from(wishlistBtns).map(btn => parseInt(btn.getAttribute('data-product-id')));
     
     try {
-        // ✅ FIX: Batch check all products in ONE request
         const response = await fetch(ENDPOINTS.wishlist, {
             method: 'POST',
             headers: {
@@ -220,16 +199,18 @@ async function loadWishlistState() {
             },
             credentials: 'same-origin',
             body: JSON.stringify({
-                action: 'check_multiple', // New batch action
-                productIDs: productIds,
-                csrf_token: getCSRFToken()
+                action: 'check_multiple', // ✅ Uses new batch check
+                productIDs: productIds
             })
         });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
         
         const result = await response.json();
         
         if (result.success && result.wishlistItems) {
-            // Update buttons based on wishlist items
             wishlistBtns.forEach(btn => {
                 const productId = parseInt(btn.getAttribute('data-product-id'));
                 if (result.wishlistItems.includes(productId)) {
@@ -243,12 +224,11 @@ async function loadWishlistState() {
         }
     } catch (error) {
         console.error('❌ Error loading wishlist state:', error);
-        // Fail silently - wishlist icons will just show as not-wishlisted
     }
 }
 
 // ========================================
-// CATEGORY FILTERING
+// CATEGORY & SEARCH
 // ========================================
 function filterByCategory(categoryId) {
     const url = new URL(window.location.href);
@@ -259,15 +239,10 @@ function filterByCategory(categoryId) {
         url.searchParams.set('category', categoryId);
     }
     
-    // Reset to page 1 when filtering
     url.searchParams.delete('page');
-    
     window.location.href = url.toString();
 }
 
-// ========================================
-// SEARCH FUNCTIONALITY
-// ========================================
 function searchProducts() {
     const searchInput = document.getElementById('searchInput');
     if (!searchInput) return;
@@ -281,9 +256,7 @@ function searchProducts() {
         url.searchParams.delete('search');
     }
     
-    // Reset to page 1 when searching
     url.searchParams.delete('page');
-    
     window.location.href = url.toString();
 }
 
@@ -303,7 +276,6 @@ function slideCategories(direction) {
     const gap = 15;
     const moveDistance = cardWidth + gap;
     
-    // Calculate cards per view based on screen width
     let cardsPerView = 4;
     if (window.innerWidth <= 1024) cardsPerView = 3;
     if (window.innerWidth <= 768) cardsPerView = 2;
@@ -322,10 +294,9 @@ function slideCategories(direction) {
 }
 
 // ========================================
-// PRODUCT DETAIL VIEW - FIXED
+// PRODUCT VIEW
 // ========================================
 function viewProduct(productId) {
-    // ✅ FIX: Get base URL safely - handle both marketplaceData and productData
     const baseUrl = window.marketplaceData?.baseUrl || 
                     window.productData?.baseUrl || 
                     window.shopData?.baseUrl || 
@@ -334,13 +305,12 @@ function viewProduct(productId) {
     window.location.href = `${baseUrl}marketplace/product?id=${productId}`;
 }
 
-// Alias for compatibility
 function viewProductDetail(productId) {
     viewProduct(productId);
 }
 
 // ========================================
-// LOGIN PROMPT (GUEST USERS)
+// LOGIN PROMPT
 // ========================================
 function promptLogin(event) {
     event.stopPropagation();
@@ -348,14 +318,13 @@ function promptLogin(event) {
     const message = 'Please login to add items to your cart.\n\nWould you like to login now?';
     
     if (confirm(message)) {
-        // Store intended action for after login
         sessionStorage.setItem('redirectAfterLogin', window.location.href);
         window.location.href = `${window.marketplaceData.baseUrl}auth/login`;
     }
 }
 
 // ========================================
-// SIDEBAR TOGGLE
+// SIDEBAR
 // ========================================
 function toggleSidebar() {
     const sidebar = document.getElementById('sidebar') || document.querySelector('.sidebar');
@@ -371,25 +340,21 @@ function toggleSidebar() {
 }
 
 // ========================================
-// NOTIFICATION SYSTEM
+// NOTIFICATIONS
 // ========================================
 function showNotification(message, type = 'success') {
-    // Remove existing notifications
     const existingNotif = document.querySelector('.notification-toast');
     if (existingNotif) {
         existingNotif.remove();
     }
     
-    // Create notification
     const notification = document.createElement('div');
     notification.className = `notification-toast notification-${type}`;
     notification.textContent = message;
     document.body.appendChild(notification);
     
-    // Show notification
     setTimeout(() => notification.classList.add('show'), 10);
     
-    // Auto-hide after 3 seconds
     setTimeout(() => {
         notification.classList.remove('show');
         setTimeout(() => notification.remove(), 300);
@@ -397,36 +362,32 @@ function showNotification(message, type = 'success') {
 }
 
 // ========================================
-// CSRF TOKEN MANAGEMENT
+// CSRF TOKEN
 // ========================================
 function updateCSRFToken(newToken) {
-    // Update meta tag
     const metaTag = document.querySelector('meta[name="csrf-token"]');
     if (metaTag) {
         metaTag.setAttribute('content', newToken);
     }
     
-    // Update global data
     if (window.marketplaceData) {
         window.marketplaceData.csrfToken = newToken;
     }
     
-    console.log('🔒 CSRF token updated');
+    console.log('🔐 CSRF token updated');
 }
 
 // ========================================
-// INITIALIZE ON PAGE LOAD
+// INITIALIZE
 // ========================================
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🌾 Agri Tayo Rito Marketplace Initialized');
     console.log('📊 Data:', window.marketplaceData);
     
-    // Load wishlist states for logged-in buyers
     if (window.marketplaceData?.isLoggedIn && window.marketplaceData?.userRole === 'buyer') {
         loadWishlistState();
     }
     
-    // Search on Enter key
     const searchInput = document.getElementById('searchInput');
     if (searchInput) {
         searchInput.addEventListener('keypress', function(e) {
@@ -437,7 +398,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Slider resize handler
     let resizeTimer;
     window.addEventListener('resize', function() {
         clearTimeout(resizeTimer);
@@ -450,9 +410,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 250);
     });
     
-    // Keyboard navigation for slider
     document.addEventListener('keydown', function(e) {
-        // Only if no input is focused
         if (document.activeElement.tagName === 'INPUT') return;
         
         if (e.key === 'ArrowLeft') {
@@ -462,18 +420,16 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    // Handle redirect after login
     const redirectUrl = sessionStorage.getItem('redirectAfterLogin');
     if (redirectUrl && window.marketplaceData?.isLoggedIn) {
         sessionStorage.removeItem('redirectAfterLogin');
-        // User just logged in, already on the page they wanted
     }
     
     console.log('✅ Marketplace ready');
 });
 
 // ========================================
-// INJECT NOTIFICATION STYLES
+// NOTIFICATION STYLES
 // ========================================
 if (!document.getElementById('marketplace-notification-styles')) {
     const style = document.createElement('style');

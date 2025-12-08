@@ -21,7 +21,7 @@ $featured_categories = $categoryModel->getAllCategories();
         <nav class="main-nav">
             <div class="left-nav-wrap">
                 <div class="logo">
-                    <img src="/agri_system/public/images/logo.jpg" alt="Logo">
+                    <img src="/agri_system/public/images/main-logo.jpg" alt="Logo">
                 </div>
                 <div class="name-title">
                     <h1>Agri Tayo Rito</h1>
@@ -86,7 +86,7 @@ $featured_categories = $categoryModel->getAllCategories();
     <footer>
         <div class="left-wrap">
             <div class="logo">
-                <img src="/agri_system/public/images/logo.jpg" alt="Logo">
+                <img src="/agri_system/public/images/main-logo.jpg" alt="Logo">
             </div>
             <div class="brand-title">
                 <strong>Agri Tayo Rito</strong>

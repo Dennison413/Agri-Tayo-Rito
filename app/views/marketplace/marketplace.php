@@ -119,7 +119,7 @@ if (!empty($filters['search'])) {
         <!-- GUEST NAVIGATION -->
         <nav class="top-navbar">
             <div class="logo-wrapper">
-                <img src="<?php echo BASE_URL; ?>images/logo.jpg" alt="Agri Tayo Rito Logo">
+                <img src="<?php echo BASE_URL; ?>images/main-logo.jpg" alt="Agri Tayo Rito Logo">
             </div>
             
             <div class="search-container">

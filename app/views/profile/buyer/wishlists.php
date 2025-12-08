@@ -1,6 +1,6 @@
 <?php
 // app/views/profile/buyer/wishlists.php
-// FIXED: Wishlist page with correct schema queries
+// FIXED: Added product card click handler, fixed button functionality, proper image display
 
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
@@ -11,7 +11,7 @@ require_once __DIR__ . '/../../../../config/database.php';
 require_once __DIR__ . '/../../../models/Cart.php';
 require_once __DIR__ . '/../../../helpers/csrf.php';
 
-// Check if user is logged in and is a buyer
+// Check authentication
 $isLoggedIn = isset($_SESSION['logged_in']) && $_SESSION['logged_in'];
 $userRole = $_SESSION['user_role'] ?? null;
 
@@ -25,7 +25,7 @@ $userId = $_SESSION['user_id'];
 $db = new Database();
 $conn = $db->connect();
 
-// FIXED: Query using correct schema (product_images with image_order = 0)
+// Get wishlist items with FIXED image query
 $sql = "
     SELECT 
         w.wishlistID,
@@ -47,7 +47,7 @@ $sql = "
     INNER JOIN products p ON w.productID = p.productID
     INNER JOIN categories c ON p.categoryID = c.categoryID
     INNER JOIN shops s ON p.shopID = s.shopID
-    LEFT JOIN product_images pi ON p.productID = pi.productID AND pi.image_order = 0
+    LEFT JOIN product_images pi ON p.productID = pi.productID AND pi.is_main = 1
     WHERE w.buyerID = :buyerId
     ORDER BY w.added_at DESC
 ";
@@ -62,7 +62,7 @@ try {
     $wishlistItems = [];
 }
 
-// Get cart count for navigation badge
+// Get cart count
 $cartCount = 0;
 try {
     $cartModel = new Cart();
@@ -71,7 +71,6 @@ try {
     error_log("Error getting cart count: " . $e->getMessage());
 }
 
-// Generate CSRF token for page
 $csrf_token = CSRF::generateToken();
 ?>
 <!DOCTYPE html>
@@ -88,7 +87,6 @@ $csrf_token = CSRF::generateToken();
     <link rel="stylesheet" href="<?php echo BASE_URL; ?>css/marketplace/wishlist.css">
 
     <style>
-        /* Loading overlay */
         .loading-overlay {
             position: fixed;
             top: 0;
@@ -115,7 +113,6 @@ $csrf_token = CSRF::generateToken();
             100% { transform: rotate(360deg); }
         }
         
-        /* Notification styles */
         .notification {
             position: fixed;
             right: 20px;
@@ -150,7 +147,6 @@ $csrf_token = CSRF::generateToken();
             border: 1px solid #bee5eb;
         }
 
-        /* Card removal animation */
         @keyframes fadeOutUp {
             from { 
                 opacity: 1; 
@@ -165,7 +161,6 @@ $csrf_token = CSRF::generateToken();
             animation: fadeOutUp 0.3s ease forwards;
         }
 
-        /* Button loading state */
         .btn-loading {
             position: relative;
             pointer-events: none;
@@ -185,22 +180,35 @@ $csrf_token = CSRF::generateToken();
             border-radius: 50%;
             animation: spin 0.6s linear infinite;
         }
+
+        /* Make card clickable */
+        .wishlist-card {
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .wishlist-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+        }
+        
+        /* Prevent propagation for buttons */
+        .wishlist-card button {
+            position: relative;
+            z-index: 2;
+        }
     </style>
 </head>
 <body>
     <div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
     
-    <!-- Loading Overlay -->
     <div class="loading-overlay" id="loadingOverlay">
         <div class="spinner"></div>
     </div>
 
-    <!-- Top Navigation -->
     <?php include BASE_PATH . '/app/views/marketplace/topmarketnav.php'; ?>
 
     <main class="main-content">
         <div class="wishlist-container">
-            <!-- Header Section -->
             <div class="wishlist-header">
                 <div class="header-content">
                     <h1 class="page-title">
@@ -224,22 +232,33 @@ $csrf_token = CSRF::generateToken();
                 <?php endif; ?>
             </div>
 
-            <!-- Wishlist Items -->
             <?php if (count($wishlistItems) > 0): ?>
                 <div class="wishlist-grid" id="wishlistGrid">
                     <?php foreach ($wishlistItems as $item): 
                         $availableStock = max(0, $item['stock_quantity'] - ($item['reserved_quantity'] ?? 0));
                         $isAvailable = $item['is_available'] && $availableStock > 0;
+                        
+                        // ✅ FIX: Proper image path construction
+                        $imagePath = $item['primary_image'] ?? '';
+                        if (!empty($imagePath)) {
+                            $imagePath = BASE_URL . ltrim($imagePath, '/');
+                        } else {
+                            $imagePath = BASE_URL . 'images/placeholder.jpg';
+                        }
+                        
+                        // Build product URL
+                        $productUrl = BASE_URL . 'marketplace/product?id=' . (int)$item['productID'];
                     ?>
                         <div class="wishlist-card" 
                              data-wishlist-id="<?php echo (int)$item['wishlistID']; ?>" 
-                             data-product-id="<?php echo (int)$item['productID']; ?>">
+                             data-product-id="<?php echo (int)$item['productID']; ?>"
+                             data-product-url="<?php echo htmlspecialchars($productUrl); ?>">
                             
-                            <!-- Product Image -->
                             <div class="wishlist-image">
-                                <img src="<?php echo htmlspecialchars($item['primary_image'] ?: BASE_URL . 'images/default-product.jpg'); ?>" 
+                                <img src="<?php echo htmlspecialchars($imagePath); ?>" 
                                      alt="<?php echo htmlspecialchars($item['product_name']); ?>"
-                                     loading="lazy">
+                                     loading="lazy"
+                                     onerror="this.src='<?php echo BASE_URL; ?>images/placeholder.jpg'">
                                 
                                 <?php if (!$isAvailable): ?>
                                     <div class="out-of-stock-badge">Out of Stock</div>
@@ -253,7 +272,6 @@ $csrf_token = CSRF::generateToken();
                                 </button>
                             </div>
 
-                            <!-- Product Info -->
                             <div class="wishlist-info">
                                 <div class="product-category">
                                     <?php echo htmlspecialchars($item['category_name']); ?>
@@ -300,7 +318,6 @@ $csrf_token = CSRF::generateToken();
                     <?php endforeach; ?>
                 </div>
             <?php else: ?>
-                <!-- Empty State -->
                 <div class="empty-wishlist" id="emptyWishlist">
                     <div class="empty-icon">💔</div>
                     <h2 class="empty-title">Your wishlist is empty</h2>
@@ -313,18 +330,17 @@ $csrf_token = CSRF::generateToken();
         </div>
     </main>
 
-    <!-- Bottom Navigation -->
     <?php include BASE_PATH . '/app/views/marketplace/marketnav.php'; ?>
 
-    <!-- JavaScript Configuration -->
     <script>
         const BASE_URL = "<?php echo rtrim(BASE_URL, '/'); ?>";
         const WISHLIST_API_URL = BASE_URL + "/app/controllers/WishlistController.php";
         const USER_ID = <?php echo (int)$userId; ?>;
     </script>
 
-    <!-- Wishlist JavaScript -->
-    <script src="<?php echo BASE_URL; ?>public/js/wishlist.js"></script>
+    <!-- ✅ FIX: Correct path to wishlist.js -->
+    <script src="<?php echo BASE_URL; ?>js/wishlist.js"></script>
+    <script src="<?php echo BASE_URL; ?>js/marketplace-wishlist.js"></script>
 
     <script>
         function toggleSidebar() {
@@ -335,6 +351,23 @@ $csrf_token = CSRF::generateToken();
                 overlay.classList.toggle('active');
             }
         }
+
+        // ✅ NEW: Add click handler for product cards
+        document.addEventListener('DOMContentLoaded', function() {
+            // Handle card clicks to navigate to product page
+            document.addEventListener('click', function(e) {
+                const card = e.target.closest('.wishlist-card');
+                if (!card) return;
+                
+                // Don't navigate if clicking buttons
+                if (e.target.closest('button')) return;
+                
+                const productUrl = card.getAttribute('data-product-url');
+                if (productUrl) {
+                    window.location.href = productUrl;
+                }
+            });
+        });
     </script>
 </body>
 </html>

@@ -36,14 +36,11 @@ class DeliveryController
             $orderID = intval($_POST['order_id']);
             $riderID = intval($_POST['rider_id']);
 
-            // Validate inputs
             if (!$orderID || !$riderID) {
                 $_SESSION['error'] = 'Order ID and Rider ID are required';
                 header('Location: ' . $_SERVER['HTTP_REFERER']);
                 exit;
             }
-
-            // Get order details
             $order = $this->ordersModel->getOrderById($orderID);
 
             if (!$order) {
@@ -52,7 +49,6 @@ class DeliveryController
                 exit;
             }
 
-            // Check if order is ready for rider assignment
             if ($order['lgu_delivery_status'] !== 'pending_pickup') {
                 $_SESSION['error'] = 'Order is not ready for rider assignment';
                 header('Location: /agri_system/public/profile/admin/deliveries');
@@ -82,12 +78,8 @@ class DeliveryController
         }
     }
 
-    // ==================== ADMIN: UPDATE DELIVERY STATUS ====================
 
-    /**
-     * Update LGU delivery status
-     * Statuses: pending_pickup → picked_up → in_transit → delivered
-     */
+    // update LGU delivery status
     public function updateDeliveryStatus() 
     {
         if (!$this->isLoggedIn() || $_SESSION['user_role'] !== 'admin') {
@@ -107,7 +99,6 @@ class DeliveryController
             $status = $_POST['delivery_status'];
             $adminID = $_SESSION['user_id'];
 
-            // Validate status
             $validStatuses = ['pending_pickup', 'picked_up', 'in_transit', 'delivered', 'failed'];
             if (!in_array($status, $validStatuses)) {
                 $_SESSION['error'] = 'Invalid delivery status';
@@ -115,11 +106,9 @@ class DeliveryController
                 exit;
             }
 
-            // Update delivery status
             $result = $this->ordersModel->updateDeliveryStatus($orderID, $status, $adminID);
 
             if ($result) {
-                // If status is delivered and payment method is COD, mark payment as received
                 if ($status === 'delivered') {
                     $order = $this->ordersModel->getOrderById($orderID);
                     if ($order['payment_method_new'] === 'cod' && !$order['payment_received_by_lgu_at']) {
@@ -146,11 +135,7 @@ class DeliveryController
         }
     }
 
-    // ==================== ADMIN: GET PENDING DELIVERIES ====================
-
-    /**
-     * Get orders pending LGU pickup
-     */
+    // get orders pending pickup
     public function getPendingPickups() 
     {
         $query = "SELECT o.*, 
@@ -178,9 +163,7 @@ class DeliveryController
         }
     }
 
-    /**
-     * Get orders in transit
-     */
+    // orders in transit
     public function getOrdersInTransit() 
     {
         $query = "SELECT o.*, 
@@ -205,9 +188,7 @@ class DeliveryController
         }
     }
 
-    /**
-     * Get completed deliveries
-     */
+    // get completed deliveries
     public function getCompletedDeliveries($limit = 50) 
     {
         $query = "SELECT o.*, 
@@ -233,19 +214,13 @@ class DeliveryController
         }
     }
 
-    // ==================== RIDER MANAGEMENT ====================
-
-    /**
-     * Get all active riders
-     */
+    // get all active riders
     public function getActiveRiders() 
     {
         return $this->ridersModel->getActiveRiders();
     }
 
-    /**
-     * Add new rider
-     */
+    // add new rider
     public function addRider() 
     {
         if (!$this->isLoggedIn() || $_SESSION['user_role'] !== 'admin') {
@@ -268,7 +243,6 @@ class DeliveryController
                 'vehicle_plate' => $_POST['vehicle_plate'] ?? null
             ];
 
-            // Validate required fields
             if (empty($data['rider_name']) || empty($data['contact_number'])) {
                 $_SESSION['error'] = 'Rider name and contact number are required';
                 header('Location: ' . $_SERVER['HTTP_REFERER']);
@@ -294,9 +268,7 @@ class DeliveryController
         }
     }
 
-    /**
-     * Update rider details
-     */
+    // update rider details
     public function updateRider() 
     {
         if (!$this->isLoggedIn() || $_SESSION['user_role'] !== 'admin') {
@@ -339,9 +311,7 @@ class DeliveryController
         }
     }
 
-    /**
-     * Deactivate rider
-     */
+    // deactivate rider
     public function deactivateRider() 
     {
         if (!$this->isLoggedIn() || $_SESSION['user_role'] !== 'admin') {
@@ -378,19 +348,13 @@ class DeliveryController
         }
     }
 
-    /**
-     * Get rider statistics
-     */
+    // get rider stats
     public function getRiderStats($riderID) 
     {
         return $this->ridersModel->getRiderStats($riderID);
     }
-
-    // ==================== DELIVERY STATISTICS ====================
-
-    /**
-     * Get delivery statistics for admin dashboard
-     */
+    
+    // get delivery stats for admin dashboard
     public function getDeliveryStats() 
     {
         $query = "SELECT 

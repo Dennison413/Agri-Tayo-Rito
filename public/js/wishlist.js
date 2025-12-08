@@ -1,15 +1,18 @@
 // public/js/wishlist.js
-// FIXED: Complete wishlist functionality for wishlist page
+// FIXED: Correct API URL path resolution + all buttons working
 
 (function() {
     'use strict';
 
     // ==================== CONFIGURATION ====================
+    // ✅ FIX: Use global WISHLIST_API_URL or construct from BASE_URL
     const API_URL = typeof WISHLIST_API_URL !== 'undefined' 
         ? WISHLIST_API_URL 
-        : (BASE_URL + '/app/controllers/WishlistController.php');
+        : (typeof BASE_URL !== 'undefined' ? BASE_URL : '/agri_system/public/') + 'app/controllers/WishlistController.php';
     
     const TIMEOUT = 15000;
+
+    console.log('🔧 Wishlist JS API URL:', API_URL);
 
     // ==================== CSRF TOKEN MANAGEMENT ====================
     function getCsrfToken() {
@@ -62,6 +65,8 @@
             body.csrf_token = getCsrfToken();
         }
 
+        console.log(`📤 Wishlist Action: ${action}`, { url: API_URL, payload: body });
+
         try {
             const response = await fetchWithTimeout(API_URL, {
                 method: 'POST',
@@ -72,6 +77,8 @@
                 credentials: 'same-origin',
                 body: JSON.stringify(body)
             });
+
+            console.log(`📥 Response status: ${response.status}`);
 
             if (!response.ok) {
                 let errorMsg = `Server error ${response.status}`;
@@ -85,6 +92,7 @@
             }
 
             const data = await response.json();
+            console.log(`✅ Success:`, data);
             
             // Update CSRF token if provided
             if (data.csrf_token) {
@@ -94,7 +102,7 @@
             return data;
             
         } catch (error) {
-            console.error('Wishlist API error:', error);
+            console.error('❌ Wishlist API error:', error);
             return {
                 success: false,
                 message: error.message || 'Network error occurred'
@@ -133,10 +141,11 @@
         }
 
         // Update navigation badge if exists
-        const badge = document.querySelector('.wishlist-btn .badge');
-        if (badge) {
+        const badges = document.querySelectorAll('.wishlist-btn .badge, [href*="wishlist"] .badge');
+        badges.forEach(badge => {
             badge.textContent = count;
-        }
+            badge.style.display = count > 0 ? 'flex' : 'none';
+        });
 
         // Show empty state if no items
         if (count === 0) {
@@ -149,12 +158,13 @@
         const header = document.querySelector('.header-actions');
         
         if (grid) {
+            const baseUrl = typeof BASE_URL !== 'undefined' ? BASE_URL : '/agri_system/public/';
             grid.innerHTML = `
-                <div class="empty-wishlist" id="emptyWishlist">
-                    <div class="empty-icon">💔</div>
-                    <h2 class="empty-title">Your wishlist is empty</h2>
-                    <p class="empty-message">Start adding products you love to your wishlist!</p>
-                    <a href="${BASE_URL}/marketplace" class="browse-btn">
+                <div class="empty-wishlist" id="emptyWishlist" style="grid-column: 1/-1; text-align: center; padding: 60px 20px;">
+                    <div class="empty-icon" style="font-size: 80px; margin-bottom: 20px;">💔</div>
+                    <h2 class="empty-title" style="font-size: 24px; color: #333; margin-bottom: 10px;">Your wishlist is empty</h2>
+                    <p class="empty-message" style="font-size: 16px; color: #666; margin-bottom: 30px;">Start adding products you love to your wishlist!</p>
+                    <a href="${baseUrl}marketplace" class="browse-btn" style="display: inline-block; padding: 12px 30px; background: #2d5016; color: white; text-decoration: none; border-radius: 8px; font-weight: 600; transition: all 0.3s;">
                         Browse Products
                     </a>
                 </div>
@@ -181,6 +191,8 @@
 
         const wishlistID = card.getAttribute('data-wishlist-id');
         const productID = card.getAttribute('data-product-id');
+
+        console.log('🗑️ Removing item:', { wishlistID, productID });
 
         if (!confirm('Remove this item from your wishlist?')) {
             return;
@@ -211,6 +223,8 @@
         const productID = card.getAttribute('data-product-id');
         const button = event.target;
 
+        console.log('🛒 Adding to cart:', { wishlistID, productID });
+
         button.disabled = true;
         button.classList.add('btn-loading');
 
@@ -227,10 +241,11 @@
             
             // Update cart badge in navigation
             if (result.cartCount !== undefined) {
-                const cartBadge = document.querySelector('.cart-btn .badge');
-                if (cartBadge) {
-                    cartBadge.textContent = result.cartCount;
-                }
+                const cartBadges = document.querySelectorAll('.cart-btn .badge, [href*="cart"] .badge');
+                cartBadges.forEach(badge => {
+                    badge.textContent = result.cartCount;
+                    badge.style.display = result.cartCount > 0 ? 'flex' : 'none';
+                });
             }
 
             removeCardWithAnimation(card);
@@ -243,6 +258,8 @@
         if (!confirm('Are you sure you want to clear your entire wishlist?')) {
             return;
         }
+
+        console.log('🗑️ Clearing all wishlist items');
 
         const button = document.getElementById('clearAllBtn');
         if (button) {
@@ -287,6 +304,8 @@
             return;
         }
 
+        console.log('🛒 Adding all items to cart');
+
         const button = document.getElementById('addAllCartBtn');
         if (button) {
             button.disabled = true;
@@ -329,7 +348,7 @@
         const target = event.target;
         if (!target) return;
 
-        // Remove button
+        // Remove button (X button)
         if (target.classList.contains('remove-btn') || 
             target.closest('[data-action="remove"]')) {
             event.preventDefault();
@@ -350,6 +369,7 @@
         // Clear all button
         if (target.id === 'clearAllBtn' || target.closest('#clearAllBtn')) {
             event.preventDefault();
+            event.stopPropagation();
             handleClearAll();
             return;
         }
@@ -357,6 +377,7 @@
         // Add all to cart button
         if (target.id === 'addAllCartBtn' || target.closest('#addAllCartBtn')) {
             event.preventDefault();
+            event.stopPropagation();
             handleAddAllToCart();
             return;
         }
@@ -381,4 +402,3 @@
     console.log('✅ Wishlist page initialized');
 
 })();
-

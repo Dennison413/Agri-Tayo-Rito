@@ -27,7 +27,7 @@ if ($userRole === 'buyer' && $userId) {
 <nav class="top-navbar">
     <!-- LOGO -->
     <div class="logo-wrapper">
-        <img src="<?php echo BASE_URL; ?>images/logo.jpg" 
+        <img src="<?php echo BASE_URL; ?>images/main-logo.jpg" 
              alt="Agri Tayo Rito Logo" 
              onclick="window.location.href='<?php echo BASE_URL; ?>marketplace'"
              style="cursor: pointer;">

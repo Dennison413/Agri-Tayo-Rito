@@ -1,12 +1,12 @@
 <?php
 // app/controllers/WishlistController.php
-// SECURED: Wishlist Management with CSRF + Rate Limiting
+// FIXED: Added check_multiple action + better error handling
 
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-require_once __DIR__ . '/../models/Cart.php';            // contains Cart and Wishlist classes
+require_once __DIR__ . '/../models/Cart.php';
 require_once __DIR__ . '/../helpers/csrf.php';
 require_once __DIR__ . '/../helpers/RateLimiter.php';
 require_once __DIR__ . '/../../config/database.php';
@@ -17,14 +17,13 @@ class WishlistController
 
     public function __construct()
     {
-        $this->wishlistModel = new Wishlist();
+        $this->wishlistModel = new Cart(); // Uses Cart model which has wishlist methods
     }
 
     private function jsonResponse(array $payload, int $httpStatus = 200)
     {
         http_response_code($httpStatus);
         header('Content-Type: application/json; charset=utf-8');
-        // If cross-origin with credentials is needed, set Access-Control-Allow-Origin to exact origin
         header('Access-Control-Allow-Credentials: true');
         echo json_encode($payload);
         exit;
@@ -51,7 +50,7 @@ class WishlistController
             ], 401);
         }
 
-        // Role check (compatibility for both session keys)
+        // Role check
         $role = $_SESSION['role'] ?? $_SESSION['user_role'] ?? null;
         if ($role !== 'buyer') {
             $this->jsonResponse([
@@ -64,7 +63,6 @@ class WishlistController
         $rawInput = file_get_contents('php://input');
         $data = json_decode($rawInput, true);
         if (json_last_error() !== JSON_ERROR_NONE) {
-            // fallback to POST/GET
             $data = $_POST + $_GET;
         }
 
@@ -73,20 +71,16 @@ class WishlistController
             $this->jsonResponse(['success' => false, 'message' => 'No action specified'], 400);
         }
 
-        // State-changing actions require CSRF and AJAX
+        // State-changing actions require CSRF
         $stateActions = ['add', 'remove', 'toggle', 'move_to_cart', 'clear_all', 'add_all_to_cart'];
         if (in_array($action, $stateActions, true)) {
             $isAjax = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) &&
                      strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
             if (!$isAjax) {
-                $this->jsonResponse(['success' => false, 'message' => 'AJAX request required for this action'], 400);
+                $this->jsonResponse(['success' => false, 'message' => 'AJAX request required'], 400);
             }
 
             if (!CSRF::validateJsonRequest()) {
-                // CSRF::handleFailure(true) might exit. If not, return JSON.
-                if (function_exists('CSRF::handleFailure')) {
-                    CSRF::handleFailure(true);
-                }
                 $this->jsonResponse(['success' => false, 'message' => 'CSRF validation failed'], 403);
             }
         }
@@ -115,6 +109,11 @@ class WishlistController
                     $this->checkWishlist($buyerID, $data);
                     break;
 
+                // ✅ NEW: Batch check multiple products
+                case 'check_multiple':
+                    $this->checkMultipleWishlist($buyerID, $data);
+                    break;
+
                 case 'get_count':
                     $this->getWishlistCount($buyerID);
                     break;
@@ -137,7 +136,11 @@ class WishlistController
             }
         } catch (Exception $e) {
             error_log("WishlistController error: " . $e->getMessage());
-            $this->jsonResponse(['success' => false, 'message' => 'An error occurred', 'error' => $e->getMessage()], 500);
+            $this->jsonResponse([
+                'success' => false, 
+                'message' => 'An error occurred', 
+                'error' => $e->getMessage()
+            ], 500);
         }
     }
 
@@ -162,11 +165,9 @@ class WishlistController
 
     private function removeFromWishlist($buyerID, $data)
     {
-        // Accept wishlistID or productID
         $productID = null;
 
         if (!empty($data['wishlistID'])) {
-            // look up wishlistID -> productID (direct DB because model may not have helper)
             $db = new Database();
             $conn = $db->connect();
             $stmt = $conn->prepare("SELECT productID FROM wishlist WHERE wishlistID = ? AND buyerID = ? LIMIT 1");
@@ -224,7 +225,6 @@ class WishlistController
 
     private function moveToCart($buyerID, $data)
     {
-        // Accept wishlistID or productID
         $productID = null;
         $wishlistID = $data['wishlistID'] ?? null;
 
@@ -247,10 +247,8 @@ class WishlistController
 
         $result = $this->wishlistModel->moveToCart($buyerID, (int)$productID);
 
-        // Get updated counts
         $wishlistCount = $this->wishlistModel->getWishlistCount($buyerID);
-        $cartModel = new Cart();
-        $cartCount = $cartModel->getCartCount($buyerID);
+        $cartCount = $this->wishlistModel->getCartCount($buyerID);
 
         $this->jsonResponse([
             'success' => (bool)$result['success'],
@@ -273,6 +271,33 @@ class WishlistController
         $this->jsonResponse(['success' => true, 'inWishlist' => $inWishlist]);
     }
 
+    // ✅ NEW: Check multiple products at once
+    private function checkMultipleWishlist($buyerID, $data)
+    {
+        $productIDs = $data['productIDs'] ?? [];
+        
+        if (!is_array($productIDs) || empty($productIDs)) {
+            $this->jsonResponse(['success' => false, 'message' => 'Product IDs required'], 400);
+        }
+
+        // Get all wishlist items for this buyer
+        $db = new Database();
+        $conn = $db->connect();
+        
+        $placeholders = str_repeat('?,', count($productIDs) - 1) . '?';
+        $sql = "SELECT productID FROM wishlist WHERE buyerID = ? AND productID IN ($placeholders)";
+        
+        $stmt = $conn->prepare($sql);
+        $stmt->execute(array_merge([$buyerID], $productIDs));
+        
+        $wishlistItems = array_map('intval', $stmt->fetchAll(PDO::FETCH_COLUMN));
+
+        $this->jsonResponse([
+            'success' => true,
+            'wishlistItems' => $wishlistItems
+        ]);
+    }
+
     private function getWishlistCount($buyerID)
     {
         $count = $this->wishlistModel->getWishlistCount($buyerID);
@@ -288,7 +313,6 @@ class WishlistController
 
     private function clearAllWishlist($buyerID)
     {
-        // Use model if method exists; otherwise delete directly
         if (method_exists($this->wishlistModel, 'clearAll')) {
             $ok = $this->wishlistModel->clearAll($buyerID);
         } else {
@@ -308,15 +332,13 @@ class WishlistController
     private function addAllToCart($buyerID)
     {
         $items = $this->wishlistModel->getWishlistItems($buyerID);
-        $cartModel = new Cart();
 
         $success = 0;
         $fails = 0;
 
-        // Try to add each available item to cart (1 unit). If add succeeds remove from wishlist.
         foreach ($items as $item) {
             if (!empty($item['is_available']) && $item['is_available'] && !empty($item['stock_quantity']) && $item['stock_quantity'] > 0) {
-                $result = $cartModel->addToCart($buyerID, (int)$item['productID'], 1);
+                $result = $this->wishlistModel->addToCart($buyerID, (int)$item['productID'], 1);
                 if (!empty($result['success'])) {
                     $this->wishlistModel->removeFromWishlist($buyerID, (int)$item['productID']);
                     $success++;
@@ -342,7 +364,7 @@ class WishlistController
     }
 }
 
-// Only handle AJAX direct requests
+// Handle AJAX requests
 if (php_sapi_name() !== 'cli' && !empty($_SERVER['HTTP_X_REQUESTED_WITH']) &&
     strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') {
 

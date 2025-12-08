@@ -1,6 +1,7 @@
 <?php
 // app/models/Cart.php
 // FIXED: Changed image_order = 0 to is_main = 1 for proper image loading
+// cart, checkout and wishlist
 
 require_once __DIR__ . '/../../config/database.php';
 
@@ -69,7 +70,7 @@ class Cart
         return $grouped;
     }
 
-    // Get cart items (flat list)
+    // Get cart items
     // Uses is_main = 1 to get primary image
     public function getCartItems($buyerID) 
     {
