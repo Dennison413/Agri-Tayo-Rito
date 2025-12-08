@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Dec 07, 2025 at 09:58 AM
+-- Generation Time: Dec 08, 2025 at 01:05 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -73,11 +73,9 @@ INSERT INTO `cart` (`cartID`, `buyerID`, `productID`, `quantity`, `added_at`, `u
 (11, 8, 9, 3, '2025-11-23 02:16:50', '2025-11-28 01:11:18'),
 (25, 8, 1, 1, '2025-11-29 12:20:03', '2025-11-29 12:20:03'),
 (26, 16, 4, 1, '2025-11-30 01:24:50', '2025-11-30 01:24:50'),
-(95, 2, 10, 2, '2025-12-07 08:41:19', '2025-12-07 08:55:25'),
-(96, 2, 9, 1, '2025-12-07 08:41:20', '2025-12-07 08:41:20'),
-(97, 2, 11, 1, '2025-12-07 08:41:21', '2025-12-07 08:41:21'),
-(98, 2, 8, 1, '2025-12-07 08:55:16', '2025-12-07 08:55:16'),
-(99, 2, 1, 2, '2025-12-07 08:55:17', '2025-12-07 08:55:19');
+(104, 2, 9, 1, '2025-12-08 04:22:29', '2025-12-08 04:22:29'),
+(105, 2, 10, 1, '2025-12-08 04:22:30', '2025-12-08 04:22:30'),
+(106, 2, 12, 1, '2025-12-08 04:22:31', '2025-12-08 04:22:31');
 
 --
 -- Triggers `cart`
@@ -265,14 +263,8 @@ INSERT INTO `orders` (`orderID`, `buyerID`, `order_date`, `total_amount`, `order
 (1, 2, '2025-11-10 02:30:00', 295.00, 'delivered', '123 Rizal Avenue, Brgy. II-A', 'San Pablo City', 'Laguna', '4000', 'gcash', 'paid', 'gcash', 0.00, 'pending_pickup', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 'Please deliver before 3pm', '2025-11-25 03:53:48'),
 (2, 3, '2025-11-12 06:20:00', 540.00, 'processing', '456 Luna Street, Brgy. III-B', 'San Pablo City', 'Laguna', '4000', 'cash_on_delivery', 'pending', 'cod', 0.00, 'pending_pickup', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, '2025-11-18 13:15:08'),
 (3, 4, '2025-11-15 01:15:00', 220.00, 'shipped', '789 Bonifacio Road, Brgy. VI-C', 'San Pablo City', 'Laguna', '4000', 'gcash', 'paid', 'gcash', 0.00, 'pending_pickup', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 'Call upon arrival', '2025-11-25 03:53:48'),
-(6, 2, '2025-12-06 02:27:57', 230.00, 'pending', 'F. Mendoza Street', 'Tiaong', 'Quezon', '4324', 'cash_on_delivery', 'pending', 'cod', 0.00, 'pending_pickup', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, '', '2025-12-06 02:27:57'),
-(7, 2, '2025-12-06 02:31:01', 485.00, 'pending', '123 Rizal Avenue, Brgy. II-A', 'Nagcarlan', 'Laguna', '4000', 'cash_on_delivery', 'pending', 'cod', 0.00, 'pending_pickup', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, '', '2025-12-06 02:31:01'),
-(8, 2, '2025-12-06 02:36:36', 1030.00, 'pending', 'F. Mendoza Street', 'Tiaong', 'Quezon', '4324', 'cash_on_delivery', 'pending', 'cod', 0.00, 'pending_pickup', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, '', '2025-12-06 02:36:36'),
-(9, 2, '2025-12-06 02:43:18', 1280.00, 'pending', 'F. Mendoza Street', 'Tiaong', 'Quezon', '4324', 'cash_on_delivery', 'pending', 'cod', 0.00, 'pending_pickup', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, '', '2025-12-06 02:43:18'),
-(10, 2, '2025-12-06 02:46:41', 1280.00, 'pending', 'F. Mendoza Street', 'Tiaong', 'Quezon', '4324', 'cash_on_delivery', 'pending', 'cod', 0.00, 'pending_pickup', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, '', '2025-12-06 02:46:41'),
-(11, 2, '2025-12-06 02:58:05', 250.00, 'pending', 'F. Mendoza Street', 'Tiaong', 'Quezon', '4324', 'cash_on_delivery', 'pending', 'cod', 0.00, 'pending_pickup', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, '', '2025-12-06 02:58:05'),
-(12, 2, '2025-12-06 19:24:06', 50.00, 'pending', 'F. Mendoza Street', 'Tiaong', 'Quezon', '4324', 'cash_on_delivery', 'paid', 'gcash', 0.00, 'pending_pickup', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, '', '2025-12-06 19:24:07'),
-(13, 2, '2025-12-07 04:30:07', 1540.00, 'pending', 'F. Mendoza Street', 'Tiaong', 'Quezon', '4324', 'cash_on_delivery', 'pending', 'cod', 0.00, 'pending_pickup', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, '', '2025-12-07 04:30:07');
+(6, 2, '2025-12-06 02:27:57', 230.00, 'cancelled', 'F. Mendoza Street', 'Tiaong', 'Quezon', '4324', 'cash_on_delivery', 'pending', 'cod', 0.00, 'pending_pickup', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, '', '2025-12-08 04:04:17'),
+(15, 2, '2025-12-08 04:07:50', 1830.00, 'pending', 'F. Mendoza Street', 'Tiaong', 'Quezon', '4324', 'cash_on_delivery', 'pending', 'cod', 0.00, 'pending_pickup', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, '', '2025-12-08 04:07:50');
 
 --
 -- Triggers `orders`
@@ -347,60 +339,14 @@ INSERT INTO `order_items` (`orderItemID`, `orderID`, `productID`, `quantity`, `u
 (9, 6, 1, 1, 35.00, 35.00),
 (10, 6, 2, 1, 45.00, 45.00),
 (11, 6, 6, 1, 150.00, 150.00),
-(12, 7, 4, 1, 120.00, 120.00),
-(13, 7, 1, 1, 35.00, 35.00),
-(14, 7, 11, 1, 50.00, 50.00),
-(15, 7, 10, 2, 40.00, 80.00),
-(16, 7, 8, 1, 200.00, 200.00),
-(17, 8, 3, 1, 60.00, 60.00),
-(18, 8, 2, 1, 45.00, 45.00),
-(19, 8, 1, 1, 35.00, 35.00),
-(20, 8, 4, 1, 120.00, 120.00),
-(21, 8, 10, 1, 40.00, 40.00),
-(22, 8, 11, 1, 50.00, 50.00),
-(23, 8, 9, 1, 180.00, 180.00),
-(24, 8, 6, 1, 150.00, 150.00),
-(25, 8, 7, 1, 70.00, 70.00),
-(26, 8, 5, 1, 80.00, 80.00),
-(27, 8, 8, 1, 200.00, 200.00),
-(28, 9, 3, 1, 60.00, 60.00),
-(29, 9, 2, 1, 45.00, 45.00),
-(30, 9, 1, 1, 35.00, 35.00),
-(31, 9, 4, 1, 120.00, 120.00),
-(32, 9, 12, 1, 250.00, 250.00),
-(33, 9, 11, 1, 50.00, 50.00),
-(34, 9, 10, 1, 40.00, 40.00),
-(35, 9, 9, 1, 180.00, 180.00),
-(36, 9, 7, 1, 70.00, 70.00),
-(37, 9, 6, 1, 150.00, 150.00),
-(38, 9, 5, 1, 80.00, 80.00),
-(39, 9, 8, 1, 200.00, 200.00),
-(40, 10, 3, 1, 60.00, 60.00),
-(41, 10, 1, 1, 35.00, 35.00),
-(42, 10, 2, 1, 45.00, 45.00),
-(43, 10, 4, 1, 120.00, 120.00),
-(44, 10, 12, 1, 250.00, 250.00),
-(45, 10, 11, 1, 50.00, 50.00),
-(46, 10, 10, 1, 40.00, 40.00),
-(47, 10, 9, 1, 180.00, 180.00),
-(48, 10, 7, 1, 70.00, 70.00),
-(49, 10, 6, 1, 150.00, 150.00),
-(50, 10, 5, 1, 80.00, 80.00),
-(51, 10, 8, 1, 200.00, 200.00),
-(52, 11, 12, 1, 250.00, 250.00),
-(53, 12, 11, 1, 50.00, 50.00),
-(54, 13, 4, 1, 120.00, 120.00),
-(55, 13, 3, 1, 60.00, 60.00),
-(56, 13, 1, 1, 35.00, 35.00),
-(57, 13, 2, 1, 45.00, 45.00),
-(58, 13, 11, 1, 50.00, 50.00),
-(59, 13, 12, 1, 250.00, 250.00),
-(60, 13, 10, 3, 40.00, 120.00),
-(61, 13, 9, 2, 180.00, 360.00),
-(62, 13, 7, 1, 70.00, 70.00),
-(63, 13, 8, 1, 200.00, 200.00),
-(64, 13, 5, 1, 80.00, 80.00),
-(65, 13, 6, 1, 150.00, 150.00);
+(67, 15, 4, 1, 120.00, 120.00),
+(68, 15, 1, 2, 35.00, 70.00),
+(69, 15, 12, 2, 250.00, 500.00),
+(70, 15, 11, 3, 50.00, 150.00),
+(71, 15, 9, 1, 180.00, 180.00),
+(72, 15, 10, 2, 40.00, 80.00),
+(73, 15, 8, 2, 200.00, 400.00),
+(74, 15, 14, 3, 110.00, 330.00);
 
 -- --------------------------------------------------------
 
@@ -423,7 +369,7 @@ CREATE TABLE `password_reset_otps` (
 --
 
 INSERT INTO `password_reset_otps` (`id`, `email`, `otp`, `expires_at`, `is_used`, `verified_at`, `created_at`) VALUES
-(1, 'dennisontenorio11@gmail.com', '8052', '2025-12-07 00:06:04', 0, '2025-12-06 23:26:29', '2025-12-06 23:36:04'),
+(1, 'dennisontenorio11@gmail.com', '4409', '2025-12-07 22:47:28', 1, '2025-12-07 22:17:56', '2025-12-07 22:17:28'),
 (23, 'ichaichatactics1@gmail.com', '5918', '2025-12-07 02:29:07', 1, '2025-12-07 01:59:30', '2025-12-07 01:59:07');
 
 -- --------------------------------------------------------
@@ -454,10 +400,10 @@ CREATE TABLE `products` (
 --
 
 INSERT INTO `products` (`productID`, `shopID`, `sellerID`, `categoryID`, `product_name`, `description`, `price`, `stock_quantity`, `reserved_quantity`, `low_stock_threshold`, `unit`, `is_available`, `created_at`, `updated_at`) VALUES
-(1, 1, 1, 1, 'Fresh Pechay', 'Freshly harvested pechay, crisp and green. Perfect for sinigang and stir-fry.', 35.00, 50, 0, 5, 'bundle', 1, '2025-11-18 13:15:08', '2025-11-28 00:49:34'),
+(1, 1, 1, 1, 'Fresh Pechay', 'Freshly harvested pechay, crisp and green. Perfect for sinigang and stir-fry.', 35.00, 50, 0, 5, 'bundle', 1, '2025-11-18 13:15:08', '2025-12-07 18:11:59'),
 (2, 1, 1, 1, 'Sitaw (String Beans)', 'Long and tender sitaw, freshly picked. Great for adobong sitaw.', 45.00, 30, 0, 5, 'bundle', 1, '2025-11-18 13:15:08', '2025-11-28 00:49:35'),
 (3, 1, 1, 1, 'Kamote (Sweet Potato)', 'Yellow sweet potato, naturally sweet and nutritious.', 60.00, 100, 0, 5, 'kg', 1, '2025-11-18 13:15:08', '2025-11-28 00:49:35'),
-(4, 1, 1, 3, 'Tomato Seeds', 'High-quality hybrid tomato seeds. Package of 50 seeds.', 120.00, 20, 0, 5, 'pack', 1, '2025-11-18 13:15:08', '2025-11-28 00:49:35'),
+(4, 1, 1, 3, 'Buto ng Tomato', 'High-quality hybrid tomato seeds. Package of 50 seeds.', 120.00, 16, 0, 5, 'pack', 1, '2025-11-18 13:15:08', '2025-12-07 18:23:20'),
 (5, 2, 2, 1, 'Organic Lettuce', 'Certified organic lettuce grown without pesticides. Fresh and crispy.', 80.00, 25, 0, 5, 'head', 1, '2025-11-18 13:15:08', '2025-11-28 00:49:35'),
 (6, 2, 2, 1, 'Organic Cherry Tomatoes', 'Sweet and juicy organic cherry tomatoes. Safe for kids.', 150.00, 15, 0, 5, 'kg', 1, '2025-11-18 13:15:08', '2025-11-28 00:49:35'),
 (7, 2, 2, 1, 'Organic Eggplant', 'Long purple eggplant grown organically. Perfect for tortang talong.', 70.00, 40, 0, 5, 'kg', 1, '2025-11-18 13:15:08', '2025-11-28 00:49:35'),
@@ -465,7 +411,9 @@ INSERT INTO `products` (`productID`, `shopID`, `sellerID`, `categoryID`, `produc
 (9, 3, 3, 2, 'Carabao Mango', 'Premium Carabao mangoes from Laguna. Sweet and fleshy, export quality.', 180.00, 80, 0, 5, 'kg', 1, '2025-11-18 13:15:08', '2025-11-28 00:49:35'),
 (10, 3, 3, 2, 'Fresh Coconuts', 'Young coconuts with refreshing juice. Perfect for summer.', 40.00, 150, 0, 5, 'pcs', 1, '2025-11-18 13:15:08', '2025-11-28 00:49:35'),
 (11, 3, 3, 2, 'Ripe Papaya', 'Sweet ripe papaya with red-orange flesh. Rich in vitamins.', 50.00, 60, 0, 5, 'kg', 1, '2025-11-18 13:15:08', '2025-11-28 00:49:35'),
-(12, 3, 3, 4, 'Mango Saplings', 'Grafted carabao mango saplings, 1 year old. Ready for transplanting.', 250.00, 35, 0, 5, 'pcs', 1, '2025-11-18 13:15:08', '2025-11-28 00:49:35');
+(12, 3, 3, 4, 'Mango Saplings', 'Grafted carabao mango saplings, 1 year old. Ready for transplanting.', 250.00, 35, 0, 5, 'pcs', 1, '2025-11-18 13:15:08', '2025-11-28 00:49:35'),
+(13, 7, 13, 2, 'Avocado', 'Bili na kayo dito guys mura na 120 ang per basket mga idol.', 120.00, 20, 0, 5, 'bundle', 1, '2025-12-08 03:16:58', '2025-12-08 03:16:58'),
+(14, 6, 12, 2, 'Pineapple', 'Pineapple kayo dyan mga bus', 110.00, 1900, 0, 5, 'kg', 1, '2025-12-08 03:23:02', '2025-12-08 03:23:02');
 
 -- --------------------------------------------------------
 
@@ -488,7 +436,7 @@ CREATE TABLE `product_images` (
 --
 
 INSERT INTO `product_images` (`imageID`, `productID`, `image_path`, `is_main`, `image_order`, `file_size_kb`, `uploaded_at`) VALUES
-(1, 1, '/uploads/products/pechay_main.jpg', 1, 0, NULL, '2025-12-07 04:25:28'),
+(1, 1, '/uploads/products/pechay_main.jpg', 0, 0, NULL, '2025-12-07 04:25:28'),
 (2, 2, '/uploads/products/sitaw_main.jpg', 1, 0, NULL, '2025-12-07 04:25:28'),
 (3, 3, '/uploads/products/kamote_main.jpg', 1, 0, NULL, '2025-12-07 04:25:28'),
 (4, 4, '/uploads/products/tomato_seeds_pack.jpg', 1, 0, NULL, '2025-12-07 04:25:28'),
@@ -499,7 +447,11 @@ INSERT INTO `product_images` (`imageID`, `productID`, `image_path`, `is_main`, `
 (9, 9, '/uploads/products/mango_main.jpg', 1, 0, NULL, '2025-12-07 04:25:28'),
 (10, 10, '/uploads/products/coconut_main.jpg', 1, 0, NULL, '2025-12-07 04:25:28'),
 (11, 11, '/uploads/products/papaya_main.jpg', 1, 0, NULL, '2025-12-07 04:25:28'),
-(12, 12, '/uploads/products/sapling_main.jpg', 1, 0, NULL, '2025-12-07 04:25:28');
+(12, 12, '/uploads/products/sapling_main.jpg', 1, 0, NULL, '2025-12-07 04:25:28'),
+(13, 1, '/uploads/products/product_1_6935a20d3e313.jpg', 1, 1, NULL, '2025-12-07 15:49:33'),
+(14, 3, '/uploads/products/product_3_6935a3308e5a6.jpg', 0, 1, NULL, '2025-12-07 15:54:24'),
+(15, 13, '/uploads/products/product_13_69364342a8b0e.jpg', 1, 1, NULL, '2025-12-08 03:17:22'),
+(16, 14, '/uploads/products/product_14_693644b864a4e.jpg', 1, 1, NULL, '2025-12-08 03:23:36');
 
 --
 -- Triggers `product_images`
@@ -790,7 +742,7 @@ INSERT INTO `shops` (`shopID`, `sellerID`, `shop_name`, `shop_slug`, `shop_descr
 (2, 2, 'Rosa\'s Organic Farm', 'rosas-organic-farm', 'Certified organic farm growing chemical-free vegetables using traditional farming methods.', NULL, NULL, 'Brgy. San Isidro, 1.5 hectares', NULL, NULL, 4.90, 0, 0, 0, 0.00, 0.00, 0.00, NULL, NULL, 1, 1, '2025-11-25 03:53:43', '2025-11-27 14:10:16'),
 (3, 3, 'Reyes Fruit Garden', 'reyes-fruit-garden', 'Tropical fruit orchard specializing in mangoes, coconuts, and seasonal fruits. We also sell fruit seedlings.', NULL, NULL, 'Brgy. Sto. Angel Sur, 3 hectares', NULL, NULL, 4.70, 0, 0, 0, 0.00, 0.00, 0.00, '21-11823', '2025-11-29 12:20:55', 1, 1, '2025-11-25 03:53:43', '2025-11-29 12:20:55'),
 (6, 12, 'Tan Bilihan ng Palay', 'tan-bilihan-ng-palay', 'Welcome to Tan Bilihan ng Palay!', NULL, NULL, 'Lagalag, Tiaong, Quezon', NULL, '09201234567', 0.00, 0, 0, 0, 0.00, 0.00, 0.00, '21-77796', '2025-12-05 00:02:49', 1, 1, '2025-12-04 16:16:17', '2025-12-05 00:02:49'),
-(7, 13, 'Dela Cruz Fresh Vegetables Fruits and Saplings and Seeds and Livestocks', 'dela-cruz-fresh-vegetables-1', 'Welcome to Dela Cruz Fresh Vegetables!', NULL, NULL, 'Sitio Maligaya, Brgy. San Buenaventura, San Pablo City', NULL, '09121493081', 0.00, 0, 0, 0, 0.00, 0.00, 0.00, '21-12338', '2025-12-04 17:19:47', 1, 1, '2025-12-04 16:16:23', '2025-12-05 00:04:58');
+(7, 13, 'Dennison Shop', 'dela-cruz-fresh-vegetables-1', 'Welcome to Dela Cruz Fresh Vegetables!', NULL, NULL, 'Sitio Maligaya, Brgy. San Buenaventura, San Pablo City', NULL, '09121493081', 0.00, 0, 0, 0, 0.00, 0.00, 0.00, '21-12338', '2025-12-04 17:19:47', 1, 1, '2025-12-04 16:16:23', '2025-12-08 03:24:46');
 
 -- --------------------------------------------------------
 
@@ -878,7 +830,7 @@ INSERT INTO `users` (`userID`, `email`, `profile_image`, `password_hash`, `full_
 (5, 'juan.delacruz@gmail.com', '/images/avatars/avt5.jpg', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Juan Dela Cruz', '09211234567', '/images/avatars/avt5.jpg', 'seller', 1, '2025-11-18 13:15:07', '2025-12-02 02:46:20'),
 (6, 'rosa.mendoza@yahoo.com', '/images/avatars/avt6.jpg', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Rosa Mendoza', '09221234567', '/images/avatars/avt6.jpg', 'seller', 1, '2025-11-18 13:15:07', '2025-11-25 03:53:48'),
 (7, 'pedro.reyes@gmail.com', '/images/avatars/avt7.jpg', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Pedro Reyes', '09231234567', '/images/avatars/avt7.jpg', 'seller', 1, '2025-11-18 13:15:07', '2025-11-25 03:53:48'),
-(8, 'dennisontenorio11@gmail.com', '/images/avatars/avt13.jpg', '$2y$10$WJyCQ2VHuCAVc06Aneaa1OGvWa97IFBjiFM5uZn5UhnW03UxStXui', 'Dennison Tenorio', '09121493081', '/images/avatars/avt13.jpg', 'seller', 1, '2025-11-19 04:20:47', '2025-12-06 14:42:53'),
+(8, 'dennisontenorio11@gmail.com', '/images/avatars/avt13.jpg', '$2y$10$dv8cBIbhAjt0Db7dp.M2ju.f.qVRN8lOx4CsyrQEYaP00kz7xBsB.', 'Dennison Tenorio', '09121493081', '/images/avatars/avt13.jpg', 'seller', 1, '2025-11-19 04:20:47', '2025-12-07 14:18:07'),
 (12, 'test@example.com', NULL, '$2y$10$9AVeVnfOo6dqbmLZXwu0Qux0O1y8FdYEz9hzdcj8Lkbx.R4fi/hbG', 'Test User', NULL, '/images/avatars/avt1.jpg', 'buyer', 1, '2025-11-30 00:49:53', '2025-11-30 00:49:53'),
 (13, 'dennis1@gmail.com', NULL, '$2y$10$iHtit/MP1XPCekjBm5EQv.xn9z79lMF/78tBFIGULIyCrsNdteFqa', 'Dennis Tenorio', NULL, '/images/avatars/avt1.jpg', 'buyer', 1, '2025-11-30 01:06:21', '2025-11-30 01:06:21'),
 (14, 'lebron23@gmail.com', NULL, '$2y$10$f9x/ZAzCCmOzDhylpJBV2O1nWziUYYqG57QLBnFDzfLaDHtK72b0i', 'Lebron James', NULL, '/images/avatars/avt1.jpg', 'buyer', 1, '2025-11-30 01:09:45', '2025-11-30 01:09:45'),
@@ -1238,7 +1190,7 @@ ALTER TABLE `account_deletion_requests`
 -- AUTO_INCREMENT for table `cart`
 --
 ALTER TABLE `cart`
-  MODIFY `cartID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=100;
+  MODIFY `cartID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=107;
 
 --
 -- AUTO_INCREMENT for table `categories`
@@ -1262,31 +1214,31 @@ ALTER TABLE `inventory_logs`
 -- AUTO_INCREMENT for table `orders`
 --
 ALTER TABLE `orders`
-  MODIFY `orderID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
+  MODIFY `orderID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=16;
 
 --
 -- AUTO_INCREMENT for table `order_items`
 --
 ALTER TABLE `order_items`
-  MODIFY `orderItemID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=66;
+  MODIFY `orderItemID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=75;
 
 --
 -- AUTO_INCREMENT for table `password_reset_otps`
 --
 ALTER TABLE `password_reset_otps`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=24;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=25;
 
 --
 -- AUTO_INCREMENT for table `products`
 --
 ALTER TABLE `products`
-  MODIFY `productID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
+  MODIFY `productID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
 
 --
 -- AUTO_INCREMENT for table `product_images`
 --
 ALTER TABLE `product_images`
-  MODIFY `imageID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
+  MODIFY `imageID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=17;
 
 --
 -- AUTO_INCREMENT for table `product_images_old`
