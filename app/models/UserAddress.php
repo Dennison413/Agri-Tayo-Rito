@@ -1,6 +1,5 @@
 <?php
 // app/models/UserAddress.php
-// User Address Management Model
 require_once __DIR__ . '/../../config/database.php';
 
 class UserAddress 
@@ -14,7 +13,7 @@ class UserAddress
         $this->conn = $database->connect();
     }
     
-    // Get all addresses for a user
+    // get all addresses for a user
     public function getUserAddresses($userID) 
     {
         $query = "SELECT * FROM {$this->table} 
@@ -33,7 +32,7 @@ class UserAddress
         }
     }
     
-    // Get a specific address (with user verification)
+    // get a specific address (with user verification)
     public function getAddress($addressID, $userID = null) 
     {
         if ($userID !== null) {
@@ -72,7 +71,7 @@ class UserAddress
         }
     }
     
-    // Get the most recent address (used as default)
+    // get the most recent address (used as default)
     public function getDefaultAddress($userID) 
     {
         $query = "SELECT * FROM {$this->table} 
@@ -92,7 +91,7 @@ class UserAddress
         }
     }
     
-    // Add new address
+    // add new address
     public function addAddress($userID, $address, $municipality, $province, $postal_code) 
     {
         $query = "INSERT INTO {$this->table} 
@@ -125,7 +124,7 @@ class UserAddress
         ];
     }
     
-    // Update address (with user verification)
+    // update address (with user verification)
     public function updateAddress($addressID, $userID, $address, $municipality, $province, $postal_code) 
     {
         $query = "UPDATE {$this->table} 
@@ -168,7 +167,7 @@ class UserAddress
         ];
     }
     
-    // Delete address (with user verification)
+    // delete address (with user verification)
     public function deleteAddress($addressID, $userID) 
     {
         $query = "DELETE FROM {$this->table} 
@@ -202,7 +201,7 @@ class UserAddress
         ];
     }
     
-    // Count addresses for a user
+    // count addresses for a user
     public function countUserAddresses($userID) 
     {
         $query = "SELECT COUNT(*) as count FROM {$this->table} 
@@ -221,13 +220,13 @@ class UserAddress
         }
     }
     
-    // Check if user has any addresses
+    // check if user has any addresses
     public function hasAddresses($userID) 
     {
         return $this->countUserAddresses($userID) > 0;
     }
     
-    // Format address for display
+    // format address for display
     public function formatAddress($addressData) 
     {
         if (!$addressData) {
@@ -240,7 +239,7 @@ class UserAddress
                $addressData['postal_code'];
     }
     
-    // Get address for order (used in checkout)
+    // get address for order (mainly used in checkout)
     public function getAddressForOrder($addressID, $userID) 
     {
         $address = $this->getAddress($addressID, $userID);

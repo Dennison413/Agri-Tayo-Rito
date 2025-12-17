@@ -1,5 +1,5 @@
 <?php
-// app/views/profile/seller/dashboard.php - UPDATED WITH SIDEBAR
+// app/views/profile/seller/dashboard.php
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
@@ -7,7 +7,6 @@ if (session_status() === PHP_SESSION_NONE) {
 require_once __DIR__ . '/../../../../config/config.php';
 require_once __DIR__ . '/../../../../config/database.php';
 
-// Check if user is logged in and is seller
 $isLoggedIn = isset($_SESSION['logged_in']) && $_SESSION['logged_in'];
 $userRole = $_SESSION['user_role'] ?? null;
 $userID = $_SESSION['user_id'] ?? null;
@@ -20,7 +19,6 @@ if (!$isLoggedIn || $userRole !== 'seller') {
 $db = new Database();
 $conn = $db->connect();
 
-// Get seller profile ID
 $stmt = $conn->prepare("SELECT sellerID FROM seller_profiles WHERE userID = ?");
 $stmt->execute([$userID]);
 $sellerProfile = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -30,59 +28,47 @@ if (!$sellerProfile) {
 }
 
 $sellerID = $sellerProfile['sellerID'];
-
-// Get seller's shop and balance
 $stmt = $conn->prepare("SELECT s.shopID, s.balance, s.total_earned, s.total_withdrawn, s.atm_card_number 
                         FROM shops s WHERE s.sellerID = ?");
 $stmt->execute([$sellerID]);
 $shopBalance = $stmt->fetch(PDO::FETCH_ASSOC);
 
-// Fetch seller statistics
 $stats = [];
 
-// Total products
-$stmt = $conn->prepare("SELECT COUNT(*) as total FROM products WHERE sellerID = ?");
+$stmt = $conn->prepare("SELECT COUNT(*) as total FROM products WHERE sellerID = ?"); // Total products
 $stmt->execute([$sellerID]);
 $stats['total_products'] = $stmt->fetch(PDO::FETCH_ASSOC)['total'];
-
-// Active products
-$stmt = $conn->prepare("SELECT COUNT(*) as total FROM products WHERE sellerID = ? AND is_available = 1");
+$stmt = $conn->prepare("SELECT COUNT(*) as total FROM products WHERE sellerID = ? AND is_available = 1"); // Active products
 $stmt->execute([$sellerID]);
 $stats['active_products'] = $stmt->fetch(PDO::FETCH_ASSOC)['total'];
-
-// Total orders
 $stmt = $conn->prepare("SELECT COUNT(DISTINCT o.orderID) as total 
                         FROM orders o 
                         JOIN order_items oi ON o.orderID = oi.orderID 
                         JOIN products p ON oi.productID = p.productID 
                         WHERE p.sellerID = ?");
 $stmt->execute([$sellerID]);
-$stats['total_orders'] = $stmt->fetch(PDO::FETCH_ASSOC)['total'];
+$stats['total_orders'] = $stmt->fetch(PDO::FETCH_ASSOC)['total']; // Total products
 
-// Pending orders
 $stmt = $conn->prepare("SELECT COUNT(DISTINCT o.orderID) as total 
                         FROM orders o 
                         JOIN order_items oi ON o.orderID = oi.orderID 
                         JOIN products p ON oi.productID = p.productID 
                         WHERE p.sellerID = ? AND o.order_status = 'pending'");
-$stmt->execute([$sellerID]);
-$stats['pending_orders'] = $stmt->fetch(PDO::FETCH_ASSOC)['total'];
+$stmt->execute([$sellerID]); 
+$stats['pending_orders'] = $stmt->fetch(PDO::FETCH_ASSOC)['total']; // Pending orders
 
-// Total revenue (from delivered orders)
 $stmt = $conn->prepare("SELECT COALESCE(SUM(oi.subtotal), 0) as total 
                         FROM orders o 
                         JOIN order_items oi ON o.orderID = oi.orderID 
                         JOIN products p ON oi.productID = p.productID 
                         WHERE p.sellerID = ? AND o.order_status = 'delivered'");
 $stmt->execute([$sellerID]);
-$stats['total_revenue'] = $stmt->fetch(PDO::FETCH_ASSOC)['total'];
+$stats['total_revenue'] = $stmt->fetch(PDO::FETCH_ASSOC)['total']; // Total revenue (from delivered orders)
 
-// Low stock products
-$stmt = $conn->prepare("SELECT COUNT(*) as total FROM products WHERE sellerID = ? AND stock_quantity <= 10 AND is_available = 1");
+$stmt = $conn->prepare("SELECT COUNT(*) as total FROM products WHERE sellerID = ? AND stock_quantity <= 10 AND is_available = 1"); // Low stock products
 $stmt->execute([$sellerID]);
 $stats['low_stock'] = $stmt->fetch(PDO::FETCH_ASSOC)['total'];
 
-// Recent products - using image_path and image_order
 $stmt = $conn->prepare("SELECT p.productID, p.product_name, p.price, p.stock_quantity, p.is_available, c.category, pi.image_path as imageURL
                         FROM products p
                         JOIN categories c ON p.categoryID = c.categoryID
@@ -90,9 +76,8 @@ $stmt = $conn->prepare("SELECT p.productID, p.product_name, p.price, p.stock_qua
                         WHERE p.sellerID = ?
                         ORDER BY p.created_at DESC LIMIT 5");
 $stmt->execute([$sellerID]);
-$recent_products = $stmt->fetchAll(PDO::FETCH_ASSOC);
+$recent_products = $stmt->fetchAll(PDO::FETCH_ASSOC); // Recent products
 
-// Recent orders (last 5)
 $stmt = $conn->prepare("SELECT DISTINCT o.orderID, o.total_amount, o.order_status, o.order_date, u.full_name
                         FROM orders o
                         JOIN order_items oi ON o.orderID = oi.orderID
@@ -101,14 +86,15 @@ $stmt = $conn->prepare("SELECT DISTINCT o.orderID, o.total_amount, o.order_statu
                         WHERE p.sellerID = ?
                         ORDER BY o.order_date DESC LIMIT 5");
 $stmt->execute([$sellerID]);
-$recent_orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
+$recent_orders = $stmt->fetchAll(PDO::FETCH_ASSOC); // Recent orders (last 5)
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Seller Dashboard - Agri Tayo Rito</title>
+    <link rel="icon" type="image/jpg" href="/agri_system/public/images/agri-icon.jpg">
+    <title>Agri Tayo Rito</title>
     <link rel="stylesheet" href="<?php echo BASE_URL; ?>css/responsive.css">
     <link rel="stylesheet" href="<?php echo BASE_URL; ?>css/seller/dashboard.css">
 </head>
@@ -309,10 +295,6 @@ $recent_orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
     </main>
 
     <style>
-        /* ============================================
-           DASHBOARD-SPECIFIC STYLES
-           ============================================ */
-        
         * {
             margin: 0;
             padding: 0;
@@ -324,7 +306,6 @@ $recent_orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
             background: #f9fafb;
         }
 
-        /* Page Header */
         .page-header {
             margin-bottom: 30px;
         }
@@ -339,8 +320,6 @@ $recent_orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
             color: #6b7280;
             font-size: 1rem;
         }
-
-        /* Balance Alert */
         .balance-alert {
             background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
             color: white;
@@ -387,7 +366,6 @@ $recent_orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
             transform: translateY(-2px);
         }
 
-        /* Quick Actions - SQUARE GRID */
         .quick-actions {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
@@ -426,8 +404,6 @@ $recent_orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
             font-size: 1rem;
             text-align: center;
         }
-
-        /* Stats Section */
         .stats-section {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -495,8 +471,6 @@ $recent_orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
         .stat-link:hover {
             text-decoration: underline;
         }
-
-        /* Card Info Section */
         .card-info-section {
             margin-bottom: 30px;
         }
@@ -570,7 +544,6 @@ $recent_orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
             text-decoration: underline;
         }
 
-        /* Products List */
         .products-list {
             display: flex;
             flex-direction: column;
@@ -678,8 +651,6 @@ $recent_orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
             background: #d1fae5;
             color: #065f46;
         }
-
-        /* Table */
         .table-container {
             overflow-x: auto;
         }
@@ -710,10 +681,6 @@ $recent_orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
         .data-table tbody tr:hover {
             background: #f9fafb;
         }
-
-        /* ============================================
-           MOBILE RESPONSIVE
-           ============================================ */
         @media (max-width: 768px) {
             .page-title {
                 font-size: 1.5rem;
@@ -728,7 +695,6 @@ $recent_orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 width: 100%;
             }
 
-            /* Square grid on mobile - 2 columns */
             .quick-actions {
                 grid-template-columns: repeat(2, 1fr);
                 gap: 15px;

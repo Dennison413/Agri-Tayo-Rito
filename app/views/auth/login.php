@@ -1,9 +1,10 @@
 <?php
+// app/views/auth/login.php
 require_once BASE_PATH . '/app/controllers/AuthController.php';
 
 $authController = new AuthController();
 
-// Handle form submission
+// handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = $_POST['email'] ?? '';
     $password = $_POST['password'] ?? '';
@@ -11,7 +12,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $result = $authController->login($email, $password);
     
     if ($result['success']) {
-        // Role-based redirect
+        // role-based redirect
         $role = $result['role'];
         
         switch ($role) {
@@ -37,6 +38,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/jpg" href="/agri_system/public/images/agri-icon.jpg">
     <title>Log In - Agri Tayo Rito</title>
     <link rel="stylesheet" href="/agri_system/public/css/auth/auth.css">
 </head>

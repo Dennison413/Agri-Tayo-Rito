@@ -1,11 +1,9 @@
 <?php
 // app/views/profile/seller/seller-nav.php
-// Reusable navigation component for all seller pages
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-// Get pending orders count for badge
 $pending_count = 0;
 if (isset($stats) && isset($stats['pending_orders'])) {
     $pending_count = $stats['pending_orders'];
@@ -15,7 +13,7 @@ if (isset($stats) && isset($stats['pending_orders'])) {
 <!-- Top Navigation Bar -->
 <nav class="top-navbar">
     <div class="logo-wrapper">
-        <img src="<?php echo BASE_URL; ?>images/logo.jpg" alt="Logo">
+        <img src="<?php echo BASE_URL; ?>images/main-logo.jpg" alt="Logo">
         <span class="logo">Seller Panel</span>
     </div>
     <div class="navbar-actions">
@@ -95,16 +93,9 @@ if (isset($stats) && isset($stats['pending_orders'])) {
         </button>
     </div>
 </aside>
-
-<!-- Overlay for mobile -->
 <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSellerSidebar()"></div>
 
 <style>
-/* ============================================
-   SELLER NAVIGATION STYLES - RESPONSIVE
-   ============================================ */
-
-/* Top Navigation Bar */
 .top-navbar {
     position: fixed;
     top: 0;
@@ -162,7 +153,6 @@ if (isset($stats) && isset($stats['pending_orders'])) {
     font-size: 1.5rem;
 }
 
-/* Sidebar - Always visible on desktop */
 .seller-sidebar {
     position: fixed;
     left: 0;
@@ -175,13 +165,12 @@ if (isset($stats) && isset($stats['pending_orders'])) {
     z-index: 999;
     display: flex;
     flex-direction: column;
-    /* Hide scrollbar for Chrome, Safari and Opera */
-    scrollbar-width: none; /* Firefox */
-    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none;
+    -ms-overflow-style: none;
 }
 
 .seller-sidebar::-webkit-scrollbar {
-    display: none; /* Chrome, Safari, Opera */
+    display: none; 
 }
 
 .sidebar-header {
@@ -210,7 +199,7 @@ if (isset($stats) && isset($stats['pending_orders'])) {
 
 .sidebar-actions {
     margin-left: auto;
-    display: none; /* Hidden on desktop */
+    display: none;
 }
 
 .sidebar-action-btn {
@@ -338,38 +327,29 @@ if (isset($stats) && isset($stats['pending_orders'])) {
     transform: translateY(-2px);
 }
 
-/* Overlay - hidden on desktop */
 .sidebar-overlay {
     display: none;
 }
 
-/* ============================================
-   MOBILE RESPONSIVE (768px and below)
-   ============================================ */
 @media (max-width: 768px) {
-    /* Show hamburger menu */
     .navbar-actions {
         display: block;
     }
     
-    /* Hide sidebar by default on mobile */
     .seller-sidebar {
         left: -280px;
         transition: left 0.3s ease;
         top: 70px;
     }
     
-    /* Show sidebar when active */
     .seller-sidebar.active {
         left: 0;
     }
     
-    /* Show close button in sidebar on mobile */
     .sidebar-actions {
         display: block;
     }
     
-    /* Show overlay when sidebar is active */
     .sidebar-overlay {
         display: none;
         position: fixed;
@@ -386,10 +366,6 @@ if (isset($stats) && isset($stats['pending_orders'])) {
     }
 }
 
-/* ============================================
-   MAIN CONTENT ADJUSTMENT
-   ============================================ */
-/* This should be applied to your main content wrapper */
 .main-content {
     margin-left: 280px;
     margin-top: 70px;

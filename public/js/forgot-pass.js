@@ -1,3 +1,4 @@
+// public/js/forgot-pass.js
 document.getElementById("forgotPasswordForm").addEventListener("submit", function(e) {
     e.preventDefault();
 
@@ -12,8 +13,6 @@ document.getElementById("forgotPasswordForm").addEventListener("submit", functio
 
     setTimeout(() => {
         showToast("Code sent! ✓", "success");
-        // Here you will redirect to Verify Code Page later
-        // window.location.href = "verify-code.php";
     }, 1500);
 });
 
@@ -31,17 +30,11 @@ function showToast(message, type = "error") {
         document.body.appendChild(toast);
     }
 
-    // Clear previous classes
     toast.className = '';
-    
-    // Add new type class
     toast.classList.add(type);
-    
-    // Set message
     toast.textContent = message;
     toast.style.opacity = '1';
     
-    // Auto-hide after 3 seconds (except for loading)
     if (type !== "loading") {
         setTimeout(() => {
             toast.style.opacity = '0';

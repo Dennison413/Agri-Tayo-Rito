@@ -1,21 +1,15 @@
-// ==========================================
-// CHECKOUT PAGE - FIXED VERSION
-// ==========================================
-
+// public/js/checkout.js
 console.log('checkout.js loaded');
 
-// Global checkout data
 let checkoutData = null;
 let addresses = [];
 let selectedAddressId = null;
 
-// Initialize checkout page
 document.addEventListener('DOMContentLoaded', function () {
     console.log('=== Initializing Checkout Page ===');
     loadCheckoutData();
 });
 
-// Load checkout data
 async function loadCheckoutData() {
     const loadingEl = document.getElementById('checkoutLoading');
     const containerEl = document.getElementById('checkoutContainer');
@@ -24,10 +18,7 @@ async function loadCheckoutData() {
     try {
         console.log('=== Loading Checkout Data ===');
         
-        // Try multiple sources for product IDs
         let selectedProductIDs = null;
-        
-        // Method 1: SessionStorage
         const sessionData = sessionStorage.getItem('checkout_product_ids');
         console.log('SessionStorage raw data:', sessionData);
         
@@ -40,7 +31,6 @@ async function loadCheckoutData() {
             }
         }
         
-        // Method 2: URL parameters (fallback)
         if (!selectedProductIDs || !Array.isArray(selectedProductIDs) || selectedProductIDs.length === 0) {
             const urlParams = new URLSearchParams(window.location.search);
             const idsParam = urlParams.get('ids');
@@ -52,7 +42,6 @@ async function loadCheckoutData() {
             }
         }
         
-        // Final validation
         if (!selectedProductIDs || !Array.isArray(selectedProductIDs) || selectedProductIDs.length === 0) {
             console.error('❌ No valid product IDs found');
             loadingEl.style.display = 'none';
@@ -67,8 +56,6 @@ async function loadCheckoutData() {
         }
 
         console.log('✅ Using product IDs:', selectedProductIDs);
-
-        // Fetch checkout data from API
         const url = new URL(CHECKOUT_API_URL, window.location.origin);
         url.searchParams.append('product_ids', selectedProductIDs.join(','));
 
@@ -84,8 +71,6 @@ async function loadCheckoutData() {
         });
 
         console.log('📡 Response status:', response.status);
-
-        // Check content type
         const contentType = response.headers.get("content-type");
         if (!contentType || !contentType.includes("application/json")) {
             const text = await response.text();
@@ -105,26 +90,20 @@ async function loadCheckoutData() {
             }
             throw new Error(data.message);
         }
-
-        // Store checkout data globally
         checkoutData = data;
         addresses = data.addresses || [];
 
         console.log('✅ Items to display:', data.items.length);
         console.log('✅ Addresses available:', addresses.length);
-
-        // Display everything
         displayAddresses();
         displayOrderItems(data.items);
 
-        // Update summary
         document.getElementById('totalItemsCount').textContent = data.itemCount;
         document.getElementById('itemsCountText').textContent = data.itemCount + ' items';
         document.getElementById('subtotalDisplay').textContent = '₱' + data.subtotal;
         document.getElementById('shippingFeeDisplay').textContent = '₱' + data.shippingFee;
         document.getElementById('totalDisplay').textContent = '₱' + data.total;
 
-        // Show checkout UI
         loadingEl.style.display = 'none';
         containerEl.style.display = 'grid';
 
@@ -139,7 +118,7 @@ async function loadCheckoutData() {
     }
 }
 
-// Display saved addresses
+// display saved addresses
 function displayAddresses() {
     const container = document.getElementById('savedAddressesList');
     
@@ -153,7 +132,6 @@ function displayAddresses() {
         return;
     }
 
-    // Set default address as selected
     if (checkoutData.defaultAddress) {
         selectedAddressId = checkoutData.defaultAddress.addressID;
     } else {
@@ -186,7 +164,7 @@ function displayAddresses() {
     container.innerHTML = html;
 }
 
-// Select address option
+// select address option
 function selectAddressOption(addressID) {
     selectedAddressId = addressID;
     
@@ -197,14 +175,14 @@ function selectAddressOption(addressID) {
     event.currentTarget.querySelector('input[type="radio"]').checked = true;
 }
 
-// Show add address form
+// show add address form
 function showAddAddressForm() {
     const form = document.getElementById('addAddressForm');
     form.classList.add('active');
     form.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
-// Cancel add address
+// cancel add address
 function cancelAddAddress() {
     const form = document.getElementById('addAddressForm');
     form.classList.remove('active');
@@ -215,7 +193,7 @@ function cancelAddAddress() {
     document.getElementById('new_postal_code').value = '';
 }
 
-// Save new address
+// save new address
 async function saveNewAddress() {
     const address = document.getElementById('new_address').value.trim();
     const municipality = document.getElementById('new_municipality').value.trim();
@@ -298,7 +276,7 @@ async function saveNewAddress() {
     }
 }
 
-// Display order items grouped by shop
+// display order items grouped by shop
 function displayOrderItems(items) {
     const container = document.getElementById('orderItemsList');
 
@@ -306,8 +284,6 @@ function displayOrderItems(items) {
         container.innerHTML = '<p class="empty-message">No items found</p>';
         return;
     }
-
-    // Group items by shop
     const itemsByShop = {};
     items.forEach(item => {
         if (!itemsByShop[item.shop_name]) {
@@ -347,7 +323,7 @@ function displayOrderItems(items) {
     container.innerHTML = html;
 }
 
-// Select payment method
+// select payment method
 function selectPayment(radio) {
     document.querySelectorAll('.payment-option').forEach(option => {
         option.classList.remove('selected');
@@ -355,7 +331,7 @@ function selectPayment(radio) {
     radio.closest('.payment-option').classList.add('selected');
 }
 
-// Apply promo code
+// apply promo code
 function applyPromo() {
     const promoCode = document.getElementById('promoCode').value.trim();
     
@@ -366,12 +342,10 @@ function applyPromo() {
     
     showNotification('Promo code feature coming soon!', 'info');
 }
-
-// ✅ FIXED: Place order with better error handling
+ // place order
 async function placeOrder() {
     const btn = document.getElementById('placeOrderBtn');
     
-    // Validation
     if (!selectedAddressId) {
         showNotification('Please select a delivery address', 'warning');
         return;
@@ -384,8 +358,6 @@ async function placeOrder() {
     }
 
     const notes = document.getElementById('notes')?.value || '';
-
-    // Get current CSRF token
     const csrfToken = getCsrfToken();
     console.log('📝 Current CSRF token:', csrfToken);
 
@@ -399,14 +371,12 @@ async function placeOrder() {
 
     console.log('📦 Order data to send:', orderData);
 
-    // Show confirmation popup
     const confirmed = await showConfirmationPopup(orderData);
     if (!confirmed) {
         console.log('❌ User cancelled order');
         return;
     }
 
-    // Disable button
     btn.disabled = true;
     btn.innerHTML = '<span class="spinner-small"></span> Processing...';
 
@@ -428,7 +398,6 @@ async function placeOrder() {
         console.log('📡 Response status:', response.status);
         console.log('📡 Response headers:', [...response.headers.entries()]);
 
-        // ✅ Check content type BEFORE parsing
         const contentType = response.headers.get("content-type");
         console.log('📄 Content-Type:', contentType);
 
@@ -445,8 +414,6 @@ async function placeOrder() {
             if (data.csrf_token) {
                 updateCsrfToken(data.csrf_token);
             }
-
-            // Clear sessionStorage
             sessionStorage.removeItem('checkout_product_ids');
 
             showOrderSuccess(data.orderID);
@@ -471,7 +438,7 @@ async function placeOrder() {
     }
 }
 
-// Show confirmation popup
+// confirmation popup
 function showConfirmationPopup(orderData) {
     return new Promise((resolve) => {
         console.log('=== SHOWING CONFIRMATION POPUP ===');
@@ -494,7 +461,6 @@ function showConfirmationPopup(orderData) {
         const phone = selectedAddr.phone || checkoutData.user.phone;
         const addressText = `${selectedAddr.address}, ${selectedAddr.municipality}, ${selectedAddr.province} ${selectedAddr.postal_code}`;
 
-        // Build items list HTML
         let itemsListHtml = '';
         if (checkoutData.items && checkoutData.items.length > 0) {
             itemsListHtml = checkoutData.items.map(item => `
@@ -574,7 +540,6 @@ function showConfirmationPopup(orderData) {
     });
 }
 
-// Close confirmation popup
 function closeConfirmationPopup(confirmed) {
     const overlay = document.querySelector('.confirmation-overlay');
     if (overlay) {
@@ -587,7 +552,6 @@ function closeConfirmationPopup(confirmed) {
     }
 }
 
-// Show order success message
 function showOrderSuccess(orderID) {
     const overlay = document.createElement('div');
     overlay.className = 'success-overlay';

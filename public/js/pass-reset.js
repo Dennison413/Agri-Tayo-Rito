@@ -1,22 +1,14 @@
-// Password Reset Multi-Step Flow
+// public/js/pass-reset.js
 let currentStep = 1;
 let userEmail = '';
 
-// Compact Toast notification helper
 function showToast(message, type = 'success') {
     const toast = document.getElementById('toast-box');
-    
-    // Remove previous classes
     toast.className = '';
-    
-    // Add new type class
     toast.classList.add(type);
-    
-    // Set message
     toast.textContent = message;
     toast.style.opacity = '1';
     
-    // Auto hide after 3 seconds (except for loading)
     if (type !== 'loading') {
         setTimeout(() => {
             toast.style.opacity = '0';
@@ -24,7 +16,6 @@ function showToast(message, type = 'success') {
     }
 }
 
-// Toggle password visibility
 function togglePassword(fieldId) {
     const input = document.getElementById(fieldId);
     const icon = input.nextElementSibling;
@@ -38,7 +29,6 @@ function togglePassword(fieldId) {
     }
 }
 
-// Update progress indicator
 function updateProgress(step) {
     document.querySelectorAll('.progress-dot').forEach((dot, index) => {
         if (index < step) {
@@ -49,7 +39,6 @@ function updateProgress(step) {
     });
 }
 
-// Show specific step
 function showStep(step) {
     document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
     
@@ -69,7 +58,7 @@ function showStep(step) {
     updateProgress(step);
 }
 
-// STEP 1: Send OTP
+// send OTP
 document.getElementById('emailForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     
@@ -80,7 +69,6 @@ document.getElementById('emailForm').addEventListener('submit', async (e) => {
         return;
     }
     
-    // Show loading
     const submitBtn = e.target.querySelector('.submit-btn');
     const originalText = submitBtn.textContent;
     submitBtn.textContent = 'Sending...';
@@ -117,30 +105,26 @@ document.getElementById('emailForm').addEventListener('submit', async (e) => {
     }
 });
 
-// STEP 2: OTP Input Handling
+// OTP input handling
 const codeInputs = document.querySelectorAll('.code-input');
 
 codeInputs.forEach((input, index) => {
-    // Auto-focus next input
     input.addEventListener('input', (e) => {
         if (e.target.value.length === 1 && index < codeInputs.length - 1) {
             codeInputs[index + 1].focus();
         }
     });
     
-    // Handle backspace
     input.addEventListener('keydown', (e) => {
         if (e.key === 'Backspace' && !e.target.value && index > 0) {
             codeInputs[index - 1].focus();
         }
     });
     
-    // Only allow numbers
     input.addEventListener('input', (e) => {
         e.target.value = e.target.value.replace(/[^0-9]/g, '');
     });
 
-    // Handle paste
     input.addEventListener('paste', (e) => {
         e.preventDefault();
         const pastedData = e.clipboardData.getData('text').replace(/[^0-9]/g, '');
@@ -154,7 +138,7 @@ codeInputs.forEach((input, index) => {
     });
 });
 
-// STEP 2: Verify OTP
+// verify OTP
 document.getElementById('verifyForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     
@@ -170,7 +154,7 @@ document.getElementById('verifyForm').addEventListener('submit', async (e) => {
         return;
     }
     
-    // Validate that all characters are digits
+    // validate that all characters are digits
     if (!/^\d{4}$/.test(otp)) {
         showToast('Numbers only', 'error');
         return;
@@ -219,7 +203,6 @@ document.getElementById('verifyForm').addEventListener('submit', async (e) => {
             setTimeout(() => showStep(3), 1000);
         } else {
             showToast(result.message || 'Invalid code', 'error');
-            // Clear inputs
             codeInputs.forEach(input => input.value = '');
             codeInputs[0].focus();
         }
@@ -232,7 +215,7 @@ document.getElementById('verifyForm').addEventListener('submit', async (e) => {
     }
 });
 
-// Resend OTP
+// resend OTP
 document.getElementById('resendCode').addEventListener('click', async (e) => {
     e.preventDefault();
     
@@ -270,22 +253,18 @@ document.getElementById('resendCode').addEventListener('click', async (e) => {
     }
 });
 
-// Start Over - Go back to Step 1
+// start over - go back to Step 1
 document.getElementById('startOver').addEventListener('click', (e) => {
     e.preventDefault();
-    
-    // Clear all inputs
     document.getElementById('email').value = '';
     codeInputs.forEach(input => input.value = '');
     document.getElementById('new_password').value = '';
     document.getElementById('confirm_password').value = '';
-    
-    // Reset to step 1
     showStep(1);
     showToast('Starting over...', 'loading');
 });
 
-// STEP 3: Reset Password
+// reset password
 document.getElementById('resetForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     
@@ -339,7 +318,7 @@ document.getElementById('resetForm').addEventListener('submit', async (e) => {
     }
 });
 
-// Password strength indicator
+// password strength indicator
 document.getElementById('new_password').addEventListener('input', function() {
     const password = this.value;
     
@@ -352,7 +331,7 @@ document.getElementById('new_password').addEventListener('input', function() {
     }
 });
 
-// Password match indicator
+// password match indicator
 document.getElementById('confirm_password').addEventListener('input', function() {
     const newPassword = document.getElementById('new_password').value;
     const confirmPassword = this.value;
@@ -368,7 +347,6 @@ document.getElementById('confirm_password').addEventListener('input', function()
     }
 });
 
-// Initialize
 document.addEventListener('DOMContentLoaded', () => {
     showStep(1);
     document.getElementById('email').focus();

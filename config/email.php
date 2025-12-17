@@ -1,7 +1,6 @@
 <?php
 // config/email.php
 // Email Configuration for PHPMailer
-
 return [
     'smtp_host' => 'smtp.gmail.com',
     'smtp_port' => 587,

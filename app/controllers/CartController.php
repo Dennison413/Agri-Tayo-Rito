@@ -3,8 +3,6 @@
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
-
-// Load dependencies
 require_once __DIR__ . '/../models/Cart.php';
 require_once __DIR__ . '/../helpers/csrf.php';
 require_once __DIR__ . '/../helpers/RateLimiter.php';
@@ -12,7 +10,6 @@ require_once __DIR__ . '/../helpers/RateLimiter.php';
 class CartController 
 {
     private $cartModel;
-
     public function __construct() 
     {
         $this->cartModel = new Cart();
@@ -66,7 +63,7 @@ class CartController
 
         $buyerID = $_SESSION['user_id'];
 
-        // Handle actions
+        // handle cart actions
         try {
             switch ($action) {
                 case 'add':
@@ -204,7 +201,7 @@ class CartController
         ]);
     }
 
-    // Get cart item count only
+    // get cart item count only
     private function getCartCount($buyerID) 
     {
         $count = $this->cartModel->getCartCount($buyerID);
@@ -214,7 +211,7 @@ class CartController
         ]);
     }
 
-    // Validate cart before checkout
+    // validate cart before checkout
     private function validateCheckout($buyerID) 
     {
         $cartCount = $this->cartModel->getCartCount($buyerID);

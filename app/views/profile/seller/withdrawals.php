@@ -10,7 +10,6 @@ require_once __DIR__ . '/../../../models/Shop.php';
 require_once __DIR__ . '/../../../models/Withdrawal.php';
 require_once __DIR__ . '/../../../helpers/csrf.php';
 
-// Check if user is logged in and is seller
 $isLoggedIn = isset($_SESSION['logged_in']) && $_SESSION['logged_in'];
 $userRole = $_SESSION['user_role'] ?? null;
 $userID = $_SESSION['user_id'] ?? null;
@@ -25,7 +24,6 @@ $conn = $db->connect();
 $shopModel = new Shop();
 $withdrawalModel = new Withdrawal();
 
-// Get seller's shop
 $stmt = $conn->prepare("SELECT sellerID FROM seller_profiles WHERE userID = ?");
 $stmt->execute([$userID]);
 $sellerProfile = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -38,7 +36,6 @@ $shop = $shopModel->getShopBySeller($sellerProfile['sellerID']);
 $balance = $shopModel->getBalance($shop['shopID']);
 $withdrawalHistory = $withdrawalModel->getWithdrawalsByShop($shop['shopID'], 20);
 
-// Get minimum withdrawal amount
 $stmt = $conn->query("SELECT setting_value FROM system_settings WHERE setting_key = 'min_withdrawal_amount'");
 $minWithdrawal = $stmt->fetch(PDO::FETCH_ASSOC)['setting_value'] ?? 100;
 ?>
@@ -47,7 +44,8 @@ $minWithdrawal = $stmt->fetch(PDO::FETCH_ASSOC)['setting_value'] ?? 100;
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Withdrawals - Agri Tayo Rito</title>
+    <link rel="icon" type="image/jpg" href="/agri_system/public/images/agri-icon.jpg">
+    <title>Agri Tayo Rito</title>
     <link rel="stylesheet" href="<?php echo BASE_URL; ?>css/responsive.css">
     <link rel="stylesheet" href="<?php echo BASE_URL; ?>css/seller/dashboard.css">
 </head>
@@ -63,7 +61,6 @@ $minWithdrawal = $stmt->fetch(PDO::FETCH_ASSOC)['setting_value'] ?? 100;
     <div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
     
     <?php 
-    // Include reusable seller navigation
     include __DIR__ . '/seller-nav.php'; 
     ?>
 
@@ -441,7 +438,6 @@ $minWithdrawal = $stmt->fetch(PDO::FETCH_ASSOC)['setting_value'] ?? 100;
             color: #999;
         }
 
-        /* Modal Styles */
         .modal {
             display: none;
             position: fixed;
@@ -519,7 +515,6 @@ $minWithdrawal = $stmt->fetch(PDO::FETCH_ASSOC)['setting_value'] ?? 100;
             const submitBtn = document.getElementById('submitBtn');
             const formData = new FormData(form);
             
-            // Disable submit button
             submitBtn.disabled = true;
             submitBtn.textContent = 'Processing...';
             
@@ -532,19 +527,14 @@ $minWithdrawal = $stmt->fetch(PDO::FETCH_ASSOC)['setting_value'] ?? 100;
                 const result = await response.json();
                 
                 if (result.success) {
-                    // Show success modal
                     document.getElementById('successMessage').textContent = result.message;
                     document.getElementById('successModal').classList.add('active');
-                    
-                    // Reset form
                     form.reset();
                     
-                    // Reload page after 2 seconds
                     setTimeout(() => {
                         location.reload();
                     }, 2000);
                 } else {
-                    // Show error modal
                     document.getElementById('errorMessage').textContent = result.message;
                     document.getElementById('errorModal').classList.add('active');
                 }
@@ -553,7 +543,6 @@ $minWithdrawal = $stmt->fetch(PDO::FETCH_ASSOC)['setting_value'] ?? 100;
                 document.getElementById('errorMessage').textContent = 'Network error. Please try again.';
                 document.getElementById('errorModal').classList.add('active');
             } finally {
-                // Re-enable submit button
                 submitBtn.disabled = false;
                 submitBtn.textContent = 'Submit Withdrawal Request';
             }

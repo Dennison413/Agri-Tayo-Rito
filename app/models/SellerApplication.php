@@ -1,8 +1,7 @@
 <?php
 // app/models/SellerApplication.php
-// Seller Application Management - Application Submission, Review, Approval/Rejection
 require_once __DIR__ . '/../../config/database.php';
-require_once __DIR__ . '/User.php';  // ADD THIS LINE
+require_once __DIR__ . '/User.php';
 require_once __DIR__ . '/Shop.php';
 
 class SellerApplication
@@ -22,16 +21,10 @@ class SellerApplication
         $this->conn = $database->connect();
     }
 
-    // ==================== APPLICATION SUBMISSION ====================
-
-    /**
-     * Submit seller application
-     * Used by: Buyers who want to become sellers
-     */
+    // Submit new seller application (with optional business permit upload)
     public function submitApplication($userID, $data, $permitFile = null)
     {
         try {
-            // Check if user already has a pending or approved application
             $checkQuery = "SELECT applicationID, application_status 
                           FROM {$this->table} 
                           WHERE userID = ? 
@@ -55,7 +48,6 @@ class SellerApplication
                 }
             }
 
-            // Handle business permit upload
             $permitPath = null;
             if ($permitFile && $permitFile['error'] === UPLOAD_ERR_OK) {
                 $uploadResult = $this->uploadBusinessPermit($userID, $permitFile);
@@ -92,31 +84,25 @@ class SellerApplication
         return ['success' => false, 'message' => 'Failed to submit application'];
     }
 
-    /**
-     * Upload business permit document
-     */
+    // Upload business permit file
     private function uploadBusinessPermit($userID, $file)
     {
         try {
-            // Validate file
             $validation = $this->validatePermitFile($file);
             if (!$validation['valid']) {
                 return ['success' => false, 'message' => $validation['error']];
             }
 
-            // Create upload directory if it doesn't exist
             $uploadDir = $_SERVER['DOCUMENT_ROOT'] . '/agri_system/public' . $this->uploadPath;
             if (!is_dir($uploadDir)) {
                 mkdir($uploadDir, 0755, true);
             }
 
-            // Generate unique filename
             $extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
             $filename = 'permit_user_' . $userID . '_' . time() . '.' . $extension;
             $fullPath = $uploadDir . $filename;
             $dbPath = $this->uploadPath . $filename;
 
-            // Move uploaded file
             if (move_uploaded_file($file['tmp_name'], $fullPath)) {
                 return [
                     'success' => true,
@@ -131,12 +117,9 @@ class SellerApplication
         }
     }
 
-    /**
-     * Validate business permit file
-     */
+    // Validate business permit file
     private function validatePermitFile($file)
     {
-        // Check file size
         if ($file['size'] > $this->maxFileSize) {
             return [
                 'valid' => false,
@@ -144,7 +127,6 @@ class SellerApplication
             ];
         }
 
-        // Check MIME type
         $finfo = finfo_open(FILEINFO_MIME_TYPE);
         $mimeType = finfo_file($finfo, $file['tmp_name']);
         finfo_close($finfo);
@@ -159,11 +141,7 @@ class SellerApplication
         return ['valid' => true];
     }
 
-    // ==================== APPLICATION RETRIEVAL ====================
-
-    /**
-     * Get application by ID
-     */
+    // get application by ID
     public function getApplicationById($applicationID)
 {
     $query = "SELECT sa.*, 
@@ -180,9 +158,7 @@ class SellerApplication
     return $stmt->fetch(PDO::FETCH_ASSOC);
 }
 
-    /**
-     * Get application by user ID
-     */
+    // get latest application by user
    public function getApplicationByUser($userID)
 {
     $query = "SELECT sa.*,
@@ -199,10 +175,7 @@ class SellerApplication
     return $stmt->fetch(PDO::FETCH_ASSOC);
 }
 
-    /**
-     * Get all applications with filters
-     * Used by: Admin to view and manage applications
-     */
+    // admin: get all applications with filters, sorting, pagination
     public function getAllApplications($filters = [], $limit = 50, $offset = 0)
 {
     $query = "SELECT sa.*, 
@@ -250,18 +223,15 @@ class SellerApplication
 
     $sortBy = $filters['sort'] ?? 'newest';
     $query .= " ORDER BY " . ($sortOptions[$sortBy] ?? $sortOptions['newest']);
-
-    // LIMIT and OFFSET - bind as integers
+    // Pagination
     $query .= " LIMIT ? OFFSET ?";
 
     $stmt = $this->conn->prepare($query);
 
-    // Bind all string/text parameters first
     foreach ($params as $index => $param) {
         $stmt->bindValue($index + 1, $param);
     }
 
-    // Bind LIMIT and OFFSET as integers
     $stmt->bindValue(count($params) + 1, (int)$limit, PDO::PARAM_INT);
     $stmt->bindValue(count($params) + 2, (int)$offset, PDO::PARAM_INT);
 
@@ -286,9 +256,7 @@ public function getRecentApplications($limit = 10)
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
 
-    /**
-     * Get pending applications count
-     */
+    // get count of pending applications
     public function getPendingCount()
     {
         $query = "SELECT COUNT(*) as count FROM {$this->table} 
@@ -299,30 +267,18 @@ public function getRecentApplications($limit = 10)
         return $result['count'] ?? 0;
     }
 
-    /**
-     * Get pending applications
-     */
+    // get pending applications
     public function getPendingApplications($limit = 50)
     {
         return $this->getAllApplications(['status' => 'pending'], $limit, 0);
     }
 
-    // ==================== APPLICATION APPROVAL/REJECTION ====================
-
-    /**
-     * Approve seller application
-     * Creates seller profile and shop, updates user role
-     */
-    /**
- * Approve seller application
- * Creates seller profile and shop, updates user role
- */
+    // approve seller application and change user role, create seller profile and shop
 public function approveApplication($applicationID, $adminID)
 {
     try {
         $this->conn->beginTransaction();
 
-        // Get application details
         $application = $this->getApplicationById($applicationID);
 
         if (!$application) {
@@ -335,7 +291,6 @@ public function approveApplication($applicationID, $adminID)
             return ['success' => false, 'message' => 'Application already processed'];
         }
 
-        // 1. Update application status FIRST
         $updateQuery = "UPDATE {$this->table} 
                        SET application_status = 'approved',
                            reviewed_by = ?,
@@ -346,7 +301,7 @@ public function approveApplication($applicationID, $adminID)
             throw new Exception('Failed to update application status');
         }
 
-        // 2. Update user role to seller
+        // update user role to 'seller'
         $userModel = new User();
         $roleResult = $userModel->updateUserRole($application['userID'], 'seller');
 
@@ -354,7 +309,7 @@ public function approveApplication($applicationID, $adminID)
             throw new Exception('Failed to update user role: ' . $roleResult['message']);
         }
 
-        // 3. Create seller profile
+        // create seller profile
         $profileQuery = "INSERT INTO {$this->sellerProfilesTable} 
                         (userID, business_name, business_description, farm_location, is_verified) 
                         VALUES (?, ?, NULL, ?, 1)";
@@ -367,11 +322,7 @@ public function approveApplication($applicationID, $adminID)
             throw new Exception('Failed to create seller profile');
         }
         $sellerID = $this->conn->lastInsertId();
-
-        // 4. Create shop slug
         $shopSlug = $this->createShopSlug($application['business_name']);
-
-        // 5. Create shop directly (without Shop model to avoid dependency issues)
         $shopQuery = "INSERT INTO shops 
                      (sellerID, shop_name, shop_slug, shop_description, farm_location, contact_number, is_verified, is_active) 
                      VALUES (?, ?, ?, ?, ?, ?, 1, 1)";
@@ -388,7 +339,7 @@ public function approveApplication($applicationID, $adminID)
         }
         $shopID = $this->conn->lastInsertId();
 
-        // 6. Update seller profile with shopID
+        // update seller profile with shopID
         $updateSellerQuery = "UPDATE {$this->sellerProfilesTable} SET shopID = ? WHERE sellerID = ?";
         $updateSellerStmt = $this->conn->prepare($updateSellerQuery);
         $updateSellerStmt->execute([$shopID, $sellerID]);
@@ -411,21 +362,12 @@ public function approveApplication($applicationID, $adminID)
     }
 }
 
-/**
- * Create URL-friendly slug from shop name
- */
+// create unique shop slug (for URL friendly shop identifiers)
 private function createShopSlug($shopName)
 {
-    // Convert to lowercase
     $slug = strtolower($shopName);
-    
-    // Replace spaces and special characters with hyphens
     $slug = preg_replace('/[^a-z0-9]+/', '-', $slug);
-    
-    // Remove leading/trailing hyphens
     $slug = trim($slug, '-');
-    
-    // Check if slug exists, append number if needed
     $originalSlug = $slug;
     $counter = 1;
     
@@ -437,9 +379,7 @@ private function createShopSlug($shopName)
     return $slug;
 }
 
-/**
- * Check if shop slug already exists
- */
+// check if shop slug already exists
 private function slugExists($slug)
 {
     $query = "SELECT COUNT(*) as count FROM shops WHERE shop_slug = ?";
@@ -450,13 +390,10 @@ private function slugExists($slug)
     return $result['count'] > 0;
 }
 
-    /**
-     * Reject seller application
-     */
+    // reject seller application
     public function rejectApplication($applicationID, $adminID, $reason = null)
     {
         try {
-            // Get application details
             $application = $this->getApplicationById($applicationID);
 
             if (!$application) {
@@ -467,7 +404,6 @@ private function slugExists($slug)
                 return ['success' => false, 'message' => 'Application already processed'];
             }
 
-            // Update application status
             $query = "UPDATE {$this->table} 
                      SET application_status = 'rejected',
                          reviewed_by = ?,
@@ -478,7 +414,7 @@ private function slugExists($slug)
             $result = $stmt->execute([$adminID, $applicationID]);
 
             if ($result) {
-                // Optional: Send rejection notification to user
+                // Send rejection notification to user
                 // TODO: Implement notification system
 
                 return [
@@ -493,11 +429,7 @@ private function slugExists($slug)
         return ['success' => false, 'message' => 'Failed to reject application'];
     }
 
-    // ==================== APPLICATION STATISTICS ====================
-
-    /**
-     * Get application statistics for admin dashboard
-     */
+    // application statistics
     public function getApplicationStats()
     {
         $query = "SELECT 
@@ -514,9 +446,7 @@ private function slugExists($slug)
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
-    /**
-     * Get approval rate
-     */
+    // get approval rate
     public function getApprovalRate()
     {
         $query = "SELECT 
@@ -536,9 +466,7 @@ private function slugExists($slug)
         return 0;
     }
 
-    /**
-     * Get applications by date range
-     */
+    // get applications by date range (for reports)
     public function getApplicationsByDateRange($startDate, $endDate)
     {
         $query = "SELECT 
@@ -558,11 +486,7 @@ private function slugExists($slug)
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    // ==================== UTILITY METHODS ====================
-
-    /**
-     * Check if user can apply (no pending or approved applications)
-     */
+    // check if user can apply (no pending/approved application)
     public function canUserApply($userID)
     {
         $query = "SELECT application_status 
@@ -593,16 +517,14 @@ private function slugExists($slug)
             ];
         }
 
-        // If rejected, user can reapply
+        // if rejected, user can reapply
         return [
             'can_apply' => true,
             'message' => 'You can reapply'
         ];
     }
 
-    /**
-     * Check application status for user
-     */
+    // get application status for user dashboard
     public function getApplicationStatus($userID)
     {
         $query = "SELECT application_status, applied_at, reviewed_at 
@@ -617,12 +539,9 @@ private function slugExists($slug)
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
-    /**
-     * Delete application (if rejected and user wants to clear it)
-     */
+    // delete application (only if rejected)
     public function deleteApplication($applicationID, $userID)
     {
-        // Verify ownership
         $query = "SELECT application_status FROM {$this->table} 
                  WHERE applicationID = ? AND userID = ?";
         $stmt = $this->conn->prepare($query);

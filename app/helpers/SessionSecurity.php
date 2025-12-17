@@ -1,12 +1,8 @@
 <?php
 class SessionSecurity {
-    /**
-     * Initialize secure session
-     * Call this at the start of your application
-     */
     public static function init() {
         if (session_status() === PHP_SESSION_NONE) {
-            // Secure session configuration
+            // secure session configuration
             ini_set('session.cookie_httponly', 1);
             ini_set('session.use_only_cookies', 1);
             ini_set('session.cookie_secure', isset($_SERVER['HTTPS']) ? 1 : 0);
@@ -14,21 +10,19 @@ class SessionSecurity {
             
             session_start();
             
-            // Regenerate session ID on first access
+            // regenerate session ID on first access
             if (!isset($_SESSION['initiated'])) {
                 session_regenerate_id(true);
                 $_SESSION['initiated'] = true;
                 $_SESSION['created_at'] = time();
             }
             
-            // Validate session
+            // validate session
             self::validateSession();
         }
     }
 
-    /**
-     * Regenerate session ID (after login, role change)
-     */
+    // regenerate session ID
     public static function regenerate() {
         if (session_status() === PHP_SESSION_ACTIVE) {
             session_regenerate_id(true);
@@ -36,14 +30,11 @@ class SessionSecurity {
         }
     }
 
-    /**
-     * Validate session integrity
-     */
+    // validate session integrity
     private static function validateSession() {
-        // Check session age (max 24 hours)
         if (isset($_SESSION['created_at'])) {
             $age = time() - $_SESSION['created_at'];
-            if ($age > 86400) { // 24 hours
+            if ($age > 86400) { 
                 self::destroy();
                 return false;
             }
@@ -61,26 +52,10 @@ class SessionSecurity {
             }
         }
 
-        // Check IP address (optional, can cause issues with mobile users)
-        // Uncomment if needed
-        /*
-        if (!isset($_SESSION['ip_address'])) {
-            $_SESSION['ip_address'] = $_SERVER['REMOTE_ADDR'];
-        } else {
-            if ($_SESSION['ip_address'] !== $_SERVER['REMOTE_ADDR']) {
-                error_log("Session IP mismatch detected");
-                self::destroy();
-                return false;
-            }
-        }
-        */
-
         return true;
     }
 
-    /**
-     * Destroy session completely
-     */
+    // destroy session securely
     public static function destroy() {
         session_unset();
         session_destroy();

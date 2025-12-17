@@ -16,7 +16,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     switch ($action) {
         case 'send_otp':
             $email = $_POST['email'] ?? '';
-            $_SESSION['reset_email'] = $email; // Store in session
+            $_SESSION['reset_email'] = $email;
             $result = $controller->sendOTP($email);
             echo json_encode($result);
             exit;
@@ -25,7 +25,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $email = $_SESSION['reset_email'] ?? '';
             $otp = $_POST['otp'] ?? '';
             
-            // Debug logging
             error_log("Verify OTP - Email from session: " . $email);
             error_log("Verify OTP - OTP received: " . $otp);
             
@@ -96,7 +95,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $result = $controller->resetPassword($email, $newPassword);
             
             if ($result['success']) {
-                // Clear session
                 unset($_SESSION['reset_email']);
                 unset($_SESSION['otp_verified']);
             }
@@ -113,17 +111,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// If GET request, show the HTML form
+// if GET request, show the HTML form
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Forgot Password - Agri Tayo Rito</title>
+    <link rel="icon" type="image/jpg" href="/agri_system/public/images/agri-icon.jpg">
+    <title>Agri Tayo Rito</title>
     <link rel="stylesheet" href="/agri_system/public/css/auth/forgot-pass.css">
     <style>
-        /* Step visibility control */
         .step {
             display: none;
             animation: fadeIn 0.4s ease;
@@ -143,8 +141,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 transform: translateY(0);
             }
         }
-        
-        /* Progress indicator */
         .progress-dots {
             display: flex;
             justify-content: center;
@@ -169,7 +165,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </head>
 <body>
     <div class="container">
-        <!-- Home Button -->
         <button class="home-btn" onclick="window.location.href='/agri_system/public/'">🏠</button>
 
         <!-- Progress Indicator -->
@@ -181,7 +176,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         <!-- STEP 1: Enter Email -->
         <div class="step active" id="step-email">
-            <h1 class="page-title">Forget Password</h1>
+            <h1 class="page-title">Password Management</h1>
             <div class="icon-circle">
                 <div class="lock-icon">
                     <div class="lock-body">
@@ -209,7 +204,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         <!-- STEP 2: Verify Code -->
         <div class="step" id="step-verify">
-            <h1 class="page-title">Forget Password</h1>
+            <h1 class="page-title">OTP Verification</h1>
             <div class="icon-circle">
                 <div class="email-icon">
                     <div class="envelope">
@@ -273,7 +268,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
     
     <div id="toast-box"></div>
-
     <script src="/agri_system/public/js/pass-reset.js"></script>
 </body>
 </html>

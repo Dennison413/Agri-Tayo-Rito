@@ -1,6 +1,5 @@
 <?php
 // app/views/profile/admin/withdrawals.php
-// Admin page to manage seller withdrawal requests
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
@@ -31,11 +30,11 @@ $allShops = $shopModel->getAllShopsWithBalance();
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Manage Withdrawals - Admin</title>
+    <link rel="icon" type="image/jpg" href="/agri_system/public/images/agri-icon.jpg">
+    <title>Agri Tayo Rito</title>
     <link rel="stylesheet" href="<?php echo BASE_URL; ?>css/responsive.css">
     <link rel="stylesheet" href="<?php echo BASE_URL; ?>css/admin/dashboard.css">
     <style>
-        /* Complete Admin Withdrawal Styles */
         * {
             margin: 0;
             padding: 0;
@@ -94,8 +93,6 @@ $allShops = $shopModel->getAllShopsWithBalance();
             color: #6b7280;
             font-size: 1rem;
         }
-
-        /* Card Lookup Section */
         .card-lookup-section {
             background: white;
             border-radius: 12px;
@@ -168,7 +165,6 @@ $allShops = $shopModel->getAllShopsWithBalance();
             color: #4b5563;
         }
 
-        /* Pending Section */
         .pending-section,
         .shops-section {
             background: white;
@@ -193,8 +189,6 @@ $allShops = $shopModel->getAllShopsWithBalance();
             font-size: 0.9rem;
             font-weight: 600;
         }
-
-        /* Table Styles - OPTIMIZED FOR NO HORIZONTAL SCROLL */
         .table-container {
             overflow-x: auto;
         }
@@ -204,7 +198,6 @@ $allShops = $shopModel->getAllShopsWithBalance();
             border-collapse: collapse;
             margin-top: 20px;
             table-layout: fixed;
-            /* ✅ Changed to fixed for better control */
         }
 
         .data-table thead {
@@ -227,10 +220,6 @@ $allShops = $shopModel->getAllShopsWithBalance();
             color: #4b5563;
             font-size: 0.9rem;
         }
-
-        /* ✅ OPTIMIZED COLUMN WIDTHS - Remove extra space */
-
-        /* Shop Name - flexible but not too wide */
         .data-table th:nth-child(1),
         .data-table td:nth-child(1) {
             width: 25%;
@@ -238,48 +227,35 @@ $allShops = $shopModel->getAllShopsWithBalance();
             word-wrap: break-word;
             white-space: normal;
         }
-
-        /* Seller - moderate */
         .data-table th:nth-child(2),
         .data-table td:nth-child(2) {
             width: 15%;
             white-space: nowrap;
         }
-
-        /* ATM Card - compact */
         .data-table th:nth-child(3),
         .data-table td:nth-child(3) {
             width: 12%;
             white-space: nowrap;
         }
-
-        /* Balance - compact */
         .data-table th:nth-child(4),
         .data-table td:nth-child(4) {
             width: 12%;
             white-space: nowrap;
         }
-
-        /* Earned - compact */
         .data-table th:nth-child(5),
         .data-table td:nth-child(5) {
             width: 12%;
             white-space: nowrap;
         }
-
-        /* Withdrawn - compact */
         .data-table th:nth-child(6),
         .data-table td:nth-child(6) {
             width: 12%;
             white-space: nowrap;
         }
-
-        /* Actions - ✅ REDUCED from min-width: 180px to fit buttons */
         .data-table th:nth-child(7),
         .data-table td:nth-child(7) {
             width: 12%;
             min-width: 140px;
-            /* ✅ Reduced to fit buttons better */
             text-align: right;
             padding-right: 10px;
         }
@@ -311,14 +287,10 @@ $allShops = $shopModel->getAllShopsWithBalance();
             background: #dbeafe;
             color: #1e40af;
         }
-
-        /* ✅ OPTIMIZED ACTION BUTTONS - More compact */
         .action-buttons {
             display: flex;
             gap: 5px;
-            /* ✅ Reduced gap from 8px to 5px */
             flex-wrap: nowrap;
-            /* ✅ Changed to nowrap */
             justify-content: flex-end;
         }
 
@@ -327,7 +299,6 @@ $allShops = $shopModel->getAllShopsWithBalance();
         .btn-view-history,
         .btn-quick-cash {
             padding: 6px 10px;
-            /* ✅ Slightly increased padding for better look */
             border: none;
             border-radius: 6px;
             cursor: pointer;
@@ -398,8 +369,6 @@ $allShops = $shopModel->getAllShopsWithBalance();
             color: #6b7280;
             font-size: 1.1rem;
         }
-
-        /* Modal Styles */
         .modal {
             display: none;
             position: fixed;
@@ -599,7 +568,6 @@ $allShops = $shopModel->getAllShopsWithBalance();
             margin-right: 8px;
         }
 
-        /* Responsive */
         @media (max-width: 768px) {
             .lookup-form {
                 flex-direction: column;
@@ -624,8 +592,6 @@ $allShops = $shopModel->getAllShopsWithBalance();
                 padding: 8px 6px;
                 font-size: 0.75rem;
             }
-
-            /* Reset column widths for mobile */
             .data-table th,
             .data-table td {
                 width: auto !important;
@@ -640,7 +606,6 @@ $allShops = $shopModel->getAllShopsWithBalance();
             .btn-view-history,
             .btn-quick-cash {
                 padding: 8px 12px;
-                /* Keep comfortable on mobile */
                 font-size: 0.8rem;
             }
 
@@ -698,7 +663,6 @@ $allShops = $shopModel->getAllShopsWithBalance();
 
     <div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
     <?php
-    // Include unified sidebar component
     require_once __DIR__ . '/admin-nav.php';
     ?>
 
@@ -720,7 +684,6 @@ $allShops = $shopModel->getAllShopsWithBalance();
             </div>
 
             <div id="shopResult" class="shop-result" style="display: none;">
-                <!-- Results will be shown here -->
             </div>
         </section>
 
@@ -934,7 +897,6 @@ $allShops = $shopModel->getAllShopsWithBalance();
             }
         }
 
-        // Show message modal instead of alert
         function showMessage(message, type = 'info') {
             const modal = document.getElementById('messageModal');
             const content = document.getElementById('messageContent');
@@ -1007,14 +969,12 @@ $allShops = $shopModel->getAllShopsWithBalance();
         }
 
         function processInstantWithdrawal(shopID, balance) {
-            // Create a custom modal for amount input
             const modal = document.getElementById('quickCashModal');
             const shopNameInput = document.getElementById('quick_shop_name');
             const balanceInput = document.getElementById('quick_balance');
             const shopIDInput = document.getElementById('quick_shop_id');
             const amountInput = document.getElementById('quick_amount');
 
-            // Fetch shop name from the search result
             const resultDiv = document.getElementById('shopResult');
             const shopNameElement = resultDiv.querySelector('p strong');
             const shopName = shopNameElement ? shopNameElement.nextSibling.textContent.trim() : 'Shop';
@@ -1052,10 +1012,8 @@ $allShops = $shopModel->getAllShopsWithBalance();
                 return;
             }
 
-            // Close the quick cash modal first
             closeModal();
 
-            // Show confirmation modal
             if (!confirm(`Process cash withdrawal of ₱${amount.toFixed(2)}?`)) {
                 return;
             }
@@ -1187,7 +1145,6 @@ $allShops = $shopModel->getAllShopsWithBalance();
             document.querySelectorAll('.modal').forEach(m => m.classList.remove('active'));
         }
 
-        // Close modal on background click
         document.querySelectorAll('.modal').forEach(modal => {
             modal.addEventListener('click', function(e) {
                 if (e.target === this) {
@@ -1196,14 +1153,12 @@ $allShops = $shopModel->getAllShopsWithBalance();
             });
         });
 
-        // Enter key to search
         document.getElementById('cardNumber').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
                 searchByCard();
             }
         });
 
-        // Enter key on quick cash amount
         document.getElementById('quick_amount').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
                 processQuickCash();

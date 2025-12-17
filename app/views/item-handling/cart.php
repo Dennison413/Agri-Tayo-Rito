@@ -1,4 +1,5 @@
 <?php
+// app/views/item-handling/cart.php
 if (session_status() === PHP_SESSION_NONE) session_start();
 
 require_once __DIR__ . '/../../../config/config.php';
@@ -19,7 +20,6 @@ $buyerID = $_SESSION['user_id'];
 $cartModel = new Cart();
 $cartItemsGrouped = $cartModel->getCartItemsGroupedByShop($buyerID);
 
-// Generate CSRF token
 $csrfToken = CSRF::generateToken();
 ?>
 <!DOCTYPE html>
@@ -29,7 +29,8 @@ $csrfToken = CSRF::generateToken();
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
-    <title>My Cart - Agri Tayo Rito</title>
+    <link rel="icon" type="image/jpg" href="/agri_system/public/images/agri-icon.jpg">
+    <title>Agri Tayo Rito</title>
 
     <link rel="stylesheet" href="<?= BASE_URL ?>css/marketplace/marketplace.css">
     <link rel="stylesheet" href="<?= BASE_URL ?>css/responsive.css">
@@ -49,7 +50,6 @@ $csrfToken = CSRF::generateToken();
     </style>
     <script>
         const BASE_URL = "<?= BASE_URL ?>";
-        // FIXED: Point to the API router
         const CART_CONTROLLER_URL = "<?= BASE_URL ?>api/cart.php";
     </script>
 </head>
@@ -75,7 +75,6 @@ $csrfToken = CSRF::generateToken();
 
     <?php else: ?>
 
-        <!-- Cart with Items -->
         <main class="main-content">
             <div class="cart-breadcrumb">
                 <a href="<?= BASE_URL ?>marketplace" class="breadcrumb-link">Home</a>
@@ -86,10 +85,8 @@ $csrfToken = CSRF::generateToken();
             <div class="cart-container">
 
 
-                <!-- Cart Items Section -->
                 <div class="cart-items-container">
 
-                    <!-- Cart Header with Select All -->
                     <div class="cart-header">
                         <h2>🛒 My Shopping Cart</h2>
                         <div class="select-all-container">
@@ -101,14 +98,11 @@ $csrfToken = CSRF::generateToken();
                         </div>
                     </div>
 
-                    <!-- Cart Content -->
                     <div id="cartContent">
                         <?php foreach ($cartItemsGrouped as $shopID => $shop): ?>
 
-                            <!-- Shop Group -->
                             <div class="shop-section">
 
-                                <!-- Shop Header -->
                                 <div class="shop-header">
                                     <span class="shop-icon">🏪</span>
                                     <div class="shop-name">
@@ -116,7 +110,6 @@ $csrfToken = CSRF::generateToken();
                                     </div>
                                 </div>
 
-                                <!-- Shop Items -->
                                 <?php foreach ($shop['items'] as $item): ?>
                                     <?php
                                     $itemTotal = $item['price'] * $item['quantity'];
@@ -128,16 +121,12 @@ $csrfToken = CSRF::generateToken();
                                         data-product-id="<?= $item['productID'] ?>"
                                         data-price="<?= number_format($item['price'], 2, '.', '') ?>">
 
-                                        <!-- Checkbox -->
                                         <input type="checkbox"
                                             class="item-checkbox"
                                             onchange="calculateCartTotal()">
 
-                                        <!-- Product Image -->
                                         <?php
-                                        // Properly construct the full image URL
                                         if (!empty($item['primary_image'])) {
-                                            // If path starts with /, remove it to avoid double slashes
                                             $imagePath = ltrim($item['primary_image'], '/');
                                             $imageUrl = BASE_URL . $imagePath;
                                         } else {
@@ -150,7 +139,6 @@ $csrfToken = CSRF::generateToken();
                                             class="cart-item-image"
                                             onerror="this.src='<?= BASE_URL ?>images/placeholder.jpg'">
 
-                                        <!-- Product Info -->
                                         <div class="cart-item-info">
                                             <h3 class="cart-item-name">
                                                 <?= htmlspecialchars($item['product_name']) ?>
@@ -166,7 +154,6 @@ $csrfToken = CSRF::generateToken();
                                                 <?php endif; ?>
                                             </p>
 
-                                            <!-- Quantity Controls -->
                                             <div class="cart-qty-controls">
                                                 <button class="cart-qty-btn"
                                                     onclick="updateQty(<?= $item['productID'] ?>, -1)"
@@ -180,7 +167,6 @@ $csrfToken = CSRF::generateToken();
                                             </div>
                                         </div>
 
-                                        <!-- Item Actions -->
                                         <div class="cart-item-actions">
                                             <div class="cart-item-total">
                                                 ₱<?= number_format($itemTotal, 2) ?>
@@ -226,7 +212,6 @@ $csrfToken = CSRF::generateToken();
                         <span id="cartGrandTotal">₱0.00</span>
                     </div>
 
-                    <!-- Checkout Button -->
                     <button class="checkout-button"
                         id="checkoutBtn"
                         onclick="goToCheckout()"
@@ -234,7 +219,6 @@ $csrfToken = CSRF::generateToken();
                         Proceed to Checkout →
                     </button>
 
-                    <!-- Continue Shopping Button -->
                     <button class="continue-shopping"
                         onclick="window.location.href='<?= BASE_URL ?>marketplace'">
                         Continue Shopping
@@ -245,8 +229,6 @@ $csrfToken = CSRF::generateToken();
         </main>
 
     <?php endif; ?>
-
-    <!-- Load Cart JavaScript -->
     <script src="<?= BASE_URL ?>js/cart.js?v=<?= time() ?>"></script>
 
 </body>

@@ -105,7 +105,8 @@ while ($row = $assignedStmt->fetch(PDO::FETCH_ASSOC)) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Delivery Riders - Admin</title>
+    <link rel="icon" type="image/jpg" href="/agri_system/public/images/agri-icon.jpg">
+    <title>Agri Tayo Rito</title>
     <link rel="stylesheet" href="<?php echo BASE_URL; ?>css/responsive.css">
     <link rel="stylesheet" href="<?php echo BASE_URL; ?>css/admin/dashboard.css">
 </head>

@@ -1,6 +1,5 @@
 <?php
 // app/controllers/WithDrawalController.php
-
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
@@ -21,9 +20,7 @@ class WithdrawalController
         $this->shopModel = new Shop();
     }
 
-    /* ============================================================
-       SELLER: CREATE WITHDRAWAL REQUEST
-    ============================================================ */
+    // seller: request withdrawal
     public function requestWithdrawal() 
     {
         header('Content-Type: application/json');
@@ -87,9 +84,7 @@ class WithdrawalController
         exit;
     }
 
-    /* ============================================================
-       ADMIN: APPROVE WITHDRAWAL
-    ============================================================ */
+    // admin: approve withdrawal
     public function approveWithdrawal() 
     {
         if (!CSRF::validateRequest()) {
@@ -126,9 +121,7 @@ class WithdrawalController
         exit;
     }
 
-    /* ============================================================
-       ADMIN: REJECT WITHDRAWAL
-    ============================================================ */
+    // admin: reject withdrawal
     public function rejectWithdrawal() 
     {
         if (!CSRF::validateRequest()) {
@@ -165,9 +158,7 @@ class WithdrawalController
         exit;
     }
 
-    /* ============================================================
-       ADMIN: SEARCH BY ATM CARD
-    ============================================================ */
+    // admin: search shop by card number
     public function searchByCard() 
     {
         header('Content-Type: application/json');
@@ -209,9 +200,7 @@ class WithdrawalController
         exit;
     }
 
-    /* ============================================================
-       ADMIN: PROCESS CASH WITHDRAWAL
-    ============================================================ */
+    // admin: process cash withdrawal
     public function processCashWithdrawal() 
     {
         header('Content-Type: application/json');
@@ -252,9 +241,7 @@ class WithdrawalController
         exit;
     }
 
-    /* ============================================================
-       NEW: ADMIN — GET WITHDRAWALS BY SHOP
-    ============================================================ */
+    // admin: get withdrawals by shop (history)
     public function getWithdrawalsByShop()
     {
         header("Content-Type: application/json");
@@ -289,18 +276,13 @@ class WithdrawalController
         exit;
     }
 
-    /* ============================================================
-       AUTH HELPER
-    ============================================================ */
     private function isLoggedIn() 
     {
         return !empty($_SESSION['logged_in']);
     }
 }
 
-/* ============================================================
-   POST ROUTER
-============================================================ */
+// handle POST requests
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $controller = new WithdrawalController();
@@ -328,7 +310,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $controller->processCashWithdrawal();
             break;
 
-        case 'get_withdrawals_by_shop':   // ✅ NEW ROUTE
+        case 'get_withdrawals_by_shop': 
             $controller->getWithdrawalsByShop();
             break;
 

@@ -1,6 +1,5 @@
 <?php
 // public/marketplace/myorders.php
-// Buyer's Orders Page
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
@@ -9,7 +8,6 @@ require_once __DIR__ . '/../../../../config/config.php';
 require_once __DIR__ . '/../../../models/Orders.php';
 require_once __DIR__ . '/../../../helpers/csrf.php';
 
-// Check authentication
 if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'buyer') {
     header('Location: ' . BASE_URL . 'auth/login');
     exit;
@@ -17,11 +15,7 @@ if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'buyer') {
 
 $buyerID = $_SESSION['user_id'];
 $ordersModel = new Orders();
-
-// Get orders
 $allOrders = $ordersModel->getOrdersByBuyer($buyerID, 50, 0);
-
-// Group orders by status
 $ordersByStatus = [
     'pending' => [],
     'processing' => [],
@@ -34,15 +28,16 @@ foreach ($allOrders as $order) {
     $ordersByStatus[$order['order_status']][] = $order;
 }
 
-// Get order stats
 $stats = $ordersModel->getOrderStats($buyerID, 'buyer');
 ?>
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Orders - Agri Tayo Rito</title>
+    <link rel="icon" type="image/jpg" href="/agri_system/public/images/agri-icon.jpg">
+    <title>Agri Tayo Rito</title>
     <style>
         .orders-container {
             max-width: 1200px;
@@ -335,7 +330,6 @@ $stats = $ordersModel->getOrderStats($buyerID, 'buyer');
             color: white;
         }
 
-        /* Modal Styles */
         .modal {
             display: none;
             position: fixed;
@@ -442,8 +436,13 @@ $stats = $ordersModel->getOrderStats($buyerID, 'buyer');
         }
 
         @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
         }
 
         @keyframes slideIn {
@@ -451,6 +450,7 @@ $stats = $ordersModel->getOrderStats($buyerID, 'buyer');
                 transform: translateY(-50px);
                 opacity: 0;
             }
+
             to {
                 transform: translateY(0);
                 opacity: 1;
@@ -500,23 +500,18 @@ $stats = $ordersModel->getOrderStats($buyerID, 'buyer');
         }
     </style>
 </head>
-<body>
-    <!-- Sidebar Navigation -->
-    <?php require_once __DIR__ . '/../../marketplace/marketnav.php'; ?>
 
-    <!-- Overlay -->
+<body>
+    <?php require_once __DIR__ . '/../../marketplace/marketnav.php'; ?>
     <div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
 
     <!-- Main Content -->
     <div class="main-content">
         <div class="orders-container">
-            
-            <!-- Header -->
             <div class="orders-header">
                 <h1>📦 My Orders</h1>
             </div>
 
-            <!-- Stats -->
             <div class="stats-row">
                 <div class="stat-card">
                     <div class="stat-value"><?php echo $stats['total_orders']; ?></div>
@@ -536,7 +531,6 @@ $stats = $ordersModel->getOrderStats($buyerID, 'buyer');
                 </div>
             </div>
 
-            <!-- Tabs -->
             <div class="tabs">
                 <button class="tab-btn active" onclick="showTab('all')">
                     All (<?php echo count($allOrders); ?>)
@@ -558,7 +552,6 @@ $stats = $ordersModel->getOrderStats($buyerID, 'buyer');
                 </button>
             </div>
 
-            <!-- All Orders Tab -->
             <div id="tab-all" class="tab-content active">
                 <?php if (empty($allOrders)): ?>
                     <div class="empty-state">
@@ -571,7 +564,7 @@ $stats = $ordersModel->getOrderStats($buyerID, 'buyer');
                         </a>
                     </div>
                 <?php else: ?>
-                    <?php foreach ($allOrders as $order): 
+                    <?php foreach ($allOrders as $order):
                         $orderItems = (new OrderItems())->getOrderItems($order['orderID']);
                     ?>
                         <?php echo renderOrderCard($order, $orderItems); ?>
@@ -579,7 +572,6 @@ $stats = $ordersModel->getOrderStats($buyerID, 'buyer');
                 <?php endif; ?>
             </div>
 
-            <!-- Status-specific tabs -->
             <?php foreach (['pending', 'processing', 'shipped', 'delivered', 'cancelled'] as $status): ?>
                 <div id="tab-<?php echo $status; ?>" class="tab-content">
                     <?php if (empty($ordersByStatus[$status])): ?>
@@ -588,7 +580,7 @@ $stats = $ordersModel->getOrderStats($buyerID, 'buyer');
                             <h3>No <?php echo $status; ?> orders</h3>
                         </div>
                     <?php else: ?>
-                        <?php foreach ($ordersByStatus[$status] as $order): 
+                        <?php foreach ($ordersByStatus[$status] as $order):
                             $orderItems = (new OrderItems())->getOrderItems($order['orderID']);
                         ?>
                             <?php echo renderOrderCard($order, $orderItems); ?>
@@ -608,7 +600,6 @@ $stats = $ordersModel->getOrderStats($buyerID, 'buyer');
                 <button class="close-modal" onclick="closeModal()">&times;</button>
             </div>
             <div class="modal-body" id="modalBody">
-                <!-- Content will be loaded here -->
             </div>
         </div>
     </div>
@@ -617,7 +608,7 @@ $stats = $ordersModel->getOrderStats($buyerID, 'buyer');
         function toggleSidebar() {
             const sidebar = document.getElementById('sidebar');
             const overlay = document.getElementById('overlay');
-            
+
             if (sidebar) sidebar.classList.toggle('active');
             if (overlay) overlay.classList.toggle('active');
         }
@@ -634,14 +625,12 @@ $stats = $ordersModel->getOrderStats($buyerID, 'buyer');
         }
 
         function viewOrderDetails(orderID) {
-            // Get order data from the DOM
             const orderCard = event.target.closest('.order-card');
             const orderNumber = orderCard.querySelector('.order-number').textContent;
             const orderDate = orderCard.querySelector('.order-date').textContent;
             const statusBadge = orderCard.querySelector('.status-badge').textContent;
             const orderTotal = orderCard.querySelector('.order-total').textContent;
-            
-            // Get items
+
             const items = orderCard.querySelectorAll('.order-item');
             let itemsHTML = '';
             items.forEach(item => {
@@ -650,7 +639,7 @@ $stats = $ordersModel->getOrderStats($buyerID, 'buyer');
                 const qty = item.querySelector('.item-quantity').textContent;
                 const price = item.querySelector('.item-price').textContent;
                 const imgSrc = item.querySelector('.item-image').src;
-                
+
                 itemsHTML += `
                     <div class="order-item">
                         <img src="${imgSrc}" alt="${name}" class="item-image">
@@ -663,8 +652,7 @@ $stats = $ordersModel->getOrderStats($buyerID, 'buyer');
                     </div>
                 `;
             });
-            
-            // Build modal content
+
             const modalContent = `
                 <div class="detail-section">
                     <h3>${orderNumber}</h3>
@@ -699,7 +687,7 @@ $stats = $ordersModel->getOrderStats($buyerID, 'buyer');
                     </div>
                 </div>
             `;
-            
+
             document.getElementById('modalBody').innerHTML = modalContent;
             document.getElementById('orderModal').classList.add('active');
         }
@@ -708,7 +696,6 @@ $stats = $ordersModel->getOrderStats($buyerID, 'buyer');
             document.getElementById('orderModal').classList.remove('active');
         }
 
-        // Close modal when clicking outside
         window.onclick = function(event) {
             const modal = document.getElementById('orderModal');
             if (event.target === modal) {
@@ -718,53 +705,54 @@ $stats = $ordersModel->getOrderStats($buyerID, 'buyer');
 
         function cancelOrder(orderID) {
             if (confirm('Are you sure you want to cancel this order?')) {
-                // Show loading state
                 event.target.disabled = true;
                 event.target.textContent = 'Cancelling...';
-                
+
                 fetch('<?php echo BASE_URL; ?>api/checkout', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        action: 'cancel_order',
-                        order_id: orderID,
-                        csrf_token: document.querySelector('[name="csrf_token"]').value
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            action: 'cancel_order',
+                            order_id: orderID,
+                            csrf_token: document.querySelector('[name="csrf_token"]').value
+                        })
                     })
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        alert('Order cancelled successfully!');
-                        location.reload();
-                    } else {
-                        alert('Error: ' + data.message);
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            alert('Order cancelled successfully!');
+                            location.reload();
+                        } else {
+                            alert('Error: ' + data.message);
+                            event.target.disabled = false;
+                            event.target.textContent = 'Cancel Order';
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('Failed to cancel order. Please try again.');
                         event.target.disabled = false;
                         event.target.textContent = 'Cancel Order';
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert('Failed to cancel order. Please try again.');
-                    event.target.disabled = false;
-                    event.target.textContent = 'Cancel Order';
-                });
+                    });
             }
         }
     </script>
 
     <?php echo CSRF::getTokenField(); ?>
 </body>
+
 </html>
 
 <?php
-function renderOrderCard($order, $items) {
+function renderOrderCard($order, $items)
+{
     $statusClass = 'status-' . $order['order_status'];
     $statusLabel = ucfirst(str_replace('_', ' ', $order['order_status']));
-    
+
     ob_start();
-    ?>
+?>
     <div class="order-card">
         <div class="order-header">
             <div>
@@ -781,9 +769,9 @@ function renderOrderCard($order, $items) {
         <div class="order-items">
             <?php foreach ($items as $item): ?>
                 <div class="order-item">
-                    <img src="<?php echo BASE_URL . htmlspecialchars($item['primary_image'] ?? 'images/placeholder.jpg'); ?>" 
-                         alt="<?php echo htmlspecialchars($item['product_name']); ?>" 
-                         class="item-image">
+                    <img src="<?php echo BASE_URL . htmlspecialchars($item['primary_image'] ?? 'images/placeholder.jpg'); ?>"
+                        alt="<?php echo htmlspecialchars($item['product_name']); ?>"
+                        class="item-image">
                     <div class="item-details">
                         <div class="item-name"><?php echo htmlspecialchars($item['product_name']); ?></div>
                         <div class="item-shop">🏪 <?php echo htmlspecialchars($item['shop_name']); ?></div>
@@ -833,7 +821,7 @@ function renderOrderCard($order, $items) {
             </div>
         </div>
     </div>
-    <?php
+<?php
     return ob_get_clean();
 }
 ?>

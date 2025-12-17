@@ -14,7 +14,7 @@ class AuthController
         $this->userModel = new User();
     }
 
-    // Registration without CSRF check (for new users who don't have a session yet)
+    // registration without CSRF check (for new users who don't have a session yet)
     public function register($data) 
     {
         $rateLimitCheck = RateLimiter::checkRegistrationAttempts();
@@ -81,6 +81,7 @@ class AuthController
         }
     }
     
+    // login
     public function login($email, $password) 
     {
         if (empty($email) || empty($password)) {
@@ -211,6 +212,7 @@ class AuthController
         }
     }
 
+    // change password
     public function changePassword($userID, $currentPassword, $newPassword) 
     {
         if (strlen($newPassword) < 8) {
@@ -355,6 +357,7 @@ class AuthController
         return $roleNames[$role] ?? 'Unknown';
     }
 
+    // user role authentications
     public function isAdmin() 
     {
         return $this->isLoggedIn() && $_SESSION['user_role'] === 'admin';

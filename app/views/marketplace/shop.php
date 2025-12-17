@@ -1,6 +1,5 @@
 <?php
 // app/views/marketplace/shop.php
-// Buyer's perspective of seller shop - REWRITTEN & FIXED
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
@@ -11,12 +10,10 @@ require_once __DIR__ . '/../../models/Shop.php';
 require_once __DIR__ . '/../../models/Product.php';
 require_once __DIR__ . '/../../helpers/csrf.php';
 
-// ==================== USER AUTHENTICATION ====================
 $isLoggedIn = isset($_SESSION['logged_in']) && $_SESSION['logged_in'];
 $userRole = $_SESSION['user_role'] ?? 'guest';
 $userId = $_SESSION['user_id'] ?? null;
 
-// ==================== GET SHOP SLUG ====================
 $shopSlug = $_GET['slug'] ?? '';
 
 if (empty($shopSlug)) {
@@ -25,12 +22,10 @@ if (empty($shopSlug)) {
     exit;
 }
 
-// ==================== FETCH SHOP DATA USING MODELS ====================
 $shopModel = new Shop();
 $productModel = new Product();
 
 try {
-    // ✅ Use Shop model to get shop details
     $shop = $shopModel->getShopBySlug($shopSlug);
     
     if (!$shop) {
@@ -41,10 +36,8 @@ try {
     
     $shopID = (int)$shop['shopID'];
     
-    // ✅ Use Product model to get shop products
     $products = $productModel->getProductsByShop($shopID, false);
     
-    // ✅ Get shop statistics
     $shopStats = $shopModel->getShopStats($shopID);
     
 } catch (Exception $e) {
@@ -54,7 +47,6 @@ try {
     exit;
 }
 
-// ==================== EXTRACT & SANITIZE SHOP DATA ====================
 $shopName = htmlspecialchars($shop['shop_name']);
 $shopDescription = htmlspecialchars($shop['shop_description'] ?? 'Welcome to our shop!');
 $businessName = htmlspecialchars($shop['business_name'] ?? $shopName);
@@ -68,7 +60,6 @@ $totalProducts = (int)($shopStats['products']['total_products'] ?? count($produc
 $totalOrders = (int)($shop['total_orders'] ?? 0);
 $joinedYear = date('Y', strtotime($shop['created_at'] ?? 'now'));
 
-// ==================== GET CART COUNT (IF BUYER) ====================
 $cartCount = 0;
 if ($isLoggedIn && $userRole === 'buyer' && $userId) {
     try {
@@ -80,17 +71,15 @@ if ($isLoggedIn && $userRole === 'buyer' && $userId) {
     }
 }
 
-// ==================== CSRF TOKEN ====================
 $csrfToken = CSRF::generateToken();
-
-$pageTitle = $shopName . ' - Agri Tayo Rito';
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo $pageTitle; ?></title>
+    <link rel="icon" type="image/jpg" href="/agri_system/public/images/agri-icon.jpg">
+    <title>Agri Tayo Rito</title>
     
     <link rel="stylesheet" href="<?php echo BASE_URL; ?>css/responsive.css">
     <link rel="stylesheet" href="<?php echo BASE_URL; ?>css/marketplace/marketplace.css">
@@ -322,7 +311,6 @@ $pageTitle = $shopName . ' - Agri Tayo Rito';
             margin-bottom: 15px;
         }
 
-        /* Mobile Responsive */
         @media (max-width: 768px) {
             .shop-page-wrapper {
                 padding: 15px;
@@ -408,8 +396,6 @@ $pageTitle = $shopName . ' - Agri Tayo Rito';
 </head>
 <body>
     <div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
-
-    <!-- TOP NAVIGATION -->
     <?php if ($isLoggedIn): ?>
         <?php include __DIR__ . '/topmarketnav.php'; ?>
     <?php else: ?>
@@ -442,8 +428,6 @@ $pageTitle = $shopName . ' - Agri Tayo Rito';
     <!-- MAIN CONTENT -->
     <main class="main-content">
         <div class="shop-page-wrapper">
-            
-            <!-- BREADCRUMB -->
             <div class="product-breadcrumb" style="margin-bottom: 20px;">
                 <a href="<?php echo BASE_URL; ?>marketplace" class="breadcrumb-link">Home</a>
                 <span class="breadcrumb-separator">›</span>
@@ -452,7 +436,6 @@ $pageTitle = $shopName . ' - Agri Tayo Rito';
                 <span><?php echo $shopName; ?></span>
             </div>
 
-            <!-- SHOP HEADER -->
             <div class="shop-header-card">
                 <div class="shop-cover">
                     <?php if ($shopBanner): ?>
@@ -489,7 +472,7 @@ $pageTitle = $shopName . ' - Agri Tayo Rito';
                         </div>
                     </div>
                     
-                    <!-- SHOP STATS -->
+                    <!-- Shop Stats -->
                     <div class="shop-stats-grid">
                         <div class="stat-box">
                             <span class="stat-value-large"><?php echo $rating; ?></span>
@@ -511,7 +494,7 @@ $pageTitle = $shopName . ' - Agri Tayo Rito';
                 </div>
             </div>
 
-            <!-- PRODUCTS SECTION -->
+            <!-- Products section -->
             <div class="shop-products-section">
                 <div class="section-header-shop">
                     <h2 class="section-title-shop">Shop Products (<?php echo count($products); ?>)</h2>
@@ -711,7 +694,6 @@ $pageTitle = $shopName . ' - Agri Tayo Rito';
             }
         }
     </script>
-
     <script src="<?php echo BASE_URL; ?>js/marketplace.js"></script>
 </body>
 </html>

@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Contact Us - Agri Tayo Rito</title>
+    <link rel="icon" type="image/jpg" href="/agri_system/public/images/agri-icon.jpg">
+    <title>Agri Tayo Rito</title>
     <style>
         * {
             margin: 0;
@@ -509,7 +510,6 @@
                 </form>
             </div>
 
-            <!-- Map Placeholder -->
             <div class="map-container">
                 <div class="map-placeholder">
                     📍 San Pablo, Calabarzon, Philippines
@@ -527,17 +527,14 @@
     </footer>
 
     <script>
-        // Form submission handler
         document.getElementById('contactForm').addEventListener('submit', function(e) {
             e.preventDefault();
             
             const successMessage = document.getElementById('successMessage');
             successMessage.style.display = 'block';
             
-            // Scroll to success message
             successMessage.scrollIntoView({ behavior: 'smooth', block: 'center' });
             
-            // Reset form after 2 seconds
             setTimeout(() => {
                 this.reset();
                 setTimeout(() => {
@@ -546,7 +543,6 @@
             }, 2000);
         });
 
-        // Smooth scroll for quick links
         document.querySelectorAll('a[href^="/"]').forEach(link => {
             link.addEventListener('mouseenter', function() {
                 this.style.background = '#e8f5e9';
@@ -558,7 +554,6 @@
             });
         });
 
-        // Info items hover effect
         document.querySelectorAll('.info-item').forEach(item => {
             item.addEventListener('mouseenter', function() {
                 this.style.boxShadow = '0 4px 15px rgba(45, 80, 22, 0.1)';
@@ -568,7 +563,6 @@
             });
         });
 
-        // Form validation
         const inputs = document.querySelectorAll('.form-group input, .form-group textarea, .form-group select');
         inputs.forEach(input => {
             input.addEventListener('invalid', function(e) {

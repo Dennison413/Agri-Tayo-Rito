@@ -1,6 +1,5 @@
 <?php
 // app/controllers/SellerApplications.php
-// Handle Seller Application Submissions
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
@@ -135,7 +134,7 @@ class SellerApplicationController
     }
 }
 
-// Handle POST requests
+// handle POST requests
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $controller = new SellerApplicationController();
     $action = $_POST['action'] ?? '';

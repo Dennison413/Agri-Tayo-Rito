@@ -1,15 +1,11 @@
 <?php
 // app/views/components/admin-nav.php
-// Unified navbar component for all admin pages - UPDATED TO MATCH SELLER UI
-
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-// Get current page for active state
 $current_page = basename($_SERVER['PHP_SELF'], '.php');
 
-// Get pending counts for badges
 $db = new Database();
 $conn = $db->connect();
 
@@ -27,18 +23,15 @@ try {
     $stmt = $conn->query("SELECT COUNT(*) as total FROM orders WHERE lgu_delivery_status = 'pending_pickup'");
     $pending_pickups = $stmt->fetch(PDO::FETCH_ASSOC)['total'];
 } catch (Exception $e) {
-    // Silently fail if tables don't exist
 }
 ?>
 
 <!-- Top Navigation Bar -->
 <nav class="top-navbar">
     <div class="logo-wrapper">
-        <img src="<?php echo BASE_URL; ?>images/logo.jpg" alt="Logo">
+        <img src="<?php echo BASE_URL; ?>images/main-logo.jpg" alt="Logo">
         <span class="logo">Admin Panel</span>
     </div>
-    
-    <!-- Search Bar (shows on relevant pages) -->
     <?php if (in_array($current_page, ['users', 'manage-users', 'riders'])): ?>
     <div class="search-wrapper">
         <input type="text" 
@@ -57,7 +50,6 @@ try {
     </div>
 </nav>
 
-<!-- Sidebar Navigation -->
 <aside class="admin-sidebar" id="adminSidebar">
     
     <div class="sidebar-header">
@@ -170,15 +162,9 @@ try {
     </div>
 </aside>
 
-<!-- Overlay for mobile -->
 <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleAdminSidebar()"></div>
 
 <style>
-/* ============================================
-   ADMIN NAVIGATION STYLES - MATCHING SELLER UI
-   ============================================ */
-
-/* Top Navigation Bar */
 .top-navbar {
     position: fixed;
     top: 0;
@@ -216,7 +202,7 @@ try {
 }
 
 .navbar-actions {
-    display: none; /* Hidden on desktop */
+    display: none;
 }
 
 .nav-btn {
@@ -236,8 +222,6 @@ try {
     color: white;
     font-size: 1.5rem;
 }
-
-/* Search Bar Styling */
 .search-wrapper {
     flex: 1;
     max-width: 500px;
@@ -274,7 +258,6 @@ try {
     pointer-events: none;
 }
 
-/* Sidebar - Always visible on desktop */
 .admin-sidebar {
     position: fixed;
     left: 0;
@@ -287,7 +270,6 @@ try {
     z-index: 999;
     display: flex;
     flex-direction: column;
-    /* Hide scrollbar */
     scrollbar-width: none;
     -ms-overflow-style: none;
 }
@@ -322,7 +304,7 @@ try {
 
 .sidebar-actions {
     margin-left: auto;
-    display: none; /* Hidden on desktop */
+    display: none;
 }
 
 .sidebar-action-btn {
@@ -450,38 +432,27 @@ try {
     transform: translateY(-2px);
 }
 
-/* Overlay - hidden on desktop */
 .sidebar-overlay {
     display: none;
 }
 
-/* ============================================
-   MOBILE RESPONSIVE (768px and below)
-   ============================================ */
 @media (max-width: 768px) {
-    /* Show hamburger menu */
     .navbar-actions {
         display: block;
     }
     
-    /* Hide sidebar by default on mobile */
     .admin-sidebar {
         left: -280px;
         transition: left 0.3s ease;
         top: 70px;
     }
     
-    /* Show sidebar when active */
     .admin-sidebar.active {
         left: 0;
     }
-    
-    /* Show close button in sidebar on mobile */
     .sidebar-actions {
         display: block;
     }
-    
-    /* Show overlay when sidebar is active */
     .sidebar-overlay {
         display: none;
         position: fixed;
@@ -501,10 +472,6 @@ try {
         display: none;
     }
 }
-
-/* ============================================
-   MAIN CONTENT ADJUSTMENT
-   ============================================ */
 .main-content {
     margin-left: 280px;
     margin-top: 70px;
@@ -527,7 +494,6 @@ function toggleAdminSidebar() {
     overlay.classList.toggle('active');
 }
 
-// Close sidebar when clicking outside
 document.addEventListener('DOMContentLoaded', function() {
     const overlay = document.getElementById('sidebarOverlay');
     if (overlay) {
@@ -535,14 +501,11 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-// Search functionality
 function performSearch() {
     const searchTerm = document.getElementById('adminSearch')?.value.toLowerCase();
     if (!searchTerm) return;
     
     const currentPage = '<?php echo $current_page; ?>';
-    
-    // Get all table rows based on current page
     let rows;
     if (currentPage === 'riders') {
         rows = document.querySelectorAll('.data-table tbody tr, .rider-card');
@@ -559,7 +522,6 @@ function performSearch() {
         }
     });
     
-    // Also search in cards if they exist
     const cards = document.querySelectorAll('.rider-card, .user-card, .application-card');
     cards.forEach(card => {
         const text = card.textContent.toLowerCase();

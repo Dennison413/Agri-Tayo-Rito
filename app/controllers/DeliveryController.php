@@ -1,6 +1,5 @@
 <?php
 // app/controllers/DeliveryController.php
-// LGU Delivery Management - Rider Assignment, Status Updates, Delivery Tracking
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
@@ -354,7 +353,7 @@ class DeliveryController
         return $this->ridersModel->getRiderStats($riderID);
     }
     
-    // get delivery stats for admin dashboard
+    // get delivery stats for admin dashboard to
     public function getDeliveryStats() 
     {
         $query = "SELECT 
@@ -377,22 +376,14 @@ class DeliveryController
             return [];
         }
     }
-
-    // ==================== UTILITY METHODS ====================
-
-    /**
-     * Check if user is logged in
-     */
     private function isLoggedIn() 
     {
         return isset($_SESSION['user_id']) && 
                isset($_SESSION['logged_in']) && 
                $_SESSION['logged_in'] === true;
     }
-
-    /**
-     * Format delivery status badge
-     */
+    
+    // format delivery status badge
     public function getStatusBadge($status) 
     {
         $badges = [
@@ -407,7 +398,7 @@ class DeliveryController
     }
 }
 
-// Handle POST requests
+// handle POST requests
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $controller = new DeliveryController();
     $action = $_POST['action'] ?? '';

@@ -1,5 +1,5 @@
 <?php
-// Initialize controller and get user data
+// app/views/marketplace/profile.php
 require_once BASE_PATH . '/app/controllers/ProfileController.php';
 require_once BASE_PATH . '/config/database.php';
 
@@ -7,11 +7,10 @@ $profileController = new ProfileController();
 $user = $profileController->getProfile();
 $userStats = $profileController->getUserStats($user['userID']);
 
-// Get pending orders (not completed/cancelled)
 try {
     $db = new Database();
     $conn = $db->connect();
-    
+
     $query = "SELECT 
                 o.orderID,
                 o.order_date as created_at,
@@ -27,12 +26,11 @@ try {
               GROUP BY o.orderID
               ORDER BY o.order_date DESC
               LIMIT 5";
-    
+
     $stmt = $conn->prepare($query);
     $stmt->execute([$user['userID']]);
     $recentOrders = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    
-    // Format image paths
+
     foreach ($recentOrders as &$order) {
         if (empty($order['image'])) {
             $order['image'] = '/agri_system/public/images/placeholder-product.jpg';
@@ -45,7 +43,7 @@ try {
     $recentOrders = [];
 }
 
-// Handle form submission
+// handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_profile'])) {
     $profileController->updateProfile();
 }
@@ -56,9 +54,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_profile'])) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Profile - Agri Tayo Rito</title>
+    <link rel="icon" type="image/jpg" href="/agri_system/public/images/agri-icon.jpg">
+    <title>Agri Tayo Rito</title>
     <style>
-        
         * {
             margin: 0;
             padding: 0;
@@ -101,7 +99,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_profile'])) {
             border-left: 4px solid #dc3545;
         }
 
-        /* Profile Container */
         .profile-container {
             background: white;
             border-radius: 12px;
@@ -109,7 +106,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_profile'])) {
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
         }
 
-        /* Profile Header */
         .profile-header {
             position: relative;
         }
@@ -150,7 +146,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_profile'])) {
             transform: translateY(-2px);
         }
 
-        /* Profile Info Section */
         .profile-info-section {
             display: flex;
             align-items: flex-end;
@@ -165,13 +160,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_profile'])) {
         }
 
         .profile-avatar {
-    width: 120px;
-    height: 120px;
-    border-radius: 50%;
-    border: 5px solid white;
-    object-fit: cover;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-}
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            border: 5px solid white;
+            object-fit: cover;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
         .edit-avatar-btn {
             position: absolute;
             bottom: 5px;
@@ -242,12 +238,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_profile'])) {
             box-shadow: 0 4px 12px rgba(45, 80, 22, 0.4);
         }
 
-        /* Profile Content */
         .profile-content {
             padding: 30px;
         }
 
-        /* Profile Cards */
         .profile-card {
             background: white;
             border: 2px solid #e0e0e0;
@@ -311,7 +305,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_profile'])) {
             box-shadow: 0 2px 8px rgba(45, 80, 22, 0.3);
         }
 
-        /* Info Grid */
         .info-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -359,7 +352,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_profile'])) {
             color: #999;
         }
 
-        /* Form Actions */
         .form-actions {
             display: flex;
             gap: 10px;
@@ -402,7 +394,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_profile'])) {
             border-color: #999;
         }
 
-        /* Address Cards */
         .addresses-list {
             display: grid;
             gap: 15px;
@@ -490,7 +481,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_profile'])) {
             transform: translateY(-2px);
         }
 
-        /* Stats Grid */
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -531,7 +521,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_profile'])) {
             font-weight: 600;
         }
 
-        /* Orders List */
         .orders-list {
             display: flex;
             flex-direction: column;
@@ -654,7 +643,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_profile'])) {
             box-shadow: 0 4px 12px rgba(45, 80, 22, 0.4);
         }
 
-        /* Security List */
         .security-list {
             display: flex;
             flex-direction: column;
@@ -718,7 +706,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_profile'])) {
             color: #1f3810;
         }
 
-        /* Responsive Design */
         @media (max-width: 1200px) {
             .stats-grid {
                 grid-template-columns: repeat(2, 1fr);
@@ -850,296 +837,292 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_profile'])) {
             }
         }
 
-        /* ============================================
-   AVATAR MODAL STYLES
-   ============================================ */
-
-        /* Modal Overlay */
         .modal {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.7);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 9999;
-    animation: fadeIn 0.3s ease;
-}
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            animation: fadeIn 0.3s ease;
+        }
 
-@keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
-}
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
 
-/* Modal Content Container - IMPROVED SIZE */
-.modal-content {
-    background: white;
-    border-radius: 16px;
-    padding: 0;
-    width: 90%;
-    max-width: 800px;  /* Increased from 650px */
-    max-height: 90vh;
-    overflow: hidden;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
-    animation: slideUp 0.3s ease;
-}
+            to {
+                opacity: 1;
+            }
+        }
 
-@keyframes slideUp {
-    from {
-        transform: translateY(50px);
-        opacity: 0;
-    }
-    to {
-        transform: translateY(0);
-        opacity: 1;
-    }
-}
+        .modal-content {
+            background: white;
+            border-radius: 16px;
+            padding: 0;
+            width: 90%;
+            max-width: 800px;
+            max-height: 90vh;
+            overflow: hidden;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            animation: slideUp 0.3s ease;
+        }
 
-/* Modal Header */
-.modal-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 20px 30px;
-    border-bottom: 2px solid #f0f0f0;
-    background: linear-gradient(135deg, #f8f9fa, #ffffff);
-}
+        @keyframes slideUp {
+            from {
+                transform: translateY(50px);
+                opacity: 0;
+            }
 
-.modal-header h2 {
-    font-size: 1.4rem;
-    font-weight: 700;
-    color: #2d5016;
-    margin: 0;
-}
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
 
-/* Modal Close Button */
-.modal-close {
-    background: none;
-    border: none;
-    font-size: 2rem;
-    color: #999;
-    cursor: pointer;
-    padding: 0;
-    width: 40px;
-    height: 40px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-    transition: all 0.3s;
-    line-height: 1;
-}
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 30px;
+            border-bottom: 2px solid #f0f0f0;
+            background: linear-gradient(135deg, #f8f9fa, #ffffff);
+        }
 
-.modal-close:hover {
-    background: #f5f5f5;
-    color: #333;
-    transform: rotate(90deg);
-}
+        .modal-header h2 {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #2d5016;
+            margin: 0;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 2rem;
+            color: #999;
+            cursor: pointer;
+            padding: 0;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.3s;
+            line-height: 1;
+        }
+
+        .modal-close:hover {
+            background: #f5f5f5;
+            color: #333;
+            transform: rotate(90deg);
+        }
+
         .upload-section {
-    padding: 15px 30px;
-    background: #f8f9fa;
-    border-bottom: 1px solid #e0e0e0;
-}
+            padding: 15px 30px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e0e0e0;
+        }
 
-.upload-btn {
-    width: 100%;
-    padding: 15px;  /* Reduced from 20px */
-    background: white;
-    border: 2px dashed #2d5016;
-    border-radius: 10px;
-    cursor: pointer;
-    display: flex;
-    flex-direction: row;  /* Changed from column to row */
-    align-items: center;
-    justify-content: center;
-    gap: 12px;
-    transition: all 0.3s;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-}
+        .upload-btn {
+            width: 100%;
+            padding: 15px;
+            background: white;
+            border: 2px dashed #2d5016;
+            border-radius: 10px;
+            cursor: pointer;
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            transition: all 0.3s;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
 
-.upload-btn:hover {
-    background: #f0f8f0;
-    border-color: #4a7c25;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(45, 80, 22, 0.2);
-}
+        .upload-btn:hover {
+            background: #f0f8f0;
+            border-color: #4a7c25;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(45, 80, 22, 0.2);
+        }
 
-.upload-icon {
-    font-size: 1.8rem;  /* Reduced from 2.5rem */
-}
+        .upload-icon {
+            font-size: 1.8rem;
+        }
 
-.upload-btn span:nth-child(2) {
-    font-size: 0.9rem;  /* Reduced from 1rem */
-    font-weight: 700;
-    color: #2d5016;
-}
+        .upload-btn span:nth-child(2) {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: #2d5016;
+        }
 
-.upload-hint {
-    font-size: 0.7rem;
-    color: #666;
-}
+        .upload-hint {
+            font-size: 0.7rem;
+            color: #666;
+        }
 
-.upload-preview {
-    margin-top: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 12px;
-}
+        .upload-preview {
+            margin-top: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+        }
 
-.upload-preview img {
-    width: 80px;  /* Reduced from 120px */
-    height: 80px;
-    border-radius: 50%;
-    object-fit: cover;
-    border: 3px solid #2d5016;
-    box-shadow: 0 4px 12px rgba(45, 80, 22, 0.3);
-}
+        .upload-preview img {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid #2d5016;
+            box-shadow: 0 4px 12px rgba(45, 80, 22, 0.3);
+        }
 
-.preview-label {
-    font-size: 0.8rem;
-    font-weight: 600;
-    color: #2d5016;
-}
+        .preview-label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #2d5016;
+        }
 
-/* Divider - MADE COMPACT */
-.divider {
-    padding: 12px 30px;  /* Reduced from 15px */
-    text-align: center;
-    position: relative;
-    background: white;
-}
+        .divider {
+            padding: 12px 30px;
+            text-align: center;
+            position: relative;
+            background: white;
+        }
 
-.divider span {
-    background: white;
-    padding: 0 15px;
-    color: #999;
-    font-size: 0.8rem;
-    font-weight: 600;
-    position: relative;
-    z-index: 1;
-}
+        .divider span {
+            background: white;
+            padding: 0 15px;
+            color: #999;
+            font-size: 0.8rem;
+            font-weight: 600;
+            position: relative;
+            z-index: 1;
+        }
 
-.divider::before {
-    content: '';
-    position: absolute;
-    left: 30px;
-    right: 30px;
-    top: 50%;
-    height: 1px;
-    background: #e0e0e0;
-}
+        .divider::before {
+            content: '';
+            position: absolute;
+            left: 30px;
+            right: 30px;
+            top: 50%;
+            height: 1px;
+            background: #e0e0e0;
+        }
 
-.avatar-grid {
-    display: grid;
-    grid-template-columns: repeat(6, 1fr);  /* Show 6 per row on desktop */
-    gap: 20px;
-    padding: 25px 30px;
-    max-height: 50vh;  /* Reduced from 55vh */
-    overflow-y: auto;
-}
+        .avatar-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 20px;
+            padding: 25px 30px;
+            max-height: 50vh;
+            overflow-y: auto;
+        }
 
-/* Custom Scrollbar */
-.avatar-grid::-webkit-scrollbar {
-    width: 8px;
-}
+        .avatar-grid::-webkit-scrollbar {
+            width: 8px;
+        }
 
-.avatar-grid::-webkit-scrollbar-track {
-    background: #f1f1f1;
-    border-radius: 10px;
-}
+        .avatar-grid::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
 
-.avatar-grid::-webkit-scrollbar-thumb {
-    background: #2d5016;
-    border-radius: 10px;
-}
+        .avatar-grid::-webkit-scrollbar-thumb {
+            background: #2d5016;
+            border-radius: 10px;
+        }
 
-.avatar-grid::-webkit-scrollbar-thumb:hover {
-    background: #4a7c25;
-}
+        .avatar-grid::-webkit-scrollbar-thumb:hover {
+            background: #4a7c25;
+        }
 
-/* Avatar Options */
-.avatar-option {
-    width: 100%;
-    aspect-ratio: 1;  /* Maintains square shape */
-    border-radius: 50%;
-    cursor: pointer;
-    border: 3px solid transparent;
-    transition: all 0.3s ease;
-    object-fit: cover;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
+        .avatar-option {
+            width: 100%;
+            aspect-ratio: 1;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 3px solid transparent;
+            transition: all 0.3s ease;
+            object-fit: cover;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
 
-.avatar-option:hover {
-    border-color: #4a7c25;
-    transform: scale(1.1);
-    box-shadow: 0 6px 20px rgba(74, 124, 37, 0.4);
-}
+        .avatar-option:hover {
+            border-color: #4a7c25;
+            transform: scale(1.1);
+            box-shadow: 0 6px 20px rgba(74, 124, 37, 0.4);
+        }
 
-.avatar-option.selected {
-    border-color: #2d5016;
-    box-shadow: 0 0 0 4px rgba(45, 80, 22, 0.2);
-    transform: scale(1.05);
-}
+        .avatar-option.selected {
+            border-color: #2d5016;
+            box-shadow: 0 0 0 4px rgba(45, 80, 22, 0.2);
+            transform: scale(1.05);
+        }
 
-.modal-footer {
-    display: flex;
-    gap: 12px;
-    padding: 20px 30px;
-    border-top: 2px solid #f0f0f0;
-    justify-content: flex-end;
-    background: #f8f9fa;
-    position: sticky;
-    bottom: 0;
-}
+        .modal-footer {
+            display: flex;
+            gap: 12px;
+            padding: 20px 30px;
+            border-top: 2px solid #f0f0f0;
+            justify-content: flex-end;
+            background: #f8f9fa;
+            position: sticky;
+            bottom: 0;
+        }
 
-.modal-footer button {
-    min-width: 120px;
-}
-/* Responsive adjustments */
-@media (max-width: 768px) {
-    .upload-section {
-        padding: 15px 20px;
-    }
-    
-    .upload-btn {
-        padding: 15px;
-    }
-    
-    .upload-icon {
-        font-size: 2rem;
-    }
-    
-    .upload-preview img {
-        width: 100px;
-        height: 100px;
-    }
-}
+        .modal-footer button {
+            min-width: 120px;
+        }
 
-@media (max-width: 480px) {
-    .upload-section {
-        padding: 15px;
-    }
-    
-    .upload-btn {
-        padding: 15px 10px;
-    }
-    
-    .upload-btn span:nth-child(2) {
-        font-size: 0.9rem;
-    }
-    
-    .upload-hint {
-        font-size: 0.7rem;
-    }
-    
-    .divider {
-        padding: 12px 15px;
-    }
-}
+        @media (max-width: 768px) {
+            .upload-section {
+                padding: 15px 20px;
+            }
+
+            .upload-btn {
+                padding: 15px;
+            }
+
+            .upload-icon {
+                font-size: 2rem;
+            }
+
+            .upload-preview img {
+                width: 100px;
+                height: 100px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .upload-section {
+                padding: 15px;
+            }
+
+            .upload-btn {
+                padding: 15px 10px;
+            }
+
+            .upload-btn span:nth-child(2) {
+                font-size: 0.9rem;
+            }
+
+            .upload-hint {
+                font-size: 0.7rem;
+            }
+
+            .divider {
+                padding: 12px 15px;
+            }
+        }
     </style>
 </head>
 
@@ -1148,8 +1131,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_profile'])) {
 
     <main class="main-content">
         <div class="profile-container">
-
-            <!-- Success/Error Messages -->
             <?php if (isset($_SESSION['success'])): ?>
                 <div class="alert alert-success">
                     <?php
@@ -1168,16 +1149,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_profile'])) {
                 </div>
             <?php endif; ?>
 
-            <!-- Profile Header -->
             <div class="profile-header">
                 <div class="profile-cover">
-                    <img src="<?php 
-                        if (!empty($user['profile_image']) && file_exists($_SERVER['DOCUMENT_ROOT'] . '/agri_system/public' . $user['profile_image'])) {
-                            echo '/agri_system/public' . htmlspecialchars($user['profile_image']);
-                        } else {
-                            echo 'https://images.unsplash.com/photo-1464226184884-fa280b87c399?w=1200';
-                        }
-                    ?>" alt="Cover" class="cover-img">
+                    <img src="<?php
+                                if (!empty($user['profile_image']) && file_exists($_SERVER['DOCUMENT_ROOT'] . '/agri_system/public' . $user['profile_image'])) {
+                                    echo '/agri_system/public' . htmlspecialchars($user['profile_image']);
+                                } else {
+                                    echo 'https://images.unsplash.com/photo-1464226184884-fa280b87c399?w=1200';
+                                }
+                                ?>" alt="Cover" class="cover-img">
                     <input type="file" id="coverInput" accept="image/jpeg,image/png" style="display: none;" onchange="handleCoverUpload(event)">
                     <button class="edit-cover-btn" onclick="editCover()">📷 Change Cover</button>
                 </div>
@@ -1205,8 +1185,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_profile'])) {
 
             <!-- Profile Content -->
             <div class="profile-content">
-
-                <!-- Personal Information (Removed address fields) -->
                 <div class="profile-card">
                     <div class="card-header">
                         <h2>👤 Personal Information</h2>
@@ -1252,14 +1230,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_profile'])) {
                     </form>
                 </div>
 
-                <!-- Address Management (NEW - Replaces Primary Address) -->
                 <div class="profile-card">
                     <div class="card-header">
                         <h2>📍 My Addresses</h2>
                         <button class="card-add-btn" onclick="openAddAddressModal()">+ Add Address</button>
                     </div>
                     <div class="addresses-list" id="addressesContainer">
-                        <!-- Addresses will be loaded here via JavaScript -->
                         <div class="empty-state">
                             <p>Loading addresses...</p>
                         </div>
@@ -1328,7 +1304,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_profile'])) {
                     </div>
                 </div>
 
-                <!-- Security Settings -->
                 <div class="profile-card">
                     <div class="card-header">
                         <h2>🔒 Security</h2>
@@ -1364,32 +1339,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_profile'])) {
                 <h2>Choose Your Avatar</h2>
                 <button class="modal-close" onclick="closeAvatarModal()">&times;</button>
             </div>
-            
-            <!-- Upload Custom Avatar Section -->
             <div class="upload-section">
-                <input type="file" 
-                       id="customAvatarInput" 
-                       accept="image/jpeg,image/jpg,image/png,image/gif" 
-                       onchange="handleCustomFileSelect(event)" 
-                       style="display: none;">
-                
+                <input type="file"
+                    id="customAvatarInput"
+                    accept="image/jpeg,image/jpg,image/png,image/gif"
+                    onchange="handleCustomFileSelect(event)"
+                    style="display: none;">
+
                 <button class="upload-btn" onclick="triggerFileInput()">
                     <span class="upload-icon">📤</span>
                     <span>Upload Custom Avatar</span>
                     <span class="upload-hint">JPEG, PNG, GIF (Max 2MB)</span>
                 </button>
-                
-                <!-- Upload Preview -->
+
                 <div id="uploadPreview" class="upload-preview" style="display: none;">
                     <img id="uploadPreviewImg" src="" alt="Preview">
                 </div>
             </div>
-            
+
             <div class="divider">
                 <span>Or choose from preset avatars</span>
             </div>
-            
-            <!-- Preset Avatars Grid -->
+
             <div class="avatar-grid">
                 <?php
                 $availableAvatars = $profileController->getAvailableAvatars();
@@ -1403,7 +1374,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_profile'])) {
                         onclick="selectAvatar('<?php echo htmlspecialchars($avatarPath); ?>', this)">
                 <?php endforeach; ?>
             </div>
-            
+
             <div class="modal-footer">
                 <button class="btn-cancel" onclick="closeAvatarModal()">Cancel</button>
                 <button class="btn-save" id="saveAvatarBtn" onclick="saveAvatar()">Save Avatar</button>
@@ -1418,50 +1389,50 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_profile'])) {
                 <h2 id="addressModalTitle">Add New Address</h2>
                 <button class="modal-close" onclick="closeAddressModal()">&times;</button>
             </div>
-            
+
             <form id="addressForm" onsubmit="saveAddress(event)">
                 <input type="hidden" id="addressID" value="">
-                
+
                 <div class="form-body" style="padding: 30px;">
                     <div class="form-group">
                         <label>Complete Address *</label>
-                        <textarea id="addressField" 
-                                  required 
-                                  placeholder="House/Unit No., Street, Barangay"
-                                  style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-family: inherit; min-height: 80px;"></textarea>
+                        <textarea id="addressField"
+                            required
+                            placeholder="House/Unit No., Street, Barangay"
+                            style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-family: inherit; min-height: 80px;"></textarea>
                     </div>
-                    
+
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
                         <div class="form-group">
                             <label>Municipality *</label>
-                            <input type="text" 
-                                   id="municipalityField" 
-                                   required 
-                                   placeholder="e.g., San Pablo City"
-                                   style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-family: inherit;">
+                            <input type="text"
+                                id="municipalityField"
+                                required
+                                placeholder="e.g., San Pablo City"
+                                style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-family: inherit;">
                         </div>
-                        
+
                         <div class="form-group">
                             <label>Province *</label>
-                            <input type="text" 
-                                   id="provinceField" 
-                                   required 
-                                   placeholder="e.g., Laguna"
-                                   style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-family: inherit;">
+                            <input type="text"
+                                id="provinceField"
+                                required
+                                placeholder="e.g., Laguna"
+                                style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-family: inherit;">
                         </div>
                     </div>
-                    
+
                     <div class="form-group">
                         <label>Postal Code *</label>
-                        <input type="text" 
-                               id="postalCodeField" 
-                               required 
-                               placeholder="e.g., 4000"
-                               maxlength="10"
-                               style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-family: inherit;">
+                        <input type="text"
+                            id="postalCodeField"
+                            required
+                            placeholder="e.g., 4000"
+                            maxlength="10"
+                            style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-family: inherit;">
                     </div>
                 </div>
-                
+
                 <div class="modal-footer">
                     <button type="button" class="btn-cancel" onclick="closeAddressModal()">Cancel</button>
                     <button type="submit" class="btn-save">Save Address</button>
@@ -1475,4 +1446,5 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_profile'])) {
     <script src="/agri_system/public/js/marketplace.js"></script>
     <script src="/agri_system/public/js/profile.js"></script>
 </body>
+
 </html>

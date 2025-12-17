@@ -1,6 +1,5 @@
 <?php
 // app/views/profile/seller/image-upload.php
-// FIXED: Proper action URLs for image management
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
@@ -9,7 +8,6 @@ require_once __DIR__ . '/../../../../config/config.php';
 require_once __DIR__ . '/../../../../config/database.php';
 require_once __DIR__ . '/../../../models/Product.php';
 
-// Check authentication
 $isLoggedIn = isset($_SESSION['logged_in']) && $_SESSION['logged_in'];
 $userRole = $_SESSION['user_role'] ?? null;
 $userID = $_SESSION['user_id'] ?? null;
@@ -22,7 +20,6 @@ if (!$isLoggedIn || $userRole !== 'seller') {
 $db = new Database();
 $conn = $db->connect();
 
-// Get seller profile ID
 $stmt = $conn->prepare("SELECT sellerID FROM seller_profiles WHERE userID = ?");
 $stmt->execute([$userID]);
 $sellerProfile = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -40,8 +37,6 @@ $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Get product ID from URL
 $selectedProductID = $_GET['product'] ?? null;
-
-// Get images for selected product
 $productImages = [];
 if ($selectedProductID) {
     $stmt = $conn->prepare("SELECT * FROM product_images WHERE productID = ? ORDER BY is_main DESC, image_order ASC");
@@ -49,7 +44,7 @@ if ($selectedProductID) {
     $productImages = $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
 
-// HANDLE SET MAIN IMAGE
+// handle set main image
 if (isset($_GET['action']) && $_GET['action'] === 'set_main' && isset($_GET['imageID'])) {
     $imageID = (int)$_GET['imageID'];
     $productID = (int)$_GET['productID'];
@@ -67,7 +62,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'set_main' && isset($_GET['ima
     exit;
 }
 
-// HANDLE DELETE IMAGE
+// handle delete image
 if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['imageID'])) {
     $imageID = (int)$_GET['imageID'];
     $productID = (int)$_GET['productID'];
@@ -85,7 +80,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['image
     exit;
 }
 
-// HANDLE IMAGE UPLOAD
+// handle image upload
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'upload_images') {
     $productModel = new Product();
     
@@ -97,7 +92,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         exit;
     }
     
-    // Verify ownership
     $stmt = $conn->prepare("SELECT productID FROM products WHERE productID = ? AND sellerID = ?");
     $stmt->execute([$productID, $sellerID]);
     if (!$stmt->fetch()) {
@@ -105,8 +99,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         header('Location: ' . BASE_URL . 'profile/seller/image-upload');
         exit;
     }
-    
-    // Check current image count
+
     $stmt = $conn->prepare("SELECT COUNT(*) as count FROM product_images WHERE productID = ?");
     $stmt->execute([$productID]);
     $currentCount = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
@@ -198,7 +191,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Product Images - Agri Tayo Rito</title>
+    <link rel="icon" type="image/jpg" href="/agri_system/public/images/agri-icon.jpg">
+    <title>Agri Tayo Rito</title>
     <link rel="stylesheet" href="<?php echo BASE_URL; ?>css/responsive.css">
     <link rel="stylesheet" href="<?php echo BASE_URL; ?>css/seller/dashboard.css">
 </head>

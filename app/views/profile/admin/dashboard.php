@@ -1,13 +1,11 @@
 <?php
-// app/views/profile/admin/dashboard.php - UPDATED VERSION
+// app/views/profile/admin/dashboard.php
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
 require_once __DIR__ . '/../../../../config/config.php';
 require_once __DIR__ . '/../../../../config/database.php';
-
-// Check if user is logged in and is admin
 $isLoggedIn = isset($_SESSION['logged_in']) && $_SESSION['logged_in'];
 $userRole = $_SESSION['user_role'] ?? null;
 
@@ -19,58 +17,46 @@ if (!$isLoggedIn || $userRole !== 'admin') {
 $db = new Database();
 $conn = $db->connect();
 
-// Fetch statistics
 $stats = [];
 
-// Total users
-$stmt = $conn->query("SELECT COUNT(*) as total FROM users");
+$stmt = $conn->query("SELECT COUNT(*) as total FROM users"); // Total users
 $stats['total_users'] = $stmt->fetch(PDO::FETCH_ASSOC)['total'];
 
-// Total buyers
-$stmt = $conn->query("SELECT COUNT(*) as total FROM users WHERE role = 'buyer'");
+$stmt = $conn->query("SELECT COUNT(*) as total FROM users WHERE role = 'buyer'"); // Total buyers
 $stats['total_buyers'] = $stmt->fetch(PDO::FETCH_ASSOC)['total'];
 
-// Total sellers
-$stmt = $conn->query("SELECT COUNT(*) as total FROM users WHERE role = 'seller'");
+$stmt = $conn->query("SELECT COUNT(*) as total FROM users WHERE role = 'seller'"); // Total sellers
 $stats['total_sellers'] = $stmt->fetch(PDO::FETCH_ASSOC)['total'];
 
-// Pending applications
-$stmt = $conn->query("SELECT COUNT(*) as total FROM seller_applications WHERE application_status = 'pending'");
+$stmt = $conn->query("SELECT COUNT(*) as total FROM seller_applications WHERE application_status = 'pending'"); // Pending seller applications
 $stats['pending_applications'] = $stmt->fetch(PDO::FETCH_ASSOC)['total'];
 
-// Total products
-$stmt = $conn->query("SELECT COUNT(*) as total FROM products");
+$stmt = $conn->query("SELECT COUNT(*) as total FROM products"); // Total products
 $stats['total_products'] = $stmt->fetch(PDO::FETCH_ASSOC)['total'];
 
-// Total orders
-$stmt = $conn->query("SELECT COUNT(*) as total FROM orders");
+$stmt = $conn->query("SELECT COUNT(*) as total FROM orders"); // Total orders
 $stats['total_orders'] = $stmt->fetch(PDO::FETCH_ASSOC)['total'];
 
-// Total revenue (from delivered orders)
-$stmt = $conn->query("SELECT COALESCE(SUM(total_amount), 0) as total FROM orders WHERE order_status = 'delivered'");
+$stmt = $conn->query("SELECT COALESCE(SUM(total_amount), 0) as total FROM orders WHERE order_status = 'delivered'"); // Total revenue from delivered orders
 $stats['total_revenue'] = $stmt->fetch(PDO::FETCH_ASSOC)['total'];
 
-// ✅ NEW: Pending withdrawals
-$stmt = $conn->query("SELECT COUNT(*) as total FROM withdrawal_requests WHERE status = 'pending'");
+$stmt = $conn->query("SELECT COUNT(*) as total FROM withdrawal_requests WHERE status = 'pending'"); // Pending withdrawals
 $stats['pending_withdrawals'] = $stmt->fetch(PDO::FETCH_ASSOC)['total'];
 
-// ✅ NEW: Pending pickups
-$stmt = $conn->query("SELECT COUNT(*) as total FROM orders WHERE lgu_delivery_status = 'pending_pickup'");
+$stmt = $conn->query("SELECT COUNT(*) as total FROM orders WHERE lgu_delivery_status = 'pending_pickup'"); // Pending pickups
 $stats['pending_pickups'] = $stmt->fetch(PDO::FETCH_ASSOC)['total'];
 
-// ✅ NEW: Pending payment confirmations
-$stmt = $conn->query("SELECT COUNT(*) as total FROM orders WHERE lgu_delivery_status = 'delivered' AND payment_received_by_lgu_at IS NULL");
+$stmt = $conn->query("SELECT COUNT(*) as total FROM orders WHERE lgu_delivery_status = 'delivered' AND payment_received_by_lgu_at IS NULL"); // Pending payments to confirm
 $stats['pending_payments'] = $stmt->fetch(PDO::FETCH_ASSOC)['total'];
 
-// Recent users (last 5)
-$stmt = $conn->query("SELECT userID, full_name, email, role, created_at FROM users ORDER BY created_at DESC LIMIT 5");
+
+$stmt = $conn->query("SELECT userID, full_name, email, role, created_at FROM users ORDER BY created_at DESC LIMIT 5"); // Recent users (last 5)
 $recent_users = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// Recent orders (last 5)
 $stmt = $conn->query("SELECT o.orderID, u.full_name, o.total_amount, o.order_status, o.order_date 
                       FROM orders o 
                       JOIN users u ON o.buyerID = u.userID 
-                      ORDER BY o.order_date DESC LIMIT 5");
+                      ORDER BY o.order_date DESC LIMIT 5"); // Recent orders (last 5)
 $recent_orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 <!DOCTYPE html>
@@ -78,7 +64,8 @@ $recent_orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard - Agri Tayo Rito</title>
+    <link rel="icon" type="image/jpg" href="/agri_system/public/images/agri-icon.jpg">
+    <title>Agri Tayo Rito</title>
     <link rel="stylesheet" href="<?php echo BASE_URL; ?>css/responsive.css">
     <link rel="stylesheet" href="<?php echo BASE_URL; ?>css/admin/dashboard.css">
 </head>
@@ -86,18 +73,15 @@ $recent_orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
 
     <?php 
-    // Include unified sidebar component
     require_once __DIR__ . '/admin-nav.php'; 
     ?>
 
-    <!-- Main Content -->
     <main class="main-content">
         <div class="page-header">
             <h1 class="page-title">Dashboard Overview</h1>
             <p class="page-subtitle">Welcome back, <?php echo htmlspecialchars($_SESSION['username'] ?? 'Admin'); ?>!</p>
         </div>
 
-        <!-- ✅ NEW: Quick Action Alerts -->
         <?php if ($stats['pending_withdrawals'] > 0 || $stats['pending_pickups'] > 0 || $stats['pending_payments'] > 0): ?>
         <section class="alerts-section">
             <?php if ($stats['pending_withdrawals'] > 0): ?>
@@ -169,7 +153,7 @@ $recent_orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 </div>
             </div>
 
-            <!-- ✅ NEW: Pending Withdrawals Stat -->
+            <!-- Pending Withdrawals Stat -->
             <div class="stat-card">
                 <div class="stat-icon" style="background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);">💸</div>
                 <div class="stat-info">
@@ -178,7 +162,7 @@ $recent_orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 </div>
             </div>
 
-            <!-- ✅ NEW: Pending Pickups Stat -->
+            <!-- Pending Pickups Stat -->
             <div class="stat-card">
                 <div class="stat-icon" style="background: linear-gradient(135deg, #ff9a56 0%, #ff6a88 100%);">📦</div>
                 <div class="stat-info">

@@ -1,6 +1,5 @@
 <?php
 // app/views/marketplace/product.php
-// Enhanced Product Detail Page with Buy Now functionality
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
@@ -11,12 +10,10 @@ require_once __DIR__ . '/../../models/Product.php';
 require_once __DIR__ . '/../../models/Cart.php';
 require_once __DIR__ . '/../../helpers/csrf.php';
 
-// ==================== USER AUTHENTICATION ====================
 $isLoggedIn = isset($_SESSION['logged_in']) && $_SESSION['logged_in'];
 $userRole = $_SESSION['user_role'] ?? 'guest';
 $userId = $_SESSION['user_id'] ?? null;
 
-// ==================== GET PRODUCT ID ====================
 $productID = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 
 if ($productID <= 0) {
@@ -24,10 +21,8 @@ if ($productID <= 0) {
     exit;
 }
 
-// ==================== INITIALIZE MODELS ====================
 $productModel = new Product();
 
-// ==================== FETCH PRODUCT DATA ====================
 try {
     $product = $productModel->getProductById($productID);
     
@@ -50,20 +45,17 @@ try {
     exit;
 }
 
-// ==================== EXTRACT PRODUCT DATA ====================
 $productName = htmlspecialchars($product['product_name']);
 $productDesc = htmlspecialchars($product['description'] ?? 'Fresh from local farms');
 $productPrice = (float)$product['price'];
 $productUnit = htmlspecialchars($product['unit']);
 $categoryName = htmlspecialchars($product['category'] ?? 'Products');
 
-// Stock calculations
 $stockQty = (int)($product['stock_quantity'] ?? 0);
 $reservedQty = (int)($product['reserved_quantity'] ?? 0);
 $availableStock = $stockQty - $reservedQty;
 $lowStockThreshold = (int)($product['low_stock_threshold'] ?? 5);
 
-// Shop information
 $shopID = (int)$product['shopID'];
 $shopName = htmlspecialchars($product['shop_name'] ?? 'Local Farm');
 $shopSlug = $product['shop_slug'] ?? '';
@@ -71,7 +63,6 @@ $businessName = htmlspecialchars($product['business_name'] ?? $shopName);
 $sellerRating = number_format((float)($product['seller_rating'] ?? 0), 1);
 $totalProducts = (int)($product['total_products'] ?? 0);
 
-// Images
 $mainImage = !empty($product['main_image']) 
     ? BASE_URL . ltrim($product['main_image'], '/') 
     : BASE_URL . 'images/placeholder.jpg';
@@ -81,7 +72,6 @@ if (empty($productImages)) {
     $productImages[] = ['image_path' => $mainImage, 'is_main' => 1];
 }
 
-// Reviews
 $reviews = $product['reviews'] ?? [];
 $totalReviews = count($reviews);
 $avgRating = 0;
@@ -90,7 +80,6 @@ if ($totalReviews > 0) {
     $avgRating = number_format($totalStars / $totalReviews, 1);
 }
 
-// ==================== GET CART COUNT ====================
 $cartCount = 0;
 if ($isLoggedIn && $userRole === 'buyer' && $userId) {
     try {
@@ -101,17 +90,15 @@ if ($isLoggedIn && $userRole === 'buyer' && $userId) {
     }
 }
 
-// ==================== CSRF TOKEN ====================
 $csrfToken = CSRF::generateToken();
-
-$pageTitle = $productName . ' - Agri Tayo Rito';
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo $pageTitle; ?></title>
+    <link rel="icon" type="image/jpg" href="/agri_system/public/images/agri-icon.jpg">
+    <title>Agri Tayo Rito</title>
     
     <link rel="stylesheet" href="<?php echo BASE_URL; ?>css/responsive.css">
     <link rel="stylesheet" href="<?php echo BASE_URL; ?>css/marketplace/marketplace.css">
@@ -120,7 +107,6 @@ $pageTitle = $productName . ' - Agri Tayo Rito';
     <meta name="csrf-token" content="<?php echo $csrfToken; ?>">
     
     <style>
-        /* Enhanced Product Detail Styles */
         .product-detail-wrapper {
             max-width: 1200px;
             margin: 0 auto;
@@ -562,8 +548,6 @@ $pageTitle = $productName . ' - Agri Tayo Rito';
 </head>
 <body>
     <div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
-
-    <!-- TOP NAVIGATION -->
     <?php if ($isLoggedIn): ?>
         <?php include __DIR__ . '/topmarketnav.php'; ?>
     <?php else: ?>
@@ -591,11 +575,7 @@ $pageTitle = $productName . ' - Agri Tayo Rito';
     <!-- MAIN CONTENT -->
     <main class="main-content">
         <div class="product-detail-wrapper">
-            
-            <!-- MAIN PRODUCT SECTION -->
             <div class="product-main">
-                
-                <!-- IMAGE GALLERY -->
                 <div class="product-gallery">
                     <div class="main-image-container">
                         <img src="<?php echo $mainImage; ?>" 
@@ -840,7 +820,6 @@ $pageTitle = $productName . ' - Agri Tayo Rito';
                 buyNow: true
             }));
 
-            // Redirect to checkout
             window.location.href = window.productData.baseUrl + 'item-handling/checkout';
         }
 

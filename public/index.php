@@ -1,4 +1,5 @@
 <?php
+// public/index.php
 session_start();
 
 define('BASE_PATH', dirname(__DIR__));
@@ -85,7 +86,6 @@ $routes = [
     'settings/language-settings' => BASE_PATH . '/app/views/settings/language.php',
     'settings' => BASE_PATH . '/app/views/settings/settings.php',
 
-    // Controllers Routes
     'withdrawal' => BASE_PATH . '/app/controllers/WithDrawalController.php',
 ];
 

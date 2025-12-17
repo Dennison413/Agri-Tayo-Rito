@@ -1,6 +1,5 @@
 <?php
-// app/views/profile/seller/my-products.php - FIXED VERSION
-// Corrected action buttons: View, Edit, Toggle Status, Manage Images
+// app/views/profile/seller/my-products.php
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
@@ -10,7 +9,6 @@ require_once __DIR__ . '/../../../../config/database.php';
 require_once __DIR__ . '/../../../models/Product.php';
 require_once __DIR__ . '/../../../models/Category.php';
 
-// Check authentication
 $isLoggedIn = isset($_SESSION['logged_in']) && $_SESSION['logged_in'];
 $userRole = $_SESSION['user_role'] ?? null;
 $userID = $_SESSION['user_id'] ?? null;
@@ -23,7 +21,6 @@ if (!$isLoggedIn || $userRole !== 'seller') {
 $db = new Database();
 $conn = $db->connect();
 
-// Get seller profile ID
 $stmt = $conn->prepare("SELECT sellerID FROM seller_profiles WHERE userID = ?");
 $stmt->execute([$userID]);
 $sellerProfile = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -34,11 +31,10 @@ if (!$sellerProfile) {
 
 $sellerID = $sellerProfile['sellerID'];
 
-// Handle toggle status action
+// handle toggle status action
 if (isset($_GET['action']) && $_GET['action'] === 'toggle_status' && isset($_GET['id'])) {
     $productID = (int)$_GET['id'];
     
-    // Get current status
     $stmt = $conn->prepare("SELECT is_available FROM products WHERE productID = ? AND sellerID = ?");
     $stmt->execute([$productID, $sellerID]);
     $product = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -61,15 +57,12 @@ if (isset($_GET['action']) && $_GET['action'] === 'toggle_status' && isset($_GET
     exit;
 }
 
-// Initialize models
 $productModel = new Product();
 $categoryModel = new Category();
 
-// Get all products for this seller
 $products = $productModel->getProductsBySeller($sellerID, true);
 $categories = $categoryModel->getAllCategories();
 
-// Get product statistics
 $stats = $productModel->getSellerProductStats($sellerID);
 ?>
 <!DOCTYPE html>
@@ -77,7 +70,8 @@ $stats = $productModel->getSellerProductStats($sellerID);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Products - Agri Tayo Rito</title>
+    <link rel="icon" type="image/jpg" href="/agri_system/public/images/agri-icon.jpg">
+    <title>Agri Tayo Rito</title>
     <link rel="stylesheet" href="<?php echo BASE_URL; ?>css/responsive.css">
     <link rel="stylesheet" href="<?php echo BASE_URL; ?>css/seller/dashboard.css">
 </head>
@@ -216,28 +210,21 @@ $stats = $productModel->getSellerProductStats($sellerID);
                                 </td>
                                 <td>
                                     <div class="action-buttons">
-                                        <!-- VIEW PRODUCT (Marketplace View) -->
                                         <button class="btn-icon" 
                                                 onclick="viewProduct(<?php echo $product['productID']; ?>)" 
                                                 title="View Product">
                                             👁️
                                         </button>
-                                        
-                                        <!-- EDIT PRODUCT -->
                                         <button class="btn-icon" 
                                                 onclick="editProduct(<?php echo $product['productID']; ?>)" 
                                                 title="Edit Product">
                                             ✏️
                                         </button>
-                                        
-                                        <!-- TOGGLE STATUS (Active/Inactive) -->
                                         <button class="btn-icon" 
                                                 onclick="toggleProductStatus(<?php echo $product['productID']; ?>, <?php echo $product['is_available']; ?>)" 
                                                 title="<?php echo $product['is_available'] ? 'Deactivate' : 'Activate'; ?> Product">
                                             <?php echo $product['is_available'] ? '✅' : '🚫'; ?>
                                         </button>
-                                        
-                                        <!-- MANAGE IMAGES -->
                                         <button class="btn-icon" 
                                                 onclick="manageImages(<?php echo $product['productID']; ?>)" 
                                                 title="Manage Images">
@@ -338,17 +325,14 @@ $stats = $productModel->getSellerProductStats($sellerID);
             rows.forEach(row => {
                 let show = true;
                 
-                // Category filter
                 if (categoryFilter && row.dataset.category !== categoryFilter) {
                     show = false;
                 }
                 
-                // Status filter
                 if (statusFilter && row.dataset.status !== statusFilter) {
                     show = false;
                 }
                 
-                // Stock filter
                 if (stockFilter) {
                     const stock = parseInt(row.dataset.stock);
                     if (stockFilter === 'low' && stock > 10) show = false;
@@ -359,17 +343,14 @@ $stats = $productModel->getSellerProductStats($sellerID);
             });
         }
 
-        // VIEW PRODUCT (Navigate to marketplace product detail page)
         function viewProduct(productID) {
             window.location.href = `<?php echo BASE_URL; ?>marketplace/product?id=${productID}`;
         }
 
-        // EDIT PRODUCT (Navigate to edit form)
         function editProduct(productID) {
             window.location.href = `<?php echo BASE_URL; ?>profile/seller/edit-product?id=${productID}`;
         }
 
-        // TOGGLE STATUS (Activate/Deactivate product)
         function toggleProductStatus(productID, currentStatus) {
             const action = currentStatus ? 'deactivate' : 'activate';
             if (confirm(`Are you sure you want to ${action} this product?`)) {
@@ -377,7 +358,6 @@ $stats = $productModel->getSellerProductStats($sellerID);
             }
         }
 
-        // MANAGE IMAGES (Navigate to image upload page)
         function manageImages(productID) {
             window.location.href = `<?php echo BASE_URL; ?>profile/seller/image-upload?product=${productID}`;
         }

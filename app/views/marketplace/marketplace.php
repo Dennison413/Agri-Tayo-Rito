@@ -1,6 +1,5 @@
 <?php
 // app/views/marketplace/marketplace.php
-// Production-Ready Marketplace with Role-Based Access
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
@@ -12,16 +11,13 @@ require_once __DIR__ . '/../../models/Category.php';
 require_once __DIR__ . '/../../models/Cart.php';
 require_once __DIR__ . '/../../helpers/csrf.php';
 
-// ==================== USER AUTHENTICATION ====================
 $isLoggedIn = isset($_SESSION['logged_in']) && $_SESSION['logged_in'];
 $userRole = $_SESSION['user_role'] ?? 'guest';
 $userId = $_SESSION['user_id'] ?? null;
 
-// ==================== INITIALIZE MODELS ====================
 $productModel = new Product();
 $categoryModel = new Category();
 
-// ==================== GET COUNTS (BUYERS ONLY) ====================
 $cartCount = 0;
 $wishlistCount = 0;
 
@@ -37,17 +33,15 @@ if ($isLoggedIn && $userRole === 'buyer' && $userId) {
     }
 }
 
-// ==================== FILTERS FROM URL ====================
 $filters = [
     'search' => $_GET['search'] ?? null,
     'categoryID' => $_GET['category'] ?? null,
     'min_price' => $_GET['min_price'] ?? null,
     'max_price' => $_GET['max_price'] ?? null,
-    'in_stock' => true, // Always show only in-stock items
+    'in_stock' => true, 
     'sort' => $_GET['sort'] ?? 'newest'
 ];
 
-// Remove empty filters
 $filters = array_filter($filters, function($value) {
     return $value !== null && $value !== '';
 });
@@ -56,7 +50,6 @@ $limit = 20;
 $page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
 $offset = ($page - 1) * $limit;
 
-// ==================== FETCH DATA ====================
 try {
     $products = $productModel->getAllProducts($filters, $limit, $offset);
     $categories = $categoryModel->getAllCategories();
@@ -69,10 +62,7 @@ try {
     $categories = [];
 }
 
-// ==================== CSRF TOKEN ====================
 $csrfToken = CSRF::generateToken();
-
-// ==================== CURRENT CATEGORY NAME ====================
 $currentCategoryName = 'All Products';
 if (!empty($filters['categoryID'])) {
     foreach ($categories as $cat) {
@@ -83,7 +73,6 @@ if (!empty($filters['categoryID'])) {
     }
 }
 
-// ==================== PAGE TITLE ====================
 $pageTitle = 'Marketplace';
 if (!empty($filters['search'])) {
     $pageTitle = 'Search: ' . htmlspecialchars($filters['search']);
@@ -96,23 +85,15 @@ if (!empty($filters['search'])) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo $pageTitle; ?> - Agri Tayo Rito</title>
-    
-    <!-- Stylesheets -->
+    <link rel="icon" type="image/jpg" href="/agri_system/public/images/agri-icon.jpg">
+    <title>Agri Tayo Rito</title>
     <link rel="stylesheet" href="<?php echo BASE_URL; ?>css/responsive.css">
     <link rel="stylesheet" href="<?php echo BASE_URL; ?>css/marketplace/marketplace.css">
-    
-    <!-- CSRF Token for AJAX -->
     <meta name="csrf-token" content="<?php echo $csrfToken; ?>">
-    
-    <!-- Preload Important Resources -->
     <link rel="preconnect" href="<?php echo BASE_URL; ?>">
 </head>
 <body>
-    <!-- Overlay for Mobile Sidebar -->
     <div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
-    
-    <!-- ==================== TOP NAVIGATION ==================== -->
     <?php if ($isLoggedIn): ?>
         <?php include __DIR__ . '/topmarketnav.php'; ?>
     <?php else: ?>
@@ -149,10 +130,10 @@ if (!empty($filters['search'])) {
         </nav>
     <?php endif; ?>
 
-    <!-- ==================== MAIN CONTENT ==================== -->
+    <!-- Main Content -->
     <main class="main-content">
         
-        <!-- ==================== FEATURED CATEGORIES ==================== -->
+        <!-- Featured Categories -->
         <section class="featured-section">
             <h2 class="section-title">Browse by Category</h2>
             
@@ -162,7 +143,7 @@ if (!empty($filters['search'])) {
                     
                     <div class="category-slider-wrapper">
                         <div class="category-slider-track" id="categoryTrack">
-                            <!-- CATEGORY CARDS FROM DATABASE -->
+                            <!-- Category Cards -->
                             <?php foreach ($categories as $cat): 
                                 $catID = (int)$cat['categoryID'];
                                 $catName = htmlspecialchars($cat['category']);
@@ -184,7 +165,6 @@ if (!empty($filters['search'])) {
                                     </div>
                                 </div>
                             <?php endforeach; ?>
-                             <!-- ALL PRODUCTS CARD -->
                             <div class="category-card <?php echo empty($filters['categoryID']) ? 'active' : ''; ?>" 
                                  onclick="filterByCategory(null)">
                                 <div class="category-image">
@@ -209,10 +189,8 @@ if (!empty($filters['search'])) {
             <?php endif; ?>
         </section>
 
-        <!-- ==================== PRODUCTS GRID ==================== -->
+        <!-- Products Grid -->
         <section class="products-section">
-            
-            <!-- SECTION HEADER -->
             <div class="section-header">
                 <div>
                     <h2 class="section-title"><?php echo $pageTitle; ?></h2>
@@ -222,11 +200,8 @@ if (!empty($filters['search'])) {
                         </p>
                     <?php endif; ?>
                 </div>
-                
-                <!-- SORT DROPDOWN -->
                 <div class="filter-controls">
                     <form method="GET" action="<?php echo BASE_URL; ?>marketplace" id="sortForm">
-                        <!-- Preserve existing filters -->
                         <?php if (!empty($filters['search'])): ?>
                             <input type="hidden" name="search" value="<?php echo htmlspecialchars($filters['search']); ?>">
                         <?php endif; ?>
@@ -252,10 +227,8 @@ if (!empty($filters['search'])) {
                 </div>
             </div>
 
-            <!-- PRODUCTS GRID -->
             <div class="products-grid" id="productsGrid">
                 <?php if (empty($products)): ?>
-                    <!-- NO PRODUCTS MESSAGE -->
                     <div class="no-products">
                         <div class="no-products-icon">📦</div>
                         <h3>No Products Found</h3>
@@ -270,9 +243,8 @@ if (!empty($filters['search'])) {
                     </div>
                     
                 <?php else: ?>
-                    <!-- PRODUCT CARDS -->
+                    <!-- Product Cards -->
                     <?php foreach ($products as $product): 
-                        // Extract product data
                         $productId = (int)$product['productID'];
                         $productName = htmlspecialchars($product['product_name']);
                         $productDesc = htmlspecialchars(substr($product['description'] ?? 'Fresh from local farms', 0, 80));
@@ -309,7 +281,7 @@ if (!empty($filters['search'])) {
                                      loading="lazy"
                                      onerror="this.src='<?php echo BASE_URL; ?>images/placeholder.jpg'">
                                 
-                                <!-- WISHLIST BUTTON (Buyers Only) -->
+                                <!-- Wishlist Button (buyers only) -->
                                 <?php if ($isLoggedIn && $userRole === 'buyer'): ?>
                                     <button class="wishlist-btn" 
                                             onclick="toggleWishlist(event, <?php echo $productId; ?>)" 
@@ -329,7 +301,6 @@ if (!empty($filters['search'])) {
                             
                             <!-- PRODUCT INFO -->
                             <div class="product-info">
-                                <!-- Shop Name -->
                                 <div class="product-shop">
                                     <?php if (!empty($shopSlug)): ?>
                                         <a href="<?php echo BASE_URL; ?>marketplace/shop/<?php echo $shopSlug; ?>" 
@@ -342,34 +313,28 @@ if (!empty($filters['search'])) {
                                     <?php endif; ?>
                                 </div>
                                 
-                                <!-- Product Name -->
                                 <h3 class="product-name" title="<?php echo $productName; ?>">
                                     <?php echo $productName; ?>
                                 </h3>
                                 
-                                <!-- Product Description -->
                                 <p class="product-description">
                                     <?php echo $productDesc; ?>
                                     <?php if (strlen($product['description'] ?? '') > 80): ?>...<?php endif; ?>
                                 </p>
                                 
-                                <!-- FOOTER -->
                                 <div class="product-footer">
-                                    <!-- Price -->
                                     <div class="product-price-section">
                                         <span class="product-price">₱<?php echo $productPrice; ?></span>
                                         <span class="product-unit">/<?php echo $productUnit; ?></span>
                                     </div>
                                     
-                                    <!-- ACTION BUTTON -->
+                                    <!-- Action Buttons -->
                                     <?php if (!$isLoggedIn): ?>
-                                        <!-- GUEST: Prompt Login -->
                                         <button class="add-to-cart-btn" onclick="promptLogin(event)">
                                             🔒 Login to Buy
                                         </button>
                                         
                                     <?php elseif ($userRole === 'buyer'): ?>
-                                        <!-- BUYER: Add to Cart -->
                                         <?php if ($canPurchase): ?>
                                             <button class="add-to-cart-btn" 
                                                     onclick="addToCart(event, <?php echo $productId; ?>)"
@@ -383,7 +348,7 @@ if (!empty($filters['search'])) {
                                         <?php endif; ?>
                                         
                                     <?php else: ?>
-                                        <!-- SELLER/ADMIN: View Only -->
+                                        <!-- Seller/Admin: View Only -->
                                         <button class="add-to-cart-btn" onclick="viewProduct(<?php echo $productId; ?>)">
                                             👁️ View Details
                                         </button>
@@ -413,12 +378,11 @@ if (!empty($filters['search'])) {
         </section>
     </main>
 
-    <!-- ==================== SIDEBAR NAVIGATION ==================== -->
+    <!-- Sidebar Navigation -->
     <?php if ($isLoggedIn): ?>
         <?php include __DIR__ . '/marketnav.php'; ?>
     <?php endif; ?>
 
-    <!-- ==================== JAVASCRIPT DATA ==================== -->
    <script>
     // Pass PHP data to JavaScript
     window.marketplaceData = {
@@ -428,7 +392,7 @@ if (!empty($filters['search'])) {
         cartCount: <?php echo $cartCount; ?>,
         wishlistCount: <?php echo $wishlistCount; ?>,
         csrfToken: <?php echo json_encode($csrfToken); ?>,
-        baseUrl: '<?php echo BASE_URL; ?>',  // ✅ Fixed: Added quotes
+        baseUrl: '<?php echo BASE_URL; ?>',
         currentCategory: <?php echo json_encode($filters['categoryID'] ?? null); ?>,
         currentSort: <?php echo json_encode($filters['sort'] ?? 'newest'); ?>,
         currentPage: <?php echo $page; ?>
@@ -440,8 +404,6 @@ if (!empty($filters['search'])) {
     console.log('📦 Products:', <?php echo count($products); ?>);
     console.log('🏷️ Categories:', <?php echo count($categories); ?>);
 </script>
-    
-    <!-- ==================== MARKETPLACE JAVASCRIPT ==================== -->
     <script src="<?php echo BASE_URL; ?>js/marketplace.js"></script>
 </body>
 </html>

@@ -3,9 +3,7 @@ class CSRF {
     private static $tokenName = 'csrf_token';
     private static $tokenLifetime = 7200; // 2 hours
 
-    /**
-     * Generate CSRF token with timestamp
-     */
+    // generate a new CSRF token
     public static function generateToken() {
         if (!isset($_SESSION[self::$tokenName]) || self::isTokenExpired()) {
             $_SESSION[self::$tokenName] = bin2hex(random_bytes(32));
@@ -14,9 +12,7 @@ class CSRF {
         return $_SESSION[self::$tokenName];
     }
 
-    /**
-     * Validate CSRF token
-     */
+    // validate a given CSRF token
     public static function validateToken($token) {
         if (!isset($_SESSION[self::$tokenName]) || !isset($token)) {
             error_log("CSRF validation failed: Token missing");
@@ -38,9 +34,7 @@ class CSRF {
         return $valid;
     }
 
-    /**
-     * Check if token is expired
-     */
+    // check if the token is expired
     private static function isTokenExpired() {
         if (!isset($_SESSION[self::$tokenName . '_time'])) {
             return true;
@@ -48,26 +42,20 @@ class CSRF {
         return (time() - $_SESSION[self::$tokenName . '_time']) > self::$tokenLifetime;
     }
 
-    /**
-     * Regenerate token (after expiry or failed validation)
-     */
+    // regenerate the CSRF token (invalidate the old one)
     public static function regenerateToken() {
         unset($_SESSION[self::$tokenName]);
         unset($_SESSION[self::$tokenName . '_time']);
         return self::generateToken();
     }
 
-    /**
-     * Get token field for forms (HTML)
-     */
+    // get hidden input field for forms
     public static function getTokenField() {
         $token = self::generateToken();
         return '<input type="hidden" name="csrf_token" value="' . htmlspecialchars($token, ENT_QUOTES, 'UTF-8') . '">';
     }
 
-    /**
-     * Get token for AJAX requests (JSON)
-     */
+    // get token for AJAX requests
     public static function getTokenForAjax() {
         return [
             'token' => self::generateToken(),
@@ -75,26 +63,20 @@ class CSRF {
         ];
     }
 
-    /**
-     * Validate token from POST/GET request
-     */
+    // Validate token from standard request (POST/GET)
     public static function validateRequest() {
         $token = $_POST['csrf_token'] ?? $_GET['csrf_token'] ?? null;
         return self::validateToken($token);
     }
 
-    /**
-     * Validate token from JSON request
-     */
+    // Validate token from JSON request body
     public static function validateJsonRequest() {
         $input = json_decode(file_get_contents('php://input'), true);
         $token = $input['csrf_token'] ?? null;
         return self::validateToken($token);
     }
 
-    /**
-     * Handle CSRF validation failure
-     */
+    // Handle CSRF validation failure
     public static function handleFailure($isAjax = false) {
         if ($isAjax) {
             header('Content-Type: application/json');

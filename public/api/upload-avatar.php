@@ -1,23 +1,13 @@
 <?php
-/**
- * Custom Avatar Upload Endpoint
- * File location: /agri_system/public/api/upload-avatar.php
- */
-
-// Start session
-session_start();
-
-// Define base path
+// public/api/upload-avatar.php
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 define('BASE_PATH', dirname(dirname(__DIR__)));
-
-// Include required files
 require_once BASE_PATH . '/app/controllers/ProfileController.php';
 require_once BASE_PATH . '/app/models/User.php';
 
-// Set JSON response header
 header('Content-Type: application/json');
-
-// Check if user is logged in
 if (!isset($_SESSION['user_id']) || !isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
     echo json_encode([
         'success' => false,
@@ -26,7 +16,6 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['logged_in']) || $_SESSION[
     exit();
 }
 
-// Only allow POST requests
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     echo json_encode([
         'success' => false,
@@ -38,7 +27,6 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 try {
     $userID = $_SESSION['user_id'];
     
-    // Check if file was uploaded
     if (!isset($_FILES['avatar']) || $_FILES['avatar']['error'] === UPLOAD_ERR_NO_FILE) {
         echo json_encode([
             'success' => false,
@@ -49,7 +37,6 @@ try {
     
     $file = $_FILES['avatar'];
     
-    // Check for upload errors
     if ($file['error'] !== UPLOAD_ERR_OK) {
         $errorMessages = [
             UPLOAD_ERR_INI_SIZE => 'File is too large (server limit)',
@@ -69,10 +56,8 @@ try {
         exit();
     }
     
-    // Initialize User model
     $userModel = new User();
     
-    // Validate file
     $validation = $userModel->validateAvatarUpload($file);
     
     if (!$validation['valid']) {
@@ -83,15 +68,12 @@ try {
         exit();
     }
     
-    // Get current user data to check for old custom avatar
     $currentUser = $userModel->getUserById($userID);
     $oldAvatar = $currentUser['avatar'] ?? null;
     
-    // Process and save the uploaded file
     $result = $userModel->uploadCustomAvatar($userID, $file, $oldAvatar);
     
     if ($result['success']) {
-        // Update session
         $_SESSION['avatar'] = $result['avatarPath'];
         
         echo json_encode([
@@ -108,7 +90,6 @@ try {
     }
     
 } catch (Exception $e) {
-    // Log the error
     error_log("Avatar upload error: " . $e->getMessage());
     
     echo json_encode([

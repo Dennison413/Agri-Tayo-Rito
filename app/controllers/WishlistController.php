@@ -1,7 +1,5 @@
 <?php
 // app/controllers/WishlistController.php
-// FIXED: Added check_multiple action + better error handling
-
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
@@ -17,7 +15,7 @@ class WishlistController
 
     public function __construct()
     {
-        $this->wishlistModel = new Cart(); // Uses Cart model which has wishlist methods
+        $this->wishlistModel = new Cart(); 
     }
 
     private function jsonResponse(array $payload, int $httpStatus = 200)
@@ -31,7 +29,6 @@ class WishlistController
 
     public function handleAjaxRequest()
     {
-        // Rate limiting
         $rateCheck = RateLimiter::checkApiRate('wishlist');
         if (!$rateCheck['allowed']) {
             $this->jsonResponse([
@@ -41,7 +38,6 @@ class WishlistController
             ], 429);
         }
 
-        // Authentication
         if (!$this->isLoggedIn()) {
             $this->jsonResponse([
                 'success' => false,
@@ -50,7 +46,6 @@ class WishlistController
             ], 401);
         }
 
-        // Role check
         $role = $_SESSION['role'] ?? $_SESSION['user_role'] ?? null;
         if ($role !== 'buyer') {
             $this->jsonResponse([
@@ -59,7 +54,6 @@ class WishlistController
             ], 403);
         }
 
-        // Decode input
         $rawInput = file_get_contents('php://input');
         $data = json_decode($rawInput, true);
         if (json_last_error() !== JSON_ERROR_NONE) {
@@ -71,7 +65,6 @@ class WishlistController
             $this->jsonResponse(['success' => false, 'message' => 'No action specified'], 400);
         }
 
-        // State-changing actions require CSRF
         $stateActions = ['add', 'remove', 'toggle', 'move_to_cart', 'clear_all', 'add_all_to_cart'];
         if (in_array($action, $stateActions, true)) {
             $isAjax = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) &&
@@ -109,7 +102,6 @@ class WishlistController
                     $this->checkWishlist($buyerID, $data);
                     break;
 
-                // ✅ NEW: Batch check multiple products
                 case 'check_multiple':
                     $this->checkMultipleWishlist($buyerID, $data);
                     break;
@@ -144,6 +136,7 @@ class WishlistController
         }
     }
 
+    // add product to wishlist
     private function addToWishlist($buyerID, $data)
     {
         $productID = isset($data['productID']) ? filter_var($data['productID'], FILTER_VALIDATE_INT) : null;
@@ -163,6 +156,7 @@ class WishlistController
         ], $result['success'] ? 200 : 400);
     }
 
+    // remove product from wishlist
     private function removeFromWishlist($buyerID, $data)
     {
         $productID = null;
@@ -195,6 +189,7 @@ class WishlistController
         ], $result['success'] ? 200 : 400);
     }
 
+    // toggle product in wishlist (heart icon)
     private function toggleWishlist($buyerID, $data)
     {
         $productID = isset($data['productID']) ? filter_var($data['productID'], FILTER_VALIDATE_INT) : null;
@@ -223,6 +218,7 @@ class WishlistController
         ], $result['success'] ? 200 : 400);
     }
 
+    // move product from wishlist to cart
     private function moveToCart($buyerID, $data)
     {
         $productID = null;
@@ -271,7 +267,7 @@ class WishlistController
         $this->jsonResponse(['success' => true, 'inWishlist' => $inWishlist]);
     }
 
-    // ✅ NEW: Check multiple products at once
+    // check multiple products at once
     private function checkMultipleWishlist($buyerID, $data)
     {
         $productIDs = $data['productIDs'] ?? [];

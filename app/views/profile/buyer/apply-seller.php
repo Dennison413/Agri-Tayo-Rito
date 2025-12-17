@@ -1,6 +1,5 @@
 <?php
 // public/marketplace/apply-seller.php
-// Seller Application Form
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
@@ -9,13 +8,12 @@ require_once __DIR__ . '/../../../../config/config.php';
 require_once __DIR__ . '/../../../controllers/SellerApplications.php';
 require_once __DIR__ . '/../../../helpers/csrf.php';
 
-// Check authentication
 if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'buyer') {
     header('Location: ' . BASE_URL . 'auth/login');
     exit;
 }
 
-// Handle form submission
+// handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'submit_application') {
     $controller = new SellerApplicationController();
     $controller->submitApplication();
@@ -23,8 +21,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 }
 
 $controller = new SellerApplicationController();
-
-// Get existing application if any
 $existingApp = $controller->getMyApplication();
 $canApply = true;
 $applicationStatus = null;
@@ -39,7 +35,8 @@ if ($existingApp) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Apply as Seller - Agri Tayo Rito</title>
+    <link rel="icon" type="image/jpg" href="/agri_system/public/images/agri-icon.jpg">
+    <title>Agri Tayo Rito</title>
     <link rel="stylesheet" href="<?php echo BASE_URL; ?>css/marketplace/marketplace.css">
     <style>
         .application-container {
@@ -256,18 +253,12 @@ if ($existingApp) {
     </style>
 </head>
 <body>
-
-    <!-- Sidebar Navigation -->
     <?php require_once __DIR__ . '/../../marketplace/marketnav.php'; ?>
-
-    <!-- Overlay -->
     <div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
 
     <!-- Main Content -->
     <div class="main-content">
         <div class="application-container">
-            
-            <!-- Messages -->
             <?php if (isset($_SESSION['success'])): ?>
                 <div class="alert alert-success">
                     <?php 
@@ -311,7 +302,6 @@ if ($existingApp) {
                         <p>Join our marketplace and start selling your agricultural products</p>
                     </div>
 
-                    <!-- Requirements -->
                     <div class="requirements-box">
                         <h3>Requirements to Become a Seller:</h3>
                         <ul>
@@ -322,15 +312,12 @@ if ($existingApp) {
                         </ul>
                     </div>
 
-                    <!-- Application Form -->
                     <form method="POST" 
                           enctype="multipart/form-data"
                           id="applicationForm">
                         
                         <?php echo CSRF::getTokenField(); ?>
                         <input type="hidden" name="action" value="submit_application">
-
-                        <!-- Business Name -->
                         <div class="form-group">
                             <label for="business_name">Business Name *</label>
                             <input type="text" 
@@ -340,7 +327,6 @@ if ($existingApp) {
                                    required>
                         </div>
 
-                        <!-- Business Address -->
                         <div class="form-group">
                             <label for="business_address">Business Address *</label>
                             <textarea id="business_address" 
@@ -349,7 +335,6 @@ if ($existingApp) {
                                       required></textarea>
                         </div>
 
-                        <!-- Business Permit Upload -->
                         <div class="form-group">
                             <label>Business Permit (Optional)</label>
                             <div class="file-upload-area" onclick="document.getElementById('business_permit').click()">
@@ -366,14 +351,12 @@ if ($existingApp) {
                             </div>
                         </div>
 
-                        <!-- Submit Button -->
                         <button type="submit" class="submit-btn">
                             Submit Application
                         </button>
                     </form>
                 </div>
             <?php else: ?>
-                <!-- Already Applied -->
                 <div class="application-card">
                     <div class="application-header">
                         <h1>Application Details</h1>
@@ -408,7 +391,6 @@ if ($existingApp) {
     </div>
 
     <script>
-        // File upload preview
         document.getElementById('business_permit').addEventListener('change', function(e) {
             const fileName = e.target.files[0]?.name;
             const fileNameDisplay = document.getElementById('fileName');
@@ -420,7 +402,6 @@ if ($existingApp) {
             }
         });
 
-        // Sidebar toggle
         function toggleSidebar() {
             const sidebar = document.getElementById('sidebar');
             const overlay = document.getElementById('overlay');
@@ -429,7 +410,6 @@ if ($existingApp) {
             if (overlay) overlay.classList.toggle('active');
         }
 
-        // Form validation
         document.getElementById('applicationForm').addEventListener('submit', function(e) {
             const businessName = document.getElementById('business_name').value.trim();
             const businessAddress = document.getElementById('business_address').value.trim();

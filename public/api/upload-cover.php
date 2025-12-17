@@ -1,28 +1,19 @@
 <?php
-/**
- * Cover Photo Upload Endpoint
- * File location: /agri_system/public/api/upload-cover.php
- */
-
-// Error logging for debugging
+// public/api/upload-cover.php
 error_reporting(E_ALL);
 ini_set('display_errors', 0);
 ini_set('log_errors', 1);
 
-// Start session
-session_start();
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 
-// Define base path
 define('BASE_PATH', dirname(dirname(__DIR__)));
-
-// Include required files
 require_once BASE_PATH . '/app/models/User.php';
 require_once BASE_PATH . '/config/database.php';
 
-// Set JSON response header
 header('Content-Type: application/json');
 
-// Check if user is logged in
 if (!isset($_SESSION['user_id']) || !isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
     echo json_encode([
         'success' => false,
@@ -31,7 +22,6 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['logged_in']) || $_SESSION[
     exit();
 }
 
-// Only allow POST requests
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     echo json_encode([
         'success' => false,
@@ -42,8 +32,6 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 
 try {
     $userID = $_SESSION['user_id'];
-    
-    // Check if file was uploaded
     if (!isset($_FILES['cover']) || $_FILES['cover']['error'] === UPLOAD_ERR_NO_FILE) {
         echo json_encode([
             'success' => false,
@@ -53,8 +41,6 @@ try {
     }
     
     $file = $_FILES['cover'];
-    
-    // Check for upload errors
     if ($file['error'] !== UPLOAD_ERR_OK) {
         $errorMessages = [
             UPLOAD_ERR_INI_SIZE => 'File is too large (server limit)',
@@ -74,7 +60,6 @@ try {
         exit();
     }
     
-    // Validate file type
     $allowedTypes = ['image/jpeg', 'image/jpg', 'image/png'];
     $finfo = finfo_open(FILEINFO_MIME_TYPE);
     $mimeType = finfo_file($finfo, $file['tmp_name']);
@@ -88,7 +73,6 @@ try {
         exit();
     }
     
-    // Validate file size (5MB max)
     $maxFileSize = 5 * 1024 * 1024;
     if ($file['size'] > $maxFileSize) {
         echo json_encode([
@@ -97,8 +81,7 @@ try {
         ]);
         exit();
     }
-    
-    // Verify it's actually an image
+
     $imageInfo = getimagesize($file['tmp_name']);
     if ($imageInfo === false) {
         echo json_encode([
@@ -108,7 +91,6 @@ try {
         exit();
     }
     
-    // Create upload directory if it doesn't exist
     $uploadDir = $_SERVER['DOCUMENT_ROOT'] . '/agri_system/public/uploads/profiles/';
     if (!is_dir($uploadDir)) {
         if (!mkdir($uploadDir, 0755, true)) {
@@ -120,13 +102,11 @@ try {
         }
     }
     
-    // Generate unique filename
     $extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
     $filename = 'cover_' . $userID . '_' . time() . '.' . $extension;
     $fullPath = $uploadDir . $filename;
     $dbPath = '/uploads/profiles/' . $filename;
     
-    // Process and resize image
     if (!processAndSaveCoverImage($file['tmp_name'], $fullPath, $extension)) {
         echo json_encode([
             'success' => false,
@@ -135,21 +115,17 @@ try {
         exit();
     }
     
-    // Update database
     try {
         $db = new Database();
         $conn = $db->connect();
         
-        // Get old cover photo
         $stmt = $conn->prepare("SELECT profile_image FROM users WHERE userID = ?");
         $stmt->execute([$userID]);
         $oldCover = $stmt->fetchColumn();
         
-        // Update with new cover photo
         $stmt = $conn->prepare("UPDATE users SET profile_image = ?, updated_at = CURRENT_TIMESTAMP WHERE userID = ?");
         
         if ($stmt->execute([$dbPath, $userID])) {
-            // Delete old cover photo if it exists and is custom
             if ($oldCover && strpos($oldCover, '/uploads/profiles/') === 0) {
                 $oldPath = $_SERVER['DOCUMENT_ROOT'] . '/agri_system/public' . $oldCover;
                 if (file_exists($oldPath)) {
@@ -157,7 +133,6 @@ try {
                 }
             }
             
-            // Update session
             $_SESSION['profile_image'] = $dbPath;
             
             echo json_encode([
@@ -167,7 +142,6 @@ try {
                 'displayPath' => '/agri_system/public' . $dbPath
             ]);
         } else {
-            // If database update fails, delete the uploaded file
             if (file_exists($fullPath)) {
                 unlink($fullPath);
             }
@@ -180,7 +154,6 @@ try {
     } catch (PDOException $e) {
         error_log("Database error: " . $e->getMessage());
         
-        // Delete uploaded file on error
         if (file_exists($fullPath)) {
             unlink($fullPath);
         }
@@ -200,9 +173,7 @@ try {
     ]);
 }
 
-/**
- * Process and save cover image (1200x400)
- */
+// Function to process and save the cover image
 function processAndSaveCoverImage($sourcePath, $destinationPath, $extension) {
     try {
         list($width, $height) = getimagesize($sourcePath);

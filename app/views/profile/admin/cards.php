@@ -1,6 +1,5 @@
 <?php
 // app/views/profile/admin/cards.php
-// page for admin to manage ATM/ID cards for sellers
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
@@ -21,7 +20,7 @@ $db = new Database();
 $conn = $db->connect();
 $shopModel = new Shop();
 
-// Handle card issuance
+// handle card issuance
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'issue_card') {
     $shopID = intval($_POST['shop_id']);
     $cardNumber = $_POST['card_number'];
@@ -57,7 +56,8 @@ $stats = [
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ATM Card Management - Admin</title>
+    <link rel="icon" type="image/jpg" href="/agri_system/public/images/agri-icon.jpg">
+    <title>Agri Tayo Rito</title>
     <link rel="stylesheet" href="<?php echo BASE_URL; ?>css/responsive.css">
     <link rel="stylesheet" href="<?php echo BASE_URL; ?>css/admin/dashboard.css">
 </head>

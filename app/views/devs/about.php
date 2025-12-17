@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>About Us - Agri Tayo Rito</title>
+    <link rel="icon" type="image/jpg" href="/agri_system/public/images/agri-icon.jpg">
+    <title>Agri Tayo Rito</title>
     <style>
         * {
             margin: 0;
@@ -16,8 +17,6 @@
             background: linear-gradient(135deg, #f5f5f5 0%, #e8f5e9 100%);
             min-height: 100vh;
         }
-
-        /* Navigation */
         .main-nav {
             background-color: #2d5016;
             padding: 20px;
@@ -66,7 +65,6 @@
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
         }
 
-        /* Hero Section */
         .hero-section {
             background: linear-gradient(135deg, #2d5016 0%, #4a7c25 100%);
             color: white;
@@ -88,7 +86,6 @@
             animation: fadeInUp 0.8s ease;
         }
 
-        /* System Description */
         .system-section {
             max-width: 1200px;
             margin: 60px auto;
@@ -153,8 +150,6 @@
             color: #666;
             font-size: 0.95rem;
         }
-
-        /* Team Section */
         .team-section {
             max-width: 1400px;
             margin: 60px auto;
@@ -270,7 +265,6 @@
             box-shadow: 0 5px 15px rgba(45, 80, 22, 0.3);
         }
 
-        /* Footer */
         footer {
             background: #2d5016;
             color: white;
@@ -283,7 +277,6 @@
             margin-bottom: 10px;
         }
 
-        /* Animations */
         @keyframes fadeInDown {
             from {
                 opacity: 0;
@@ -306,7 +299,6 @@
             }
         }
 
-        /* Mobile Responsive */
         @media (max-width: 768px) {
             .hero-section h1 {
                 font-size: 2rem;
@@ -340,7 +332,6 @@
     </style>
 </head>
 <body>
-    <!-- Navigation -->
     <nav class="main-nav">
         <div class="logo-section">
             <img src="/agri_system/public/images/logo.jpg" alt="Logo">
@@ -352,13 +343,11 @@
         </div>
     </nav>
 
-    <!-- Hero Section -->
     <section class="hero-section">
         <h1>About Agri Tayo Rito</h1>
         <p>Connecting local farmers with consumers for fresher produce and sustainable agriculture</p>
     </section>
 
-    <!-- System Description -->
     <section class="system-section">
         <div class="system-card">
             <h2>🌾 Our Mission</h2>
@@ -493,14 +482,12 @@
         </div>
     </section>
 
-    <!-- Footer -->
     <footer>
         <p>&copy; 2025 Agri Tayo Rito. All rights reserved.</p>
         <p>Fresh from Farm to Table</p>
     </footer>
 
     <script>
-        // Smooth scroll animation for elements
         document.addEventListener('DOMContentLoaded', () => {
             const observerOptions = {
                 threshold: 0.1,

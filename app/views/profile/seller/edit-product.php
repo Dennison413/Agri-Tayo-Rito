@@ -1,7 +1,5 @@
 <?php
 // app/views/profile/seller/edit-product.php
-// Edit existing product details
-
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
@@ -11,7 +9,6 @@ require_once __DIR__ . '/../../../../config/database.php';
 require_once __DIR__ . '/../../../models/Product.php';
 require_once __DIR__ . '/../../../models/Category.php';
 
-// Check authentication
 $isLoggedIn = isset($_SESSION['logged_in']) && $_SESSION['logged_in'];
 $userRole = $_SESSION['user_role'] ?? null;
 $userID = $_SESSION['user_id'] ?? null;
@@ -96,7 +93,8 @@ $categories = $categoryModel->getAllCategories();
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Edit Product - Agri Tayo Rito</title>
+    <link rel="icon" type="image/jpg" href="/agri_system/public/images/agri-icon.jpg">
+    <title>Agri Tayo Rito</title>
     <link rel="stylesheet" href="<?php echo BASE_URL; ?>css/responsive.css">
     <link rel="stylesheet" href="<?php echo BASE_URL; ?>css/seller/dashboard.css">
 </head>

@@ -8,7 +8,6 @@ require_once __DIR__ . '/../../../../config/config.php';
 require_once __DIR__ . '/../../../../config/database.php';
 require_once __DIR__ . '/../../../models/Orders.php';
 
-// Check authentication
 $isLoggedIn = isset($_SESSION['logged_in']) && $_SESSION['logged_in'];
 $userRole = $_SESSION['user_role'] ?? null;
 $userID = $_SESSION['user_id'] ?? null;
@@ -21,7 +20,6 @@ if (!$isLoggedIn || $userRole !== 'seller') {
 $db = new Database();
 $conn = $db->connect();
 
-// Get seller profile
 $stmt = $conn->prepare("SELECT sellerID FROM seller_profiles WHERE userID = ?");
 $stmt->execute([$userID]);
 $sellerProfile = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -31,8 +29,6 @@ if (!$sellerProfile) {
 }
 
 $sellerID = $sellerProfile['sellerID'];
-
-// Get orders
 $ordersModel = new Orders();
 $orders = $ordersModel->getOrdersBySeller($sellerID, 50, 0);
 $stats = $ordersModel->getOrderStats($sellerID, 'seller');
@@ -42,7 +38,8 @@ $stats = $ordersModel->getOrderStats($sellerID, 'seller');
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Orders - Agri Tayo Rito</title>
+    <link rel="icon" type="image/jpg" href="/agri_system/public/images/agri-icon.jpg">
+    <title>Agri Tayo Rito</title>
     <link rel="stylesheet" href="<?php echo BASE_URL; ?>css/responsive.css">
     <link rel="stylesheet" href="<?php echo BASE_URL; ?>css/seller/dashboard.css">
 </head>

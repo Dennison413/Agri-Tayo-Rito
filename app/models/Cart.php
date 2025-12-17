@@ -1,8 +1,5 @@
 <?php
 // app/models/Cart.php
-// FIXED: Changed image_order = 0 to is_main = 1 for proper image loading
-// cart, checkout and wishlist
-
 require_once __DIR__ . '/../../config/database.php';
 
 class Cart 
@@ -16,8 +13,7 @@ class Cart
         $this->conn = $database->connect();
     }
 
-    // Get cart items grouped by shop
-    // Uses is_main = 1 to get primary image
+    // get cart items grouped by shop
     public function getCartItemsGroupedByShop($buyerID) 
     {
         $query = "
@@ -35,7 +31,7 @@ class Cart
                 p.shopID,
                 s.shop_name,
                 s.shop_slug,
-                pi.image_path as primary_image,
+                pi.image_path as primary_image, 
                 (p.price * c.quantity) as item_subtotal
             FROM {$this->table} c
             INNER JOIN products p ON c.productID = p.productID
@@ -70,8 +66,7 @@ class Cart
         return $grouped;
     }
 
-    // Get cart items
-    // Uses is_main = 1 to get primary image
+    // get cart items
     public function getCartItems($buyerID) 
     {
         $query = "
@@ -103,7 +98,7 @@ class Cart
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    // Add item to cart with stock validation
+    // add item to cart with stock validation
     public function addToCart($buyerID, $productID, $quantity = 1) 
     {
         try {
@@ -151,7 +146,7 @@ class Cart
                     'message' => $result ? 'Cart updated successfully' : 'Failed to update cart'
                 ];
             } else {
-                // Validate quantity against available stock
+                // validate quantity against available stock
                 if ($quantity > $availableStock) {
                     return [
                         'success' => false,
@@ -159,7 +154,7 @@ class Cart
                     ];
                 }
                 
-                // Insert new item - triggers will validate cart limits
+                // insert new item - triggers will validate cart limits
                 $insertQuery = "INSERT INTO {$this->table} 
                                (buyerID, productID, quantity) 
                                VALUES (?, ?, ?)";
@@ -174,7 +169,7 @@ class Cart
         } catch (PDOException $e) {
             error_log("Add to cart error: " . $e->getMessage());
             
-            // Handle trigger errors (cart limits)
+            // handle trigger errors (cart limits)
             if (strpos($e->getMessage(), 'Cart limit reached') !== false) {
                 return ['success' => false, 'message' => 'Cart limit reached: Maximum 80 different items allowed'];
             } elseif (strpos($e->getMessage(), 'Cart quantity limit') !== false) {
@@ -187,7 +182,7 @@ class Cart
         }
     }
 
-    // Update cart item quantity with stock validation
+    // update cart item quantity with stock validation
     public function updateCartQuantity($buyerID, $productID, $quantity) 
     {
         if ($quantity <= 0) {
@@ -195,7 +190,6 @@ class Cart
         }
 
         try {
-            // Check available stock
             $productQuery = "SELECT stock_quantity, reserved_quantity FROM products WHERE productID = ?";
             $stmt = $this->conn->prepare($productQuery);
             $stmt->execute([$productID]);
@@ -227,7 +221,6 @@ class Cart
         } catch (PDOException $e) {
             error_log("Update cart error: " . $e->getMessage());
             
-            // Handle trigger errors
             if (strpos($e->getMessage(), 'Cart quantity limit') !== false) {
                 return ['success' => false, 'message' => 'Cart quantity limit exceeded'];
             } elseif (strpos($e->getMessage(), 'Item quantity limit') !== false) {
@@ -238,7 +231,7 @@ class Cart
         }
     }
 
-    // Remove item from cart
+    // remove item from cart
     public function removeFromCart($buyerID, $productID) 
     {
         $query = "DELETE FROM {$this->table} 
@@ -253,7 +246,7 @@ class Cart
         ];
     }
 
-    // Clear entire cart
+    // clear entire cart
     public function clearCart($buyerID) 
     {
         $query = "DELETE FROM cart WHERE buyerID = ?";
@@ -261,10 +254,9 @@ class Cart
         return $stmt->execute([$buyerID]);
     }
 
-    // Get cart item count
+    // get cart item count (number of different products)
     public function getCartCount($buyerID) 
     {
-        // Count distinct products, not total quantity
         $query = "SELECT COUNT(*) as total FROM {$this->table} 
                  WHERE buyerID = ?";
         $stmt = $this->conn->prepare($query);
@@ -274,7 +266,7 @@ class Cart
         return (int)($result['total'] ?? 0);
     }
 
-    // Get cart total amount
+    // get cart total amount
     public function getCartTotal($buyerID) 
     {
         $query = "SELECT SUM(c.quantity * p.price) as total
@@ -301,7 +293,7 @@ class Cart
         return (int)($result['total'] ?? 0);
     }
 
-    // Validate cart before checkout
+    // validate cart before checkout
     public function validateCartForCheckout($buyerID) 
     {
         $query = "SELECT 
@@ -325,14 +317,14 @@ class Cart
         $valid = true;
         
         foreach ($items as $item) {
-            // Check if product is available
+            // check if product is available
             if (!$item['is_available']) {
                 $errors[] = "{$item['product_name']} is no longer available";
                 $valid = false;
                 continue;
             }
             
-            // Check if sufficient stock
+            // check if sufficient stock
             if ($item['available_quantity'] < $item['quantity']) {
                 $errors[] = "Insufficient stock for {$item['product_name']}. Only {$item['available_quantity']} available";
                 $valid = false;
@@ -345,8 +337,7 @@ class Cart
         ];
     }
 
-    // Get wishlist items
-    // Uses is_main = 1 to get primary image
+    // get wishlist items
     public function getWishlistItems($buyerID) 
     {
         $query = "
@@ -385,7 +376,7 @@ class Cart
         }
     }
 
-    // Wishlist methods remain the same...
+    // wishlist methods
     public function addToWishlist($buyerID, $productID) 
     {
         try {

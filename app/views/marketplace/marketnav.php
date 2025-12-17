@@ -12,7 +12,6 @@ $userRole = $_SESSION['user_role'] ?? 'buyer';
 $username = $_SESSION['username'] ?? 'User';
 $userId = $_SESSION['user_id'] ?? null;
 
-// Get avatar from session and build proper path
 $avatarFromSession = $_SESSION['avatar'] ?? '/images/avatars/avt1.jpg';
 
 if (strpos($avatarFromSession, 'http') === 0) {
@@ -25,7 +24,6 @@ if (strpos($avatarFromSession, 'http') === 0) {
         : '/agri_system/public/' . $avatarFromSession;
 }
 
-// Get wishlist count for buyers
 $wishlistCount = 0;
 if ($userRole === 'buyer' && $userId) {
     try {
@@ -37,7 +35,6 @@ if ($userRole === 'buyer' && $userId) {
     }
 }
 
-// Define navigation items based on role
 $navItems = [];
 
 switch ($userRole) {
@@ -94,6 +91,7 @@ switch ($userRole) {
 <head>
     <meta charset="UTF-8">
     <link rel="stylesheet" href="<?php echo BASE_URL; ?>css/marketplace/marketplace.css">
+    <link rel="icon" type="image/jpg" href="/agri_system/public/images/agri-icon.jpg">
 </head>
 <body>
     <aside class="sidebar" id="sidebar">

@@ -1,7 +1,5 @@
 <?php
 // app/controllers/ProductImageController.php
-// Handles product image uploads, deletions, and management
-
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
@@ -23,16 +21,14 @@ class ProductImageController
         $this->productModel = new Product();
         $this->uploadDir = $_SERVER['DOCUMENT_ROOT'] . '/agri_system/public/uploads/products/';
         
-        // Create upload directory if it doesn't exist
         if (!file_exists($this->uploadDir)) {
             mkdir($this->uploadDir, 0777, true);
         }
     }
 
-    // Main handler for GET/POST requests
+    // main handler for GET/POST requests
     public function handleRequest()
     {
-        // Check authentication
         if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'seller') {
             http_response_code(403);
             echo json_encode(['success' => false, 'message' => 'Unauthorized']);
@@ -57,7 +53,7 @@ class ProductImageController
         }
     }
 
-    // Upload multiple images for a product
+    // upload multiple images for a product
     private function uploadImages()
     {
         try {
@@ -68,7 +64,7 @@ class ProductImageController
                 return;
             }
 
-            // Verify product ownership
+            // verify product ownership
             $db = new Database();
             $conn = $db->connect();
             $stmt = $conn->prepare("SELECT sellerID FROM products WHERE productID = ?");
@@ -80,7 +76,7 @@ class ProductImageController
                 return;
             }
 
-            // Check current image count
+            // check current image count
             $stmt = $conn->prepare("SELECT COUNT(*) as count FROM product_images WHERE productID = ?");
             $stmt->execute([$productID]);
             $currentCount = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
@@ -95,7 +91,7 @@ class ProductImageController
             $files = $_FILES['images'];
             $fileCount = count($files['name']);
 
-            // Check if adding these images would exceed limit
+            // check if adding these images would exceed limit
             if (($currentCount + $fileCount) > $this->maxImages) {
                 echo json_encode([
                     'success' => false, 
@@ -103,8 +99,7 @@ class ProductImageController
                 ]);
                 return;
             }
-
-            // Process each uploaded file
+            
             for ($i = 0; $i < $fileCount; $i++) {
                 $fileName = $files['name'][$i];
                 $fileTmp = $files['tmp_name'][$i];
@@ -128,25 +123,22 @@ class ProductImageController
                     continue;
                 }
 
-                // Generate unique filename
+                // Generate unique filename and move file
                 $extension = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
                 $newFileName = 'product_' . $productID . '_' . uniqid() . '.' . $extension;
                 $targetPath = $this->uploadDir . $newFileName;
 
-                // Move uploaded file
                 if (move_uploaded_file($fileTmp, $targetPath)) {
                     $relativePath = '/uploads/products/' . $newFileName;
                     
-                    // Determine if this should be main image (first image and no main exists)
+                    // determine if this should be main image (first image and no main exists)
                     $isMain = ($currentCount == 0 && $i == 0) ? 1 : 0;
-                    
-                    // Insert into database
                     $result = $this->productModel->addProductImage(
                         $productID,
                         $this->getSellerID(),
                         $relativePath,
                         $isMain,
-                        null // Auto-increment order
+                        null
                     );
 
                     if ($result['success']) {
@@ -156,7 +148,7 @@ class ProductImageController
                             'isMain' => $isMain
                         ];
                     } else {
-                        unlink($targetPath); // Delete file if DB insert fails
+                        unlink($targetPath);
                         $errors[] = "{$fileName}: " . $result['message'];
                     }
                 } else {
@@ -240,7 +232,7 @@ class ProductImageController
         $this->redirect($productID);
     }
 
-    // Helper: Get seller ID from session
+    // helper: get seller ID from session
     private function getSellerID()
     {
         $db = new Database();
@@ -251,7 +243,7 @@ class ProductImageController
         return $seller['sellerID'] ?? null;
     }
 
-    // Helper: Redirect back to image upload page
+    // helper: redirect back to image upload page
     private function redirect($productID = null)
     {
         $url = BASE_URL . 'profile/seller/image-upload';
@@ -263,7 +255,7 @@ class ProductImageController
     }
 }
 
-// Handle request if called directly
+// handle request if called directly
 if (basename($_SERVER['PHP_SELF']) == basename(__FILE__)) {
     $controller = new ProductImageController();
     $controller->handleRequest();

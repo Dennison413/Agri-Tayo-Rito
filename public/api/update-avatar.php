@@ -1,22 +1,11 @@
 <?php
-/**
- * Avatar Update Endpoint
- * File location: /agri_system/public/api/update-avatar.php
- */
-
-// Start session
-session_start();
-
-// Define base path
+// public/api/update-avatar.php
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 define('BASE_PATH', dirname(dirname(__DIR__)));
-
-// Include the ProfileController
 require_once BASE_PATH . '/app/controllers/ProfileController.php';
-
-// Set JSON response header
 header('Content-Type: application/json');
-
-// Check if user is logged in
 if (!isset($_SESSION['user_id']) || !isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
     echo json_encode([
         'success' => false,
@@ -24,8 +13,6 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['logged_in']) || $_SESSION[
     ]);
     exit();
 }
-
-// Only allow POST requests
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     echo json_encode([
         'success' => false,
@@ -35,11 +22,9 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 try {
-    // Get JSON data from request body
     $input = file_get_contents('php://input');
     $data = json_decode($input, true);
     
-    // Check if JSON is valid
     if (json_last_error() !== JSON_ERROR_NONE) {
         echo json_encode([
             'success' => false,
@@ -48,7 +33,6 @@ try {
         exit();
     }
     
-    // Validate avatar field exists
     if (!isset($data['avatar']) || empty($data['avatar'])) {
         echo json_encode([
             'success' => false,
@@ -60,14 +44,11 @@ try {
     $selectedAvatar = $data['avatar'];
     $userID = $_SESSION['user_id'];
     
-    // Initialize controller and model
     $profileController = new ProfileController();
     
-    // Get user model to validate and update
     require_once BASE_PATH . '/app/models/User.php';
     $userModel = new User();
     
-    // Validate avatar path
     if (!$userModel->isValidAvatar($selectedAvatar)) {
         echo json_encode([
             'success' => false,
@@ -76,12 +57,9 @@ try {
         exit();
     }
     
-    // Update avatar in database
     if ($userModel->updateAvatar($userID, $selectedAvatar)) {
-        // Update session avatar
         $_SESSION['avatar'] = $selectedAvatar;
         
-        // Return success with full path for display
         echo json_encode([
             'success' => true,
             'message' => 'Avatar updated successfully!',
@@ -96,7 +74,6 @@ try {
     }
     
 } catch (Exception $e) {
-    // Log the error (in production, log to file instead of exposing)
     error_log("Avatar update error: " . $e->getMessage());
     
     echo json_encode([

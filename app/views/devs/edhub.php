@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Educational Hub - Agri Tayo Rito</title>
+    <link rel="icon" type="image/jpg" href="/agri_system/public/images/agri-icon.jpg">
+    <title>Agri Tayo Rito</title>
     <style>
         * {
             margin: 0;
@@ -161,7 +162,7 @@
 
         .video-container {
             position: relative;
-            padding-bottom: 56.25%; /* 16:9 aspect ratio */
+            padding-bottom: 56.25%;
             height: 0;
             overflow: hidden;
             background: #000;
@@ -478,12 +479,10 @@
         </div>
 
         <div class="tutorial-grid">
-            <!-- Tutorial 1: Getting Started -->
             <div class="tutorial-card">
                 <div class="video-container">
-                    <!-- Replace src with your actual video URL -->
                     <video controls poster="/agri_system/public/images/tutorial-thumbnails/getting-started.jpg">
-                        <source src="/agri_system/public/videos/getting-started.mp4" type="video/mp4">
+                        <source src="no video yet" type="video/mp4">
                         Your browser does not support the video tag.
                     </video>
                     <!-- Placeholder if no video -->

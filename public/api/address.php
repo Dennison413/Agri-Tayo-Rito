@@ -1,25 +1,16 @@
 <?php
-/**
- * Address API Handler
- * File: /agri_system/public/api/address.php
- */
-
-// Start session
+// public/api/address.php
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
 error_log("Address API called - Method: {$_SERVER['REQUEST_METHOD']}, User: " . ($_SESSION['user_id'] ?? 'none'));
-
-// Set JSON response headers
 header('Content-Type: application/json');
 header('Access-Control-Allow-Credentials: true');
 
-// Load dependencies
 require_once __DIR__ . '/../../app/models/UserAddress.php';
 require_once __DIR__ . '/../../app/helpers/csrf.php';
 
-// Check authentication
 if (!isset($_SESSION['user_id']) || !isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
     echo json_encode([
         'success' => false,
@@ -29,10 +20,7 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['logged_in']) || $_SESSION[
     exit;
 }
 
-// Get request method
 $method = $_SERVER['REQUEST_METHOD'];
-
-// Handle GET requests (fetch addresses)
 if ($method === 'GET') {
     $addressModel = new UserAddress();
     $userID = $_SESSION['user_id'];
@@ -71,7 +59,6 @@ if ($method === 'GET') {
 
 // Handle POST requests (add/update/delete)
 if ($method === 'POST') {
-    // Get JSON input
     $input = json_decode(file_get_contents('php://input'), true);
     
     if (json_last_error() !== JSON_ERROR_NONE) {
@@ -82,7 +69,6 @@ if ($method === 'POST') {
         exit;
     }
     
-    // CSRF validation
     if (!CSRF::validateJsonRequest()) {
         CSRF::handleFailure(true);
         exit;
@@ -92,9 +78,7 @@ if ($method === 'POST') {
     $addressModel = new UserAddress();
     $userID = $_SESSION['user_id'];
     
-    // ADD ADDRESS
     if ($action === 'add') {
-        // Validate required fields
         $required = ['address', 'municipality', 'province', 'postal_code'];
         foreach ($required as $field) {
             if (empty($input[$field])) {
@@ -115,7 +99,6 @@ if ($method === 'POST') {
         $result = $addressModel->addAddress($userID, $address, $municipality, $province, $postal_code);
         
         if ($result['success']) {
-            // Get the newly created address
             $newAddress = $addressModel->getAddress($result['addressID'], $userID);
             
             echo json_encode([
@@ -130,7 +113,6 @@ if ($method === 'POST') {
         exit;
     }
     
-    // UPDATE ADDRESS
     if ($action === 'update') {
         $addressID = filter_var($input['addressID'] ?? null, FILTER_VALIDATE_INT);
         
@@ -142,7 +124,6 @@ if ($method === 'POST') {
             exit;
         }
         
-        // Validate required fields
         $required = ['address', 'municipality', 'province', 'postal_code'];
         foreach ($required as $field) {
             if (empty($input[$field])) {
@@ -154,7 +135,6 @@ if ($method === 'POST') {
             }
         }
         
-        // Sanitize inputs
         $address = filter_var($input['address'], FILTER_SANITIZE_STRING);
         $municipality = filter_var($input['municipality'], FILTER_SANITIZE_STRING);
         $province = filter_var($input['province'], FILTER_SANITIZE_STRING);
@@ -167,8 +147,6 @@ if ($method === 'POST') {
         ]));
         exit;
     }
-    
-    // DELETE ADDRESS
     if ($action === 'delete') {
         $addressID = filter_var($input['addressID'] ?? null, FILTER_VALIDATE_INT);
         
@@ -188,7 +166,6 @@ if ($method === 'POST') {
         exit;
     }
     
-    // Invalid action
     echo json_encode([
         'success' => false,
         'message' => 'Invalid action'
@@ -196,7 +173,6 @@ if ($method === 'POST') {
     exit;
 }
 
-// Method not allowed
 echo json_encode([
     'success' => false,
     'message' => 'Method not allowed'

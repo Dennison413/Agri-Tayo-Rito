@@ -35,7 +35,7 @@ class ProfileController
         return $this->userModel->getUserById($userID);
     }
 
-    // ✅ NEW METHOD: Get user statistics
+    // user statistics
     public function getUserStats($userID)
     {
         try {
@@ -74,7 +74,6 @@ class ProfileController
                 'wishlist_count' => $wishlistResult['wishlist_count'] ?? 0,
                 'reviews_count' => $reviewsResult['reviews_count'] ?? 0
             ];
-
         } catch (Exception $e) {
             error_log("Get user stats error: " . $e->getMessage());
             return [
@@ -86,7 +85,7 @@ class ProfileController
         }
     }
 
-    // ✅ NEW METHOD: Get recent orders
+    // recent orders
     public function getRecentOrders($userID, $limit = 5)
     {
         try {
@@ -113,7 +112,6 @@ class ProfileController
             $stmt->execute([$userID, $limit]);
             $orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-            // Format image paths
             foreach ($orders as &$order) {
                 if (empty($order['image'])) {
                     $order['image'] = '/agri_system/public/images/placeholder-product.jpg';
@@ -123,14 +121,13 @@ class ProfileController
             }
 
             return $orders;
-
         } catch (Exception $e) {
             error_log("Get recent orders error: " . $e->getMessage());
             return [];
         }
     }
 
-    // ✅ NEW METHOD: Format date for display
+    // format date for display
     public function formatDate($dateString)
     {
         if (empty($dateString)) {
@@ -145,14 +142,13 @@ class ProfileController
         }
     }
 
-    // ✅ NEW METHOD: Format phone number
+    // format phone number
     public function formatPhone($phone)
     {
         if (empty($phone)) {
             return 'Not provided';
         }
 
-        // Format: 0912-345-6789
         if (strlen($phone) === 11 && substr($phone, 0, 2) === '09') {
             return substr($phone, 0, 4) . '-' . substr($phone, 4, 3) . '-' . substr($phone, 7);
         }
@@ -160,7 +156,7 @@ class ProfileController
         return $phone;
     }
 
-    // ✅ NEW METHOD: Get full address
+    // get full address
     public function getFullAddress($user)
     {
         $parts = [];
@@ -232,8 +228,8 @@ class ProfileController
         header('Location: /agri_system/public/profile/user');
         exit;
     }
-    
-    //password management
+
+    // password management
     public function updatePassword()
     {
         if (!CSRF::validateRequest()) {

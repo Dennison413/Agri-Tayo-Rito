@@ -1,11 +1,6 @@
 // public/js/wishlist.js
-// FIXED: Correct API URL path resolution + all buttons working
-
 (function() {
     'use strict';
-
-    // ==================== CONFIGURATION ====================
-    // ✅ FIX: Use global WISHLIST_API_URL or construct from BASE_URL
     const API_URL = typeof WISHLIST_API_URL !== 'undefined' 
         ? WISHLIST_API_URL 
         : (typeof BASE_URL !== 'undefined' ? BASE_URL : '/agri_system/public/') + 'app/controllers/WishlistController.php';
@@ -13,8 +8,6 @@
     const TIMEOUT = 15000;
 
     console.log('🔧 Wishlist JS API URL:', API_URL);
-
-    // ==================== CSRF TOKEN MANAGEMENT ====================
     function getCsrfToken() {
         const meta = document.querySelector('meta[name="csrf-token"]');
         if (meta) return meta.getAttribute('content') || '';
@@ -38,8 +31,7 @@
         
         document.cookie = `csrf_token=${encodeURIComponent(token)}; path=/; samesite=lax`;
     }
-
-    // ==================== API COMMUNICATION ====================
+    
     async function fetchWithTimeout(url, options = {}, timeout = TIMEOUT) {
         const controller = new AbortController();
         const id = setTimeout(() => controller.abort(), timeout);
@@ -58,8 +50,6 @@
 
     async function wishlistAction(action, payload = {}) {
         const body = { action, ...payload };
-        
-        // Add CSRF token for state-changing actions
         const stateActions = ['add', 'remove', 'toggle', 'move_to_cart', 'clear_all', 'add_all_to_cart'];
         if (stateActions.includes(action)) {
             body.csrf_token = getCsrfToken();
@@ -86,15 +76,12 @@
                     const errorData = await response.json();
                     errorMsg = errorData.message || errorMsg;
                 } catch (e) {
-                    // Response is not JSON
                 }
                 throw new Error(errorMsg);
             }
 
             const data = await response.json();
             console.log(`✅ Success:`, data);
-            
-            // Update CSRF token if provided
             if (data.csrf_token) {
                 updateCsrfToken(data.csrf_token);
             }
@@ -110,7 +97,6 @@
         }
     }
 
-    // ==================== UI HELPERS ====================
     function showLoading(show = true) {
         const overlay = document.getElementById('loadingOverlay');
         if (overlay) {
@@ -140,14 +126,12 @@
             subtitle.textContent = `${count} item${count !== 1 ? 's' : ''} saved`;
         }
 
-        // Update navigation badge if exists
         const badges = document.querySelectorAll('.wishlist-btn .badge, [href*="wishlist"] .badge');
         badges.forEach(badge => {
             badge.textContent = count;
             badge.style.display = count > 0 ? 'flex' : 'none';
         });
 
-        // Show empty state if no items
         if (count === 0) {
             showEmptyState();
         }
@@ -184,7 +168,7 @@
         }, 300);
     }
 
-    // ==================== EVENT HANDLERS ====================
+    // event handlers
     async function handleRemoveItem(event) {
         const card = event.target.closest('.wishlist-card');
         if (!card) return;
@@ -333,8 +317,6 @@
             }
             
             showNotification(message, 'success');
-            
-            // Reload page to reflect changes
             setTimeout(() => {
                 window.location.reload();
             }, 1500);
@@ -343,12 +325,11 @@
         }
     }
 
-    // ==================== EVENT DELEGATION ====================
+    // event listeners
     document.addEventListener('click', function(event) {
         const target = event.target;
         if (!target) return;
-
-        // Remove button (X button)
+        // Remove button
         if (target.classList.contains('remove-btn') || 
             target.closest('[data-action="remove"]')) {
             event.preventDefault();
@@ -383,7 +364,7 @@
         }
     });
 
-    // ==================== PUBLIC API ====================
+    // public API
     window.WishlistPageAPI = {
         removeFromWishlist: async (wishlistID, productID) => {
             return await wishlistAction('remove', { wishlistID, productID });

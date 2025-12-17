@@ -1,7 +1,4 @@
-// ============================================
-// PROFILE EDIT FUNCTIONS
-// ============================================
-
+// public/js/profile.js
 function editPersonalInfo() {
     document.getElementById('personalInfoView').style.display = 'none';
     document.getElementById('personalInfoEdit').style.display = 'block';
@@ -16,24 +13,18 @@ function toggleEditMode() {
     editPersonalInfo();
 }
 
-// ============================================
-// AVATAR & COVER FUNCTIONS
-// ============================================
+// avatar management variables
 
 let selectedAvatarFile = null;
 let selectedCustomFile = null;
 
-/**
- * Edit avatar - opens modal
- */
+// edit avatar
 function editAvatar() {
     console.log('🎨 Opening avatar modal');
     openAvatarModal();
 }
 
-/**
- * Open avatar selection modal
- */
+// open avatar selection modal
 function openAvatarModal() {
     const modal = document.getElementById('avatarModal');
     if (!modal) {
@@ -44,28 +35,19 @@ function openAvatarModal() {
     console.log('✅ Avatar modal found, opening...');
     modal.style.display = 'flex';
     document.body.style.overflow = 'hidden';
-    
-    // Reset custom file input
     const fileInput = document.getElementById('customAvatarInput');
     if (fileInput) {
         fileInput.value = '';
     }
     selectedCustomFile = null;
-    
-    // Hide preview
     const preview = document.getElementById('uploadPreview');
     if (preview) {
         preview.style.display = 'none';
     }
     
-    // Check if save button exists
     const saveBtn = document.getElementById('saveAvatarBtn');
     console.log('💾 Save button found:', !!saveBtn);
 }
-
-/**
- * Close avatar selection modal
- */
 function closeAvatarModal() {
     const modal = document.getElementById('avatarModal');
     if (!modal) return;
@@ -75,7 +57,6 @@ function closeAvatarModal() {
     selectedAvatarFile = null;
     selectedCustomFile = null;
     
-    // Reset selection to current avatar
     const currentAvatar = document.getElementById('currentAvatar');
     if (currentAvatar) {
         const currentSrc = currentAvatar.src;
@@ -88,16 +69,13 @@ function closeAvatarModal() {
         });
     }
     
-    // Hide preview
     const preview = document.getElementById('uploadPreview');
     if (preview) {
         preview.style.display = 'none';
     }
 }
 
-/**
- * Edit cover photo
- */
+// edit cover photo
 function editCover() {
     const coverInput = document.getElementById('coverInput');
     if (coverInput) {
@@ -105,9 +83,7 @@ function editCover() {
     }
 }
 
-/**
- * Handle cover photo upload
- */
+// handle cover photo upload
 function handleCoverUpload(event) {
     const file = event.target.files[0];
     
@@ -116,8 +92,6 @@ function handleCoverUpload(event) {
     }
     
     console.log('📸 Cover upload started:', file.name);
-    
-    // Validate file type
     const validTypes = ['image/jpeg', 'image/jpg', 'image/png'];
     if (!validTypes.includes(file.type)) {
         showNotification('Please select a valid image file (JPEG or PNG)', 'error');
@@ -125,21 +99,16 @@ function handleCoverUpload(event) {
         return;
     }
     
-    // Validate file size (5MB)
-    const maxSize = 5 * 1024 * 1024;
+    const maxSize = 5 * 1024 * 1024; // 5MB
     if (file.size > maxSize) {
         showNotification('File is too large. Maximum size is 5MB', 'error');
         event.target.value = '';
         return;
     }
-    
-    // Upload the cover photo
     const formData = new FormData();
     formData.append('cover', file);
     
     showNotification('Uploading cover photo...', 'info');
-    
-    // Use correct path
     const uploadUrl = window.API_BASE_PATH + 'profile/upload-cover.php';
     console.log('🔗 Upload URL:', uploadUrl);
     
@@ -181,32 +150,23 @@ function handleCoverUpload(event) {
     });
 }
 
-/**
- * Select a preset avatar
- */
+// select preset avatar
 function selectAvatar(avatarPath, element) {
     console.log('✅ Avatar selected:', avatarPath);
-    
-    // Remove selected class from all avatars
     document.querySelectorAll('.avatar-option').forEach(img => {
         img.classList.remove('selected');
     });
-    
-    // Add selected class to clicked avatar
     element.classList.add('selected');
     selectedAvatarFile = avatarPath;
     selectedCustomFile = null;
     
-    // Hide upload preview
     const preview = document.getElementById('uploadPreview');
     if (preview) {
         preview.style.display = 'none';
     }
 }
 
-/**
- * Trigger file input click
- */
+// trigger custom file input
 function triggerFileInput() {
     const fileInput = document.getElementById('customAvatarInput');
     if (fileInput) {
@@ -214,9 +174,7 @@ function triggerFileInput() {
     }
 }
 
-/**
- * Handle custom file selection
- */
+// handle custom file selection
 function handleCustomFileSelect(event) {
     const file = event.target.files[0];
     
@@ -225,33 +183,26 @@ function handleCustomFileSelect(event) {
     }
     
     console.log('🎨 Custom avatar selected:', file.name);
-    
-    // Validate file type
     const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
     if (!validTypes.includes(file.type)) {
         showNotification('Please select a valid image file (JPEG, PNG, or GIF)', 'error');
         event.target.value = '';
         return;
     }
-    
-    // Validate file size (2MB)
-    const maxSize = 2 * 1024 * 1024;
+    const maxSize = 2 * 1024 * 1024; // 2MB
     if (file.size > maxSize) {
         showNotification('File is too large. Maximum size is 2MB', 'error');
         event.target.value = '';
         return;
     }
     
-    // Store the file
     selectedCustomFile = file;
     selectedAvatarFile = null;
     
-    // Deselect all preset avatars
     document.querySelectorAll('.avatar-option').forEach(img => {
         img.classList.remove('selected');
     });
     
-    // Show preview
     const reader = new FileReader();
     reader.onload = function(e) {
         const preview = document.getElementById('uploadPreview');
@@ -266,9 +217,7 @@ function handleCustomFileSelect(event) {
     reader.readAsDataURL(file);
 }
 
-/**
- * Save selected avatar
- */
+// save avatar
 function saveAvatar() {
     console.log('💾 Save avatar clicked');
     console.log('📁 Selected file:', selectedAvatarFile);
@@ -296,9 +245,7 @@ function saveAvatar() {
     }
 }
 
-/**
- * Save preset avatar
- */
+// save preset avatar
 function savePresetAvatar(avatarPath, saveBtn, originalText) {
     console.log('💾 Saving preset avatar:', avatarPath);
     
@@ -338,9 +285,7 @@ function savePresetAvatar(avatarPath, saveBtn, originalText) {
     });
 }
 
-/**
- * Upload custom avatar
- */
+// upload custom avatar
 function uploadCustomAvatar(file, saveBtn, originalText) {
     console.log('📤 Uploading custom avatar:', file.name);
     
@@ -380,13 +325,7 @@ function uploadCustomAvatar(file, saveBtn, originalText) {
     });
 }
 
-// ============================================
-// ADDRESS MANAGEMENT FUNCTIONS
-// ============================================
-
-/**
- * Get CSRF token from page
- */
+// address management functions
 function getCSRFToken() {
     const tokenInput = document.querySelector('input[name="csrf_token"]');
     const tokenMeta = document.querySelector('meta[name="csrf-token"]');
@@ -401,9 +340,7 @@ function getCSRFToken() {
     return null;
 }
 
-/**
- * Load user addresses
- */
+// load addresses
 function loadAddresses() {
     console.log('📍 Loading addresses...');
     
@@ -444,9 +381,7 @@ function loadAddresses() {
     });
 }
 
-/**
- * Display addresses in the UI
- */
+// display addresses
 function displayAddresses(addresses) {
     const container = document.getElementById('addressesContainer');
     
@@ -485,9 +420,7 @@ function displayAddresses(addresses) {
     `).join('');
 }
 
-/**
- * Open add address modal
- */
+// open add address modal
 function openAddAddressModal() {
     const modal = document.getElementById('addressModal');
     if (!modal) {
@@ -497,8 +430,6 @@ function openAddAddressModal() {
     
     modal.style.display = 'flex';
     document.body.style.overflow = 'hidden';
-    
-    // Reset form
     const form = document.getElementById('addressForm');
     if (form) {
         form.reset();
@@ -515,9 +446,7 @@ function openAddAddressModal() {
     }
 }
 
-/**
- * Close address modal
- */
+// close address modal
 function closeAddressModal() {
     const modal = document.getElementById('addressModal');
     if (!modal) return;
@@ -526,9 +455,7 @@ function closeAddressModal() {
     document.body.style.overflow = 'auto';
 }
 
-/**
- * Edit address
- */
+// edit address
 function editAddress(addressID) {
     console.log('✏️ Editing address:', addressID);
     
@@ -541,7 +468,6 @@ function editAddress(addressID) {
         if (data.success && data.address) {
             const addr = data.address;
             
-            // Fill form
             const fields = {
                 'addressID': addr.addressID,
                 'addressField': addr.address,
@@ -556,14 +482,10 @@ function editAddress(addressID) {
                     field.value = value;
                 }
             }
-            
-            // Change modal title
             const title = document.getElementById('addressModalTitle');
             if (title) {
                 title.textContent = 'Edit Address';
             }
-            
-            // Open modal
             const modal = document.getElementById('addressModal');
             if (modal) {
                 modal.style.display = 'flex';
@@ -579,9 +501,7 @@ function editAddress(addressID) {
     });
 }
 
-/**
- * Save address (add or update)
- */
+// save address
 function saveAddress(event) {
     event.preventDefault();
     
@@ -615,7 +535,6 @@ function saveAddress(event) {
     saveBtn.disabled = true;
     saveBtn.textContent = 'Saving...';
     
-    // Get CSRF token
     const csrfToken = getCSRFToken();
     if (csrfToken) {
         data.csrf_token = csrfToken;
@@ -642,7 +561,6 @@ function saveAddress(event) {
             closeAddressModal();
             loadAddresses();
             
-            // Update CSRF token if provided
             if (result.csrf_token) {
                 updateCSRFToken(result.csrf_token);
             }
@@ -660,9 +578,7 @@ function saveAddress(event) {
     });
 }
 
-/**
- * Delete address
- */
+// delete address
 function deleteAddress(addressID) {
     if (!confirm('Are you sure you want to delete this address?')) {
         return;
@@ -675,7 +591,6 @@ function deleteAddress(addressID) {
         addressID: addressID
     };
     
-    // Get CSRF token
     const csrfToken = getCSRFToken();
     if (csrfToken) {
         data.csrf_token = csrfToken;
@@ -696,7 +611,6 @@ function deleteAddress(addressID) {
             showNotification('Address deleted successfully', 'success');
             loadAddresses();
             
-            // Update CSRF token if provided
             if (data.csrf_token) {
                 updateCSRFToken(data.csrf_token);
             }
@@ -710,9 +624,7 @@ function deleteAddress(addressID) {
     });
 }
 
-/**
- * Update CSRF token in the page
- */
+// update CSRF token in DOM
 function updateCSRFToken(newToken) {
     const tokenInput = document.querySelector('input[name="csrf_token"]');
     const tokenMeta = document.querySelector('meta[name="csrf-token"]');
@@ -727,10 +639,7 @@ function updateCSRFToken(newToken) {
     console.log('🔒 CSRF token updated');
 }
 
-// ============================================
-// SECURITY FUNCTIONS
-// ============================================
-
+// security functions
 function changePassword() {
     window.location.href = window.API_BASE_PATH + 'auth/pass-reset';
 }
@@ -739,13 +648,7 @@ function enable2FA() {
     showNotification('Two-factor authentication feature coming soon!', 'info');
 }
 
-// ============================================
-// UTILITY FUNCTIONS
-// ============================================
-
-/**
- * Escape HTML to prevent XSS
- */
+// utility functions
 function escapeHtml(text) {
     if (!text) return '';
     const map = {
@@ -758,11 +661,8 @@ function escapeHtml(text) {
     return String(text).replace(/[&<>"']/g, m => map[m]);
 }
 
-/**
- * Show notification
- */
+
 function showNotification(message, type) {
-    // Remove existing notifications
     const existingNotifications = document.querySelectorAll('.notification-toast');
     existingNotifications.forEach(notif => notif.remove());
     
@@ -791,33 +691,24 @@ function showNotification(message, type) {
     }, 3000);
 }
 
-/**
- * View order details
- */
+// view order details
 function viewOrderDetails(orderID) {
     window.location.href = window.API_BASE_PATH + 'marketplace/myorders';
 }
 
-// ============================================
-// EVENT LISTENERS
-// ============================================
-
+// initialize
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🚀 Profile.js loaded');
-    
-    // Set default API base path if not set
     if (!window.API_BASE_PATH) {
         window.API_BASE_PATH = '/agri_system/public/';
         console.log('📁 API_BASE_PATH set to:', window.API_BASE_PATH);
     }
     
-    // Debug: Check for modal elements
     const avatarModal = document.getElementById('avatarModal');
     const saveBtn = document.getElementById('saveAvatarBtn');
     console.log('🔍 Avatar modal found:', !!avatarModal);
     console.log('🔍 Save button found:', !!saveBtn);
     
-    // Load addresses on page load
     const addressContainer = document.getElementById('addressesContainer');
     if (addressContainer) {
         console.log('📍 Address container found, loading addresses...');
@@ -826,7 +717,6 @@ document.addEventListener('DOMContentLoaded', function() {
         console.warn('⚠️ Address container not found');
     }
     
-    // Auto-hide alerts
     const alerts = document.querySelectorAll('.alert:not(.notification-toast)');
     alerts.forEach(alert => {
         setTimeout(() => {
@@ -835,7 +725,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 5000);
     });
     
-    // Close modals when clicking outside
     document.addEventListener('click', function(event) {
         const avatarModal = document.getElementById('avatarModal');
         if (avatarModal && event.target === avatarModal) {
@@ -848,7 +737,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    // Close modals with Escape key
     document.addEventListener('keydown', function(event) {
         if (event.key === 'Escape') {
             const avatarModal = document.getElementById('avatarModal');
@@ -863,8 +751,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 });
-
-// Add animation styles
+// Inject CSS for animations if not already present
 if (!document.getElementById('profile-animations')) {
     const style = document.createElement('style');
     style.id = 'profile-animations';

@@ -1,6 +1,4 @@
-// marketplace.js - FIXED with proper batch wishlist loading
-// ========================================
-
+// public/js/marketplace.js
 const API_BASE = '/agri_system/app/controllers/';
 const ENDPOINTS = {
     cart: `${API_BASE}CartController.php`,
@@ -13,9 +11,7 @@ function getCSRFToken() {
            '';
 }
 
-// ========================================
-// ADD TO CART
-// ========================================
+// add to cart
 async function addToCart(event, productId) {
     event.stopPropagation();
     
@@ -96,9 +92,7 @@ function updateCartBadges(count) {
     }
 }
 
-// ========================================
-// WISHLIST
-// ========================================
+// wishlist toggle
 async function toggleWishlist(event, productId) {
     event.stopPropagation();
     
@@ -159,6 +153,7 @@ async function toggleWishlist(event, productId) {
     }
 }
 
+// update wishlist badges
 function updateWishlistBadges(count) {
     const badges = document.querySelectorAll('.wishlist-badge, .nav-badge[data-type="wishlist"]');
     badges.forEach(badge => {
@@ -171,9 +166,7 @@ function updateWishlistBadges(count) {
     }
 }
 
-// ========================================
-// ✅ FIXED: Load wishlist state on page load
-// ========================================
+// load wishlist state on page load
 async function loadWishlistState() {
     if (!window.marketplaceData?.isLoggedIn || window.marketplaceData?.userRole !== 'buyer') {
         return;
@@ -199,7 +192,7 @@ async function loadWishlistState() {
             },
             credentials: 'same-origin',
             body: JSON.stringify({
-                action: 'check_multiple', // ✅ Uses new batch check
+                action: 'check_multiple', 
                 productIDs: productIds
             })
         });
@@ -227,9 +220,7 @@ async function loadWishlistState() {
     }
 }
 
-// ========================================
-// CATEGORY & SEARCH
-// ========================================
+// category filter
 function filterByCategory(categoryId) {
     const url = new URL(window.location.href);
     
@@ -260,9 +251,7 @@ function searchProducts() {
     window.location.href = url.toString();
 }
 
-// ========================================
-// CATEGORY SLIDER
-// ========================================
+// category slider
 let currentSlideIndex = 0;
 
 function slideCategories(direction) {
@@ -293,9 +282,7 @@ function slideCategories(direction) {
     track.style.transform = `translateX(${translateX}px)`;
 }
 
-// ========================================
-// PRODUCT VIEW
-// ========================================
+// product view
 function viewProduct(productId) {
     const baseUrl = window.marketplaceData?.baseUrl || 
                     window.productData?.baseUrl || 
@@ -309,9 +296,7 @@ function viewProductDetail(productId) {
     viewProduct(productId);
 }
 
-// ========================================
-// LOGIN PROMPT
-// ========================================
+// login prompt
 function promptLogin(event) {
     event.stopPropagation();
     
@@ -323,9 +308,7 @@ function promptLogin(event) {
     }
 }
 
-// ========================================
-// SIDEBAR
-// ========================================
+// sidebar toggle
 function toggleSidebar() {
     const sidebar = document.getElementById('sidebar') || document.querySelector('.sidebar');
     const overlay = document.getElementById('overlay');
@@ -339,9 +322,7 @@ function toggleSidebar() {
     }
 }
 
-// ========================================
-// NOTIFICATIONS
-// ========================================
+// notification toast
 function showNotification(message, type = 'success') {
     const existingNotif = document.querySelector('.notification-toast');
     if (existingNotif) {
@@ -361,9 +342,7 @@ function showNotification(message, type = 'success') {
     }, 3000);
 }
 
-// ========================================
-// CSRF TOKEN
-// ========================================
+// csrf token update
 function updateCSRFToken(newToken) {
     const metaTag = document.querySelector('meta[name="csrf-token"]');
     if (metaTag) {
@@ -377,9 +356,6 @@ function updateCSRFToken(newToken) {
     console.log('🔐 CSRF token updated');
 }
 
-// ========================================
-// INITIALIZE
-// ========================================
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🌾 Agri Tayo Rito Marketplace Initialized');
     console.log('📊 Data:', window.marketplaceData);
@@ -428,9 +404,6 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('✅ Marketplace ready');
 });
 
-// ========================================
-// NOTIFICATION STYLES
-// ========================================
 if (!document.getElementById('marketplace-notification-styles')) {
     const style = document.createElement('style');
     style.id = 'marketplace-notification-styles';

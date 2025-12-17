@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Privacy Policy - Agri Tayo Rito</title>
+    <link rel="icon" type="image/jpg" href="/agri_system/public/images/agri-icon.jpg">
+    <title>Agri Tayo Rito</title>
     <style>
         * {
             margin: 0;
@@ -608,7 +609,6 @@
     </footer>
 
     <script>
-        // Smooth scroll animation
         document.addEventListener('DOMContentLoaded', () => {
             const sections = document.querySelectorAll('.section');
             
@@ -634,7 +634,6 @@
             });
         });
 
-        // Highlight current section in view
         const sections = document.querySelectorAll('.section');
         let currentSection = '';
 

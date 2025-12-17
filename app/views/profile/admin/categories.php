@@ -69,7 +69,8 @@ foreach ($categories as $cat) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Category Management - Admin</title>
+    <link rel="icon" type="image/jpg" href="/agri_system/public/images/agri-icon.jpg">
+    <title>Agri Tayo Rito</title>
     <link rel="stylesheet" href="<?php echo BASE_URL; ?>css/responsive.css">
     <link rel="stylesheet" href="<?php echo BASE_URL; ?>css/admin/dashboard.css">
 </head>
@@ -188,7 +189,6 @@ foreach ($categories as $cat) {
             </div>
         </section>
 
-        <!-- Categories Table (alternative view) -->
         <section class="table-section">
             <div class="section-header">
                 <h2 class="section-title">All Categories</h2>

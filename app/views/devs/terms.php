@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Terms of Service - Agri Tayo Rito</title>
+    <link rel="icon" type="image/jpg" href="/agri_system/public/images/agri-icon.jpg">
+    <title>Agri Tayo Rito</title>
     <style>
         * {
             margin: 0;
@@ -487,23 +488,17 @@
             const content = header.nextElementSibling;
             const arrow = header.querySelector('.arrow');
             const isActive = content.classList.contains('active');
-
-            // Close all accordions
             document.querySelectorAll('.accordion-content').forEach(item => {
                 item.classList.remove('active');
             });
             document.querySelectorAll('.arrow').forEach(item => {
                 item.classList.remove('rotate');
             });
-
-            // Open clicked accordion if it wasn't active
             if (!isActive) {
                 content.classList.add('active');
                 arrow.classList.add('rotate');
             }
         }
-
-        // Smooth scroll to sections
         document.querySelectorAll('a[href^="#"]').forEach(anchor => {
             anchor.addEventListener('click', function (e) {
                 e.preventDefault();

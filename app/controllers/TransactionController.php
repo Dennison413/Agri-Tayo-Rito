@@ -29,17 +29,13 @@ class TransactionController
         return $this->shopModel->getTransactionHistory($shop['shopID'], $limit, $offset);
     }
 
-    /**
-     * Get transactions by shop ID
-     */
+    // get transactions by shop ID
     public function getShopTransactions($shopID, $limit = 50, $offset = 0) 
     {
         return $this->shopModel->getTransactionHistory($shopID, $limit, $offset);
     }
 
-    /**
-     * Get transactions with filters
-     */
+    // get transactions with filters
     public function getFilteredTransactions($shopID, $filters = [], $limit = 50, $offset = 0) 
     {
         try {
@@ -97,11 +93,7 @@ class TransactionController
         }
     }
 
-    // ==================== TRANSACTION STATISTICS ====================
-
-    /**
-     * Get transaction summary for seller dashboard
-     */
+    // transaction summary and statistics
     public function getTransactionSummary($shopID, $period = 'all') 
     {
         try {
@@ -148,9 +140,7 @@ class TransactionController
         }
     }
 
-    /**
-     * Get earnings breakdown by month
-     */
+    // monthly earnings report
     public function getMonthlyEarnings($shopID, $year = null) 
     {
         $year = $year ?? date('Y');
@@ -181,29 +171,21 @@ class TransactionController
         }
     }
 
-    /**
-     * Get recent transactions for dashboard widget
-     */
+    // recent transactions
     public function getRecentTransactions($shopID, $limit = 5) 
     {
         return $this->shopModel->getTransactionHistory($shopID, $limit, 0);
     }
 
-    // ==================== EXPORT TRANSACTIONS ====================
-
-    /**
-     * Export transactions to CSV with CSRF validation + Rate Limiting
-     */
+    // export transactions to CSV
     public function exportToCSV($shopID, $filters = []) 
     {
-        // CSRF Validation for export
         if (!CSRF::validateRequest()) {
             $_SESSION['error'] = 'Security validation failed';
             header('Location: ' . $_SERVER['HTTP_REFERER']);
             exit;
         }
 
-        // Rate limit CSV exports (5 exports per 10 minutes)
         $rateCheck = RateLimiter::checkApiRate('csv_export_' . $shopID);
         if (!$rateCheck['allowed']) {
             $_SESSION['error'] = 'Too many export requests. Please wait a moment.';
@@ -218,17 +200,13 @@ class TransactionController
             header('Location: ' . $_SERVER['HTTP_REFERER']);
             exit;
         }
-
-        // Regenerate CSRF after successful export
         CSRF::regenerateToken();
 
-        // Set CSV headers
         header('Content-Type: text/csv');
         header('Content-Disposition: attachment; filename="transactions_' . date('Y-m-d') . '.csv"');
 
         $output = fopen('php://output', 'w');
 
-        // CSV headers
         fputcsv($output, [
             'Transaction ID',
             'Date',
@@ -242,7 +220,6 @@ class TransactionController
             'Notes'
         ]);
 
-        // CSV data
         foreach ($transactions as $transaction) {
             fputcsv($output, [
                 $transaction['transactionID'],
@@ -262,11 +239,7 @@ class TransactionController
         exit;
     }
 
-    // ==================== UTILITY METHODS ====================
-
-    /**
-     * Format transaction type for display
-     */
+    // format transaction type for display
     public function formatTransactionType($type) 
     {
         $types = [
@@ -280,9 +253,6 @@ class TransactionController
         return $types[$type] ?? ['label' => ucfirst(str_replace('_', ' ', $type)), 'class' => 'secondary', 'icon' => 'circle'];
     }
 
-    /**
-     * Format amount with color coding
-     */
     public function formatAmount($amount) 
     {
         $formatted = number_format(abs($amount), 2);
@@ -305,9 +275,6 @@ class TransactionController
         }
     }
 
-    /**
-     * Get transaction type icon
-     */
     public function getTransactionIcon($type) 
     {
         $icons = [
@@ -321,9 +288,6 @@ class TransactionController
         return $icons[$type] ?? 'bi-circle text-secondary';
     }
 
-    /**
-     * Check if user is logged in
-     */
     private function isLoggedIn() 
     {
         return isset($_SESSION['user_id']) && 
@@ -331,9 +295,6 @@ class TransactionController
                $_SESSION['logged_in'] === true;
     }
 
-    /**
-     * Require seller access
-     */
     private function requireSeller() 
     {
         if (!$this->isLoggedIn() || $_SESSION['user_role'] !== 'seller') {
@@ -344,7 +305,7 @@ class TransactionController
     }
 }
 
-// Handle requests
+// handle requests
 if ($_SERVER['REQUEST_METHOD'] === 'POST' || $_SERVER['REQUEST_METHOD'] === 'GET') {
     $controller = new TransactionController();
     $action = $_GET['action'] ?? $_POST['action'] ?? '';

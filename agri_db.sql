@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Dec 08, 2025 at 01:05 PM
+-- Generation Time: Dec 17, 2025 at 02:55 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -73,9 +73,9 @@ INSERT INTO `cart` (`cartID`, `buyerID`, `productID`, `quantity`, `added_at`, `u
 (11, 8, 9, 3, '2025-11-23 02:16:50', '2025-11-28 01:11:18'),
 (25, 8, 1, 1, '2025-11-29 12:20:03', '2025-11-29 12:20:03'),
 (26, 16, 4, 1, '2025-11-30 01:24:50', '2025-11-30 01:24:50'),
-(104, 2, 9, 1, '2025-12-08 04:22:29', '2025-12-08 04:22:29'),
-(105, 2, 10, 1, '2025-12-08 04:22:30', '2025-12-08 04:22:30'),
-(106, 2, 12, 1, '2025-12-08 04:22:31', '2025-12-08 04:22:31');
+(104, 2, 9, 2, '2025-12-08 04:22:29', '2025-12-17 11:15:21'),
+(105, 2, 10, 2, '2025-12-08 04:22:30', '2025-12-17 11:15:22'),
+(106, 2, 12, 2, '2025-12-08 04:22:31', '2025-12-17 11:15:25');
 
 --
 -- Triggers `cart`
@@ -264,7 +264,7 @@ INSERT INTO `orders` (`orderID`, `buyerID`, `order_date`, `total_amount`, `order
 (2, 3, '2025-11-12 06:20:00', 540.00, 'processing', '456 Luna Street, Brgy. III-B', 'San Pablo City', 'Laguna', '4000', 'cash_on_delivery', 'pending', 'cod', 0.00, 'pending_pickup', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, '2025-11-18 13:15:08'),
 (3, 4, '2025-11-15 01:15:00', 220.00, 'shipped', '789 Bonifacio Road, Brgy. VI-C', 'San Pablo City', 'Laguna', '4000', 'gcash', 'paid', 'gcash', 0.00, 'pending_pickup', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 'Call upon arrival', '2025-11-25 03:53:48'),
 (6, 2, '2025-12-06 02:27:57', 230.00, 'cancelled', 'F. Mendoza Street', 'Tiaong', 'Quezon', '4324', 'cash_on_delivery', 'pending', 'cod', 0.00, 'pending_pickup', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, '', '2025-12-08 04:04:17'),
-(15, 2, '2025-12-08 04:07:50', 1830.00, 'pending', 'F. Mendoza Street', 'Tiaong', 'Quezon', '4324', 'cash_on_delivery', 'pending', 'cod', 0.00, 'pending_pickup', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, '', '2025-12-08 04:07:50');
+(15, 2, '2025-12-08 04:07:50', 1830.00, 'cancelled', 'F. Mendoza Street', 'Tiaong', 'Quezon', '4324', 'cash_on_delivery', 'pending', 'cod', 0.00, 'pending_pickup', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, '', '2025-12-17 11:20:45');
 
 --
 -- Triggers `orders`
@@ -370,7 +370,8 @@ CREATE TABLE `password_reset_otps` (
 
 INSERT INTO `password_reset_otps` (`id`, `email`, `otp`, `expires_at`, `is_used`, `verified_at`, `created_at`) VALUES
 (1, 'dennisontenorio11@gmail.com', '4409', '2025-12-07 22:47:28', 1, '2025-12-07 22:17:56', '2025-12-07 22:17:28'),
-(23, 'ichaichatactics1@gmail.com', '5918', '2025-12-07 02:29:07', 1, '2025-12-07 01:59:30', '2025-12-07 01:59:07');
+(23, 'ichaichatactics1@gmail.com', '5918', '2025-12-07 02:29:07', 1, '2025-12-07 01:59:30', '2025-12-07 01:59:07'),
+(25, 'anna.garcia@gmail.com', '8362', '2025-12-17 19:50:15', 0, NULL, '2025-12-17 19:20:15');
 
 -- --------------------------------------------------------
 
@@ -403,7 +404,7 @@ INSERT INTO `products` (`productID`, `shopID`, `sellerID`, `categoryID`, `produc
 (1, 1, 1, 1, 'Fresh Pechay', 'Freshly harvested pechay, crisp and green. Perfect for sinigang and stir-fry.', 35.00, 50, 0, 5, 'bundle', 1, '2025-11-18 13:15:08', '2025-12-07 18:11:59'),
 (2, 1, 1, 1, 'Sitaw (String Beans)', 'Long and tender sitaw, freshly picked. Great for adobong sitaw.', 45.00, 30, 0, 5, 'bundle', 1, '2025-11-18 13:15:08', '2025-11-28 00:49:35'),
 (3, 1, 1, 1, 'Kamote (Sweet Potato)', 'Yellow sweet potato, naturally sweet and nutritious.', 60.00, 100, 0, 5, 'kg', 1, '2025-11-18 13:15:08', '2025-11-28 00:49:35'),
-(4, 1, 1, 3, 'Buto ng Tomato', 'High-quality hybrid tomato seeds. Package of 50 seeds.', 120.00, 16, 0, 5, 'pack', 1, '2025-11-18 13:15:08', '2025-12-07 18:23:20'),
+(4, 1, 1, 3, 'Buto ng Tomato', 'High-quality hybrid tomato seeds. Package of 50 seeds.', 120.00, 16, 0, 5, 'pack', 1, '2025-11-18 13:15:08', '2025-12-17 13:15:02'),
 (5, 2, 2, 1, 'Organic Lettuce', 'Certified organic lettuce grown without pesticides. Fresh and crispy.', 80.00, 25, 0, 5, 'head', 1, '2025-11-18 13:15:08', '2025-11-28 00:49:35'),
 (6, 2, 2, 1, 'Organic Cherry Tomatoes', 'Sweet and juicy organic cherry tomatoes. Safe for kids.', 150.00, 15, 0, 5, 'kg', 1, '2025-11-18 13:15:08', '2025-11-28 00:49:35'),
 (7, 2, 2, 1, 'Organic Eggplant', 'Long purple eggplant grown organically. Perfect for tortang talong.', 70.00, 40, 0, 5, 'kg', 1, '2025-11-18 13:15:08', '2025-11-28 00:49:35'),
@@ -615,7 +616,8 @@ INSERT INTO `seller_applications` (`applicationID`, `userID`, `business_name`, `
 (6, 2, 'M and C Seed Farm', 'Poblacion, Padre Garcia, Batangas', '/uploads/business_permits/permit_user_2_1764841301.pdf', 'rejected', '2025-12-04 09:41:41', '2025-12-04 16:16:41', 1),
 (7, 4, 'Tan Bilihan ng Palay', 'Lagalag, Tiaong, Quezon', '/uploads/business_permits/permit_user_4_1764841418.pdf', 'approved', '2025-12-04 09:43:38', '2025-12-04 16:16:17', 1),
 (8, 2, 'M and C Seed Farm', 'hwcviwgcvuwyqcvduaygvc', '/uploads/business_permits/permit_user_2_1764924714.pdf', 'rejected', '2025-12-05 08:51:54', '2025-12-05 08:52:59', 1),
-(9, 2, 'M and C Seed Farm', 'ufutrsdrxgf', '/uploads/business_permits/permit_user_2_1764924842.pdf', 'rejected', '2025-12-05 08:54:02', '2025-12-05 08:54:55', 1);
+(9, 2, 'M and C Seed Farm', 'ufutrsdrxgf', '/uploads/business_permits/permit_user_2_1764924842.pdf', 'rejected', '2025-12-05 08:54:02', '2025-12-05 08:54:55', 1),
+(10, 2, 'vrbtbt', 'bgbtn', '/uploads/business_permits/permit_user_2_1765501572.jpg', 'pending', '2025-12-12 01:06:12', NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -699,7 +701,9 @@ INSERT INTO `seller_transactions` (`transactionID`, `shopID`, `transaction_type`
 (24, 1, 'withdrawal_cash', -500.00, 12556.00, 12056.00, 'withdrawal', 13, 1, '', '2025-12-05 02:08:04'),
 (25, 1, 'withdrawal_cash', -500.00, 12056.00, 11556.00, 'withdrawal', 13, 1, 'Withdrawal via CASH', '2025-12-05 02:08:04'),
 (26, 1, 'withdrawal_cash', -700.00, 11556.00, 10856.00, 'withdrawal', 14, 1, '', '2025-12-05 08:56:37'),
-(27, 1, 'withdrawal_cash', -700.00, 10856.00, 10156.00, 'withdrawal', 14, 1, 'Withdrawal via CASH', '2025-12-05 08:56:37');
+(27, 1, 'withdrawal_cash', -700.00, 10856.00, 10156.00, 'withdrawal', 14, 1, 'Withdrawal via CASH', '2025-12-05 08:56:37'),
+(28, 1, 'withdrawal_cash', -600.00, 10156.00, 9556.00, 'withdrawal', 15, 1, 'Cash withdrawal processed', '2025-12-17 12:34:17'),
+(29, 1, 'withdrawal_cash', -600.00, 9556.00, 8956.00, 'withdrawal', 15, 1, 'Withdrawal via CASH', '2025-12-17 12:34:17');
 
 -- --------------------------------------------------------
 
@@ -738,7 +742,7 @@ CREATE TABLE `shops` (
 --
 
 INSERT INTO `shops` (`shopID`, `sellerID`, `shop_name`, `shop_slug`, `shop_description`, `shop_logo`, `shop_banner`, `farm_location`, `business_hours`, `contact_number`, `rating`, `total_products`, `total_orders`, `total_reviews`, `balance`, `total_earned`, `total_withdrawn`, `atm_card_number`, `atm_card_issued_at`, `is_verified`, `is_active`, `created_at`, `updated_at`) VALUES
-(1, 1, 'Dela Cruz Fresh Vegetables', 'dela-cruz-fresh-vegetables', 'Family-owned farm specializing in fresh leafy vegetables and root crops. Serving San Pablo City for over 10 years.', NULL, NULL, 'Brgy. San Buenaventura, 2 hectares', NULL, NULL, 4.80, 0, 0, 0, 10156.00, 5689.00, 13700.00, '21-11827', '2025-11-27 18:51:10', 1, 1, '2025-11-25 03:53:43', '2025-12-05 08:56:37'),
+(1, 1, 'Dela Cruz Fresh Vegetables', 'dela-cruz-fresh-vegetables', 'Family-owned farm specializing in fresh leafy vegetables and root crops. Serving San Pablo City for over 10 years.', NULL, NULL, 'Brgy. San Buenaventura, 2 hectares', NULL, NULL, 4.80, 0, 0, 0, 8956.00, 5689.00, 14900.00, '21-11827', '2025-11-27 18:51:10', 1, 1, '2025-11-25 03:53:43', '2025-12-17 12:34:17'),
 (2, 2, 'Rosa\'s Organic Farm', 'rosas-organic-farm', 'Certified organic farm growing chemical-free vegetables using traditional farming methods.', NULL, NULL, 'Brgy. San Isidro, 1.5 hectares', NULL, NULL, 4.90, 0, 0, 0, 0.00, 0.00, 0.00, NULL, NULL, 1, 1, '2025-11-25 03:53:43', '2025-11-27 14:10:16'),
 (3, 3, 'Reyes Fruit Garden', 'reyes-fruit-garden', 'Tropical fruit orchard specializing in mangoes, coconuts, and seasonal fruits. We also sell fruit seedlings.', NULL, NULL, 'Brgy. Sto. Angel Sur, 3 hectares', NULL, NULL, 4.70, 0, 0, 0, 0.00, 0.00, 0.00, '21-11823', '2025-11-29 12:20:55', 1, 1, '2025-11-25 03:53:43', '2025-11-29 12:20:55'),
 (6, 12, 'Tan Bilihan ng Palay', 'tan-bilihan-ng-palay', 'Welcome to Tan Bilihan ng Palay!', NULL, NULL, 'Lagalag, Tiaong, Quezon', NULL, '09201234567', 0.00, 0, 0, 0, 0.00, 0.00, 0.00, '21-77796', '2025-12-05 00:02:49', 1, 1, '2025-12-04 16:16:17', '2025-12-05 00:02:49'),
@@ -890,23 +894,19 @@ CREATE TABLE `wishlist` (
 --
 
 INSERT INTO `wishlist` (`wishlistID`, `buyerID`, `productID`, `added_at`) VALUES
-(1, 2, 9, '2025-11-14 04:00:00'),
-(2, 2, 12, '2025-11-15 06:30:00'),
 (3, 3, 8, '2025-11-16 03:00:00'),
 (4, 4, 4, '2025-11-16 07:30:00'),
-(8, 2, 5, '2025-11-28 00:36:38'),
-(9, 2, 6, '2025-11-28 00:36:41'),
 (11, 8, 4, '2025-11-28 06:42:20'),
 (12, 8, 1, '2025-11-28 06:42:26'),
 (19, 13, 11, '2025-11-30 01:06:31'),
 (20, 13, 1, '2025-11-30 01:06:44'),
 (22, 16, 1, '2025-11-30 01:24:15'),
-(24, 2, 10, '2025-11-30 15:16:37'),
 (25, 18, 7, '2025-12-01 04:41:09'),
 (27, 18, 4, '2025-12-01 04:42:39'),
-(28, 2, 1, '2025-12-01 05:34:35'),
-(29, 2, 4, '2025-12-01 05:35:20'),
-(30, 8, 8, '2025-12-02 02:56:05');
+(30, 8, 8, '2025-12-02 02:56:05'),
+(43, 2, 4, '2025-12-08 16:22:04'),
+(44, 2, 8, '2025-12-08 16:22:05'),
+(48, 2, 6, '2025-12-12 01:00:32');
 
 -- --------------------------------------------------------
 
@@ -946,7 +946,9 @@ INSERT INTO `withdrawal_requests` (`withdrawalID`, `shopID`, `amount`, `withdraw
 (11, 1, 500.00, 'cash', '21-11827', 'completed', '2025-12-05 01:06:05', 1, '2025-12-05 01:06:05', NULL, 'Cash withdrawal processed'),
 (12, 1, 400.00, 'atm', '21-11827', 'completed', '2025-12-05 01:22:28', 1, '2025-12-05 01:22:57', NULL, ''),
 (13, 1, 500.00, 'cash', '21-11827', 'completed', '2025-12-05 02:07:34', 1, '2025-12-05 02:08:04', NULL, ''),
-(14, 1, 700.00, 'cash', '21-11827', 'completed', '2025-12-05 08:55:57', 1, '2025-12-05 08:56:37', NULL, '');
+(14, 1, 700.00, 'cash', '21-11827', 'completed', '2025-12-05 08:55:57', 1, '2025-12-05 08:56:37', NULL, ''),
+(15, 1, 600.00, 'cash', '21-11827', 'completed', '2025-12-17 12:34:17', 1, '2025-12-17 12:34:17', NULL, 'Cash withdrawal processed'),
+(16, 1, 2500.00, 'cash', '21-11827', 'pending', '2025-12-17 13:52:21', NULL, NULL, NULL, NULL);
 
 --
 -- Triggers `withdrawal_requests`
@@ -1190,7 +1192,7 @@ ALTER TABLE `account_deletion_requests`
 -- AUTO_INCREMENT for table `cart`
 --
 ALTER TABLE `cart`
-  MODIFY `cartID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=107;
+  MODIFY `cartID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=108;
 
 --
 -- AUTO_INCREMENT for table `categories`
@@ -1226,7 +1228,7 @@ ALTER TABLE `order_items`
 -- AUTO_INCREMENT for table `password_reset_otps`
 --
 ALTER TABLE `password_reset_otps`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=25;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=27;
 
 --
 -- AUTO_INCREMENT for table `products`
@@ -1256,7 +1258,7 @@ ALTER TABLE `reviews`
 -- AUTO_INCREMENT for table `seller_applications`
 --
 ALTER TABLE `seller_applications`
-  MODIFY `applicationID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
+  MODIFY `applicationID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
 
 --
 -- AUTO_INCREMENT for table `seller_profiles`
@@ -1268,7 +1270,7 @@ ALTER TABLE `seller_profiles`
 -- AUTO_INCREMENT for table `seller_transactions`
 --
 ALTER TABLE `seller_transactions`
-  MODIFY `transactionID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=28;
+  MODIFY `transactionID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=30;
 
 --
 -- AUTO_INCREMENT for table `shops`
@@ -1304,13 +1306,13 @@ ALTER TABLE `user_addresses`
 -- AUTO_INCREMENT for table `wishlist`
 --
 ALTER TABLE `wishlist`
-  MODIFY `wishlistID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=34;
+  MODIFY `wishlistID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=50;
 
 --
 -- AUTO_INCREMENT for table `withdrawal_requests`
 --
 ALTER TABLE `withdrawal_requests`
-  MODIFY `withdrawalID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
+  MODIFY `withdrawalID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=17;
 
 --
 -- Constraints for dumped tables

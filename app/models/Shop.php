@@ -1,6 +1,5 @@
 <?php
 // app/models/Shop.php
-// Shop Management, Seller Profiles, Withdrawals, and Transactions
 require_once __DIR__ . '/../../config/database.php';
 
 class Shop 
@@ -19,7 +18,6 @@ class Shop
     public function createShop($sellerID, $data) 
     {
         try {
-            // Check if seller already has a shop
             $checkQuery = "SELECT shopID FROM {$this->table} WHERE sellerID = ?";
             $stmt = $this->conn->prepare($checkQuery);
             $stmt->execute([$sellerID]);
@@ -27,8 +25,6 @@ class Shop
             if ($stmt->fetch()) {
                 return ['success' => false, 'message' => 'Seller already has a shop'];
             }
-
-            // Generate unique shop slug
             $shopSlug = $this->generateShopSlug($data['shop_name']);
 
             $query = "INSERT INTO {$this->table} 
@@ -71,12 +67,9 @@ class Shop
         return ['success' => false, 'message' => 'Failed to create shop'];
     }
 
-    /**
-     * Update shop details
-     */
+    // update shop details
     public function updateShop($shopID, $sellerID, $data) 
     {
-        // Verify ownership
         if (!$this->verifyShopOwnership($shopID, $sellerID)) {
             return ['success' => false, 'message' => 'Unauthorized'];
         }
@@ -94,7 +87,6 @@ class Shop
             }
         }
 
-        // If shop_name is being updated, regenerate slug
         if (isset($data['shop_name'])) {
             $newSlug = $this->generateShopSlug($data['shop_name'], $shopID);
             $fields[] = "shop_slug = ?";
@@ -122,9 +114,7 @@ class Shop
         return ['success' => false, 'message' => 'Failed to update shop'];
     }
 
-    /**
-     * Deactivate shop (soft delete)
-     */
+    // deactivate shop (soft delete)
     public function deactivateShop($shopID, $sellerID) 
     {
         if (!$this->verifyShopOwnership($shopID, $sellerID)) {
@@ -138,7 +128,7 @@ class Shop
             $result = $stmt->execute([$shopID]);
 
             if ($result) {
-                // Also deactivate all products in this shop
+                // also deactivate all products in this shop
                 $productQuery = "UPDATE products SET is_available = 0 WHERE shopID = ?";
                 $productStmt = $this->conn->prepare($productQuery);
                 $productStmt->execute([$shopID]);
@@ -152,9 +142,7 @@ class Shop
         return ['success' => false, 'message' => 'Failed to deactivate shop'];
     }
 
-    /**
-     * Reactivate shop
-     */
+    // reactivate shop
     public function reactivateShop($shopID, $sellerID) 
     {
         if (!$this->verifyShopOwnership($shopID, $sellerID)) {
@@ -176,12 +164,7 @@ class Shop
 
         return ['success' => false, 'message' => 'Failed to reactivate shop'];
     }
-
-    // ==================== SHOP RETRIEVAL ====================
-
-    /**
-     * Get shop by ID with full details
-     */
+    // get shop by ID (for internal use)
     public function getShopById($shopID) 
     {
         $query = "SELECT s.*, 
@@ -197,10 +180,7 @@ class Shop
         $shop = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if ($shop) {
-            // Get shop statistics
             $shop['stats'] = $this->getShopStats($shopID);
-            
-            // Get recent products
             $productModel = new Product();
             $shop['recent_products'] = $productModel->getProductsByShop($shopID, false);
         }
@@ -208,9 +188,7 @@ class Shop
         return $shop;
     }
 
-    /**
-     * Get shop by slug (for public shop pages)
-     */
+    // get shop by slug (public view)
     public function getShopBySlug($shopSlug) 
     {
         $query = "SELECT s.*, 
@@ -227,9 +205,7 @@ class Shop
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
-    /**
-     * Get shop by seller ID
-     */
+    // get shop by seller ID
     public function getShopBySeller($sellerID) 
     {
         $query = "SELECT s.*,
@@ -245,9 +221,7 @@ class Shop
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
-    /**
-     * Get all active shops with filters
-     */
+    // get all shops with filters
     public function getAllShops($filters = [], $limit = 20, $offset = 0) 
     {
         $query = "SELECT s.*, 
@@ -293,9 +267,7 @@ class Shop
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    /**
-     * Get shops with balance info (for admin)
-     */
+    // get shops with balance info (for admin dashboard)
     public function getAllShopsWithBalance() 
     {
         $query = "SELECT s.*, 
@@ -311,11 +283,7 @@ class Shop
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    // ==================== FINANCIAL MANAGEMENT ====================
-
-    /**
-     * Get shop balance details
-     */
+    // get shop balance details
     public function getBalance($shopID) 
     {
         $query = "SELECT balance, total_earned, total_withdrawn 
@@ -327,9 +295,7 @@ class Shop
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
-    /**
-     * Get shop by ATM card number (for cash withdrawal verification)
-     */
+    // get shop by ATM card number
     public function getShopByCardNumber($cardNumber) 
     {
         $query = "SELECT s.*, 
@@ -347,13 +313,9 @@ class Shop
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
-    /**
-     * Issue ATM card to shop
-     * Called by admin when giving seller their exclusive card
-     */
+    // issue ATM card to shop (called by admin when approving ATM card request)
     public function issueATMCard($shopID, $cardNumber) 
     {
-        // Check if card number already exists
         $checkQuery = "SELECT shopID FROM {$this->table} WHERE atm_card_number = ?";
         $checkStmt = $this->conn->prepare($checkQuery);
         $checkStmt->execute([$cardNumber]);
@@ -388,9 +350,7 @@ class Shop
         return ['success' => false, 'message' => 'Failed to issue ATM card'];
     }
 
-    /**
-     * Get transaction history for shop
-     */
+    // get transaction history for shop
     public function getTransactionHistory($shopID, $limit = 50, $offset = 0) 
     {
         $query = "SELECT st.*, u.full_name as processed_by_name
@@ -409,11 +369,7 @@ class Shop
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    // ==================== SHOP STATISTICS ====================
-
-    /**
-     * Get comprehensive shop statistics
-     */
+    // get shop statistics
     public function getShopStats($shopID) 
     {
         $stats = [];
@@ -446,8 +402,7 @@ class Shop
 
         // Review statistics
         $reviewQuery = "SELECT 
-                          COUNT(*) as total_reviews,
-                          AVG(r.rating) as average_rating
+                          COUNT(*) as total_reviews
                        FROM reviews r
                        JOIN products p ON r.productID = p.productID
                        WHERE p.shopID = ?";
@@ -466,9 +421,7 @@ class Shop
         return $stats;
     }
 
-    /**
-     * Get seller dashboard analytics
-     */
+    // seller dashboard data
     public function getSellerDashboard($sellerID) 
     {
         $shop = $this->getShopBySeller($sellerID);
@@ -506,15 +459,10 @@ class Shop
         return $dashboard;
     }
 
-    // ==================== SHOP FOLLOWERS ====================
-
-    /**
-     * Follow shop
-     */
+    // follow shop
     public function followShop($shopID, $userID) 
     {
         try {
-            // Check if already following
             $checkQuery = "SELECT followerID FROM shop_followers 
                           WHERE shopID = ? AND userID = ?";
             $stmt = $this->conn->prepare($checkQuery);
@@ -538,9 +486,7 @@ class Shop
         return ['success' => false, 'message' => 'Failed to follow shop'];
     }
 
-    /**
-     * Unfollow shop
-     */
+    // unfollow shop
     public function unfollowShop($shopID, $userID) 
     {
         $query = "DELETE FROM shop_followers WHERE shopID = ? AND userID = ?";
@@ -559,9 +505,7 @@ class Shop
         return ['success' => false, 'message' => 'Failed to unfollow shop'];
     }
 
-    /**
-     * Check if user is following shop
-     */
+    // check if user is following shop
     public function isFollowing($shopID, $userID) 
     {
         $query = "SELECT followerID FROM shop_followers 
@@ -572,9 +516,7 @@ class Shop
         return $stmt->fetch() !== false;
     }
 
-    /**
-     * Get shop followers
-     */
+    // get shop followers
     public function getShopFollowers($shopID, $limit = 50) 
     {
         $query = "SELECT u.userID, u.full_name, u.avatar, sf.followed_at
@@ -592,9 +534,7 @@ class Shop
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    /**
-     * Get follower count
-     */
+    // get follower count
     public function getFollowerCount($shopID) 
     {
         $query = "SELECT COUNT(*) as count FROM shop_followers WHERE shopID = ?";
@@ -605,11 +545,7 @@ class Shop
         return $result['count'] ?? 0;
     }
 
-    // ==================== UTILITY METHODS ====================
-
-    /**
-     * Verify shop ownership by seller
-     */
+    // verify shop ownership
     private function verifyShopOwnership($shopID, $sellerID) 
     {
         $query = "SELECT shopID FROM {$this->table} WHERE shopID = ? AND sellerID = ?";
@@ -619,9 +555,7 @@ class Shop
         return $stmt->fetch(PDO::FETCH_ASSOC) !== false;
     }
 
-    /**
-     * Generate unique shop slug from shop name
-     */
+    // generate unique shop slug
     private function generateShopSlug($shopName, $excludeShopID = null) 
     {
         // Convert to lowercase and replace spaces with hyphens
@@ -630,7 +564,6 @@ class Shop
         $slug = preg_replace('/-+/', '-', $slug);
         $slug = trim($slug, '-');
 
-        // Check if slug exists
         $originalSlug = $slug;
         $counter = 1;
 
@@ -657,9 +590,7 @@ class Shop
         return $slug;
     }
 
-    /**
-     * Update shop rating (called after new review)
-     */
+    // update shop rating based on product reviews
     public function updateShopRating($shopID) 
     {
         $query = "UPDATE {$this->table} s
@@ -686,9 +617,7 @@ class Shop
         }
     }
 
-    /**
-     * Get featured shops (top rated, active)
-     */
+    // get featured shops for homepage
     public function getFeaturedShops($limit = 6) 
     {
         $query = "SELECT s.*, 
@@ -742,4 +671,3 @@ class Shop
         ];
     }
 }
-

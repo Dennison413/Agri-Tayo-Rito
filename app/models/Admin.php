@@ -1,6 +1,5 @@
 <?php
 // app/models/Admin.php
-// Admin/LGU Management - User Management, Analytics, System Settings
 require_once __DIR__ . '/../../config/database.php';
 
 class Admin 
@@ -13,9 +12,7 @@ class Admin
         $this->conn = $database->connect();
     }
 
-    // ==================== DASHBOARD ANALYTICS ====================
-
-    // Get overall dashboard statistics
+    // dashboard analytics
     public function getDashboardStats() 
     {
         $stats = [];
@@ -134,7 +131,7 @@ class Admin
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    // Get top performing shops
+    // get top performing shops
     public function getTopShops($limit = 10) 
     {
         $query = "SELECT 

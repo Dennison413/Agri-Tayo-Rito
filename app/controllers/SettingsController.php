@@ -427,7 +427,7 @@ class SettingsController
     }
 }
 
-// Handle POST requests
+// handle POST requests
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $controller = new SettingsController();
     $action = $_POST['action'] ?? '';

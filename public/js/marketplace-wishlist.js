@@ -1,14 +1,9 @@
 // public/js/marketplace-wishlist.js
-// Handles wishlist toggle functionality in marketplace
-
 (function() {
     'use strict';
-
-    // ==================== CONFIGURATION ====================
     const API_URL = (typeof BASE_URL !== 'undefined' ? BASE_URL : '') + '/app/controllers/WishlistController.php';
     const TIMEOUT = 15000;
 
-    // ==================== CSRF TOKEN ====================
     function getCsrfToken() {
         const meta = document.querySelector('meta[name="csrf-token"]');
         if (meta) return meta.getAttribute('content') || '';
@@ -33,7 +28,7 @@
         document.cookie = `csrf_token=${encodeURIComponent(token)}; path=/; samesite=lax`;
     }
 
-    // ==================== API CALLS ====================
+    // api fetch with timeout
     async function fetchWithTimeout(url, options = {}, timeout = TIMEOUT) {
         const controller = new AbortController();
         const id = setTimeout(() => controller.abort(), timeout);
@@ -87,9 +82,7 @@
         }
     }
 
-    // ==================== UI FEEDBACK ====================
     function showNotification(message, type = 'info') {
-        // Remove existing notifications
         const existing = document.querySelectorAll('.wishlist-notification');
         existing.forEach(n => n.remove());
 
@@ -166,12 +159,10 @@
         });
     }
 
-    // ==================== MAIN TOGGLE FUNCTION ====================
     window.toggleWishlist = async function(event, productID) {
         event.preventDefault();
         event.stopPropagation();
 
-        // Check if user is logged in
         if (!window.marketplaceData || !window.marketplaceData.isLoggedIn) {
             showNotification('Please login to add items to wishlist', 'info');
             setTimeout(() => {
@@ -180,7 +171,6 @@
             return;
         }
 
-        // Check if user is buyer
         if (window.marketplaceData.userRole !== 'buyer') {
             showNotification('Only buyers can add items to wishlist', 'error');
             return;
@@ -189,17 +179,14 @@
         const button = event.target.closest('.wishlist-btn');
         if (!button) return;
 
-        // Prevent double-clicks
         if (button.disabled) return;
         button.disabled = true;
 
-        // Add loading animation
         const originalContent = button.textContent;
         button.style.transform = 'scale(0.9)';
 
         const result = await toggleWishlistAPI(productID);
 
-        // Restore button state
         button.disabled = false;
         button.style.transform = 'scale(1)';
 
@@ -219,8 +206,6 @@
             showNotification(result.message || 'Failed to update wishlist', 'error');
         }
     };
-
-    // ==================== INITIALIZE WISHLIST STATES ====================
     async function initializeWishlistStates() {
         if (!window.marketplaceData || 
             !window.marketplaceData.isLoggedIn || 
@@ -248,14 +233,12 @@
             if (data.success && data.items) {
                 const wishlistProductIDs = data.items.map(item => parseInt(item.productID, 10));
                 
-                // Update all wishlist buttons
                 document.querySelectorAll('.wishlist-btn[data-product-id]').forEach(button => {
                     const productID = parseInt(button.getAttribute('data-product-id'), 10);
                     const inWishlist = wishlistProductIDs.includes(productID);
                     updateWishlistButton(button, inWishlist);
                 });
 
-                // Update count
                 if (data.count !== undefined) {
                     updateWishlistCount(data.count);
                 }
@@ -265,7 +248,6 @@
         }
     }
 
-    // ==================== INITIALIZE ON PAGE LOAD ====================
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', initializeWishlistStates);
     } else {

@@ -1,8 +1,5 @@
 <?php
 // app/views/profile/seller/add-product.php
-// Complete product creation form with inline image upload
-// FIXED: Properly handle seller profile and shop lookup
-
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
@@ -11,7 +8,6 @@ require_once __DIR__ . '/../../../../config/config.php';
 require_once __DIR__ . '/../../../../config/database.php';
 require_once __DIR__ . '/../../../models/Category.php';
 
-// Check authentication
 $isLoggedIn = isset($_SESSION['logged_in']) && $_SESSION['logged_in'];
 $userRole = $_SESSION['user_role'] ?? null;
 $userID = $_SESSION['user_id'] ?? null;
@@ -24,8 +20,6 @@ if (!$isLoggedIn || $userRole !== 'seller') {
 // Get seller profile
 $db = new Database();
 $conn = $db->connect();
-
-// First, get the seller profile
 $stmt = $conn->prepare("SELECT sellerID FROM seller_profiles WHERE userID = ?");
 $stmt->execute([$userID]);
 $sellerProfile = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -34,9 +28,8 @@ if (!$sellerProfile) {
     die("Seller profile not found. Please contact administrator.");
 }
 
+// Get shop info
 $sellerID = $sellerProfile['sellerID'];
-
-// Then, get the shop for this seller
 $stmt = $conn->prepare("SELECT shopID, shop_name, is_active FROM shops WHERE sellerID = ?");
 $stmt->execute([$sellerID]);
 $shop = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -54,10 +47,8 @@ $seller = [
     'shopID' => $shop['shopID']
 ];
 
-// Handle form submission
+// handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'create_product') {
-    
-    // Validate inputs
     $errors = [];
     
     if (empty($_POST['product_name'])) $errors[] = 'Product name is required';
@@ -95,7 +86,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     }
 }
 
-// Get categories
 $categoryModel = new Category();
 $categories = $categoryModel->getAllCategories();
 ?>
@@ -104,7 +94,8 @@ $categories = $categoryModel->getAllCategories();
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Add New Product - Agri Tayo Rito</title>
+    <link rel="icon" type="image/jpg" href="/agri_system/public/images/agri-icon.jpg">
+    <title>Agri Tayo Rito</title>
     <link rel="stylesheet" href="<?php echo BASE_URL; ?>css/responsive.css">
     <link rel="stylesheet" href="<?php echo BASE_URL; ?>css/seller/dashboard.css">
 </head>
@@ -393,7 +384,6 @@ $categories = $categoryModel->getAllCategories();
     </style>
 
     <script>
-        // Form validation
         document.getElementById('addProductForm').addEventListener('submit', function(e) {
             const price = parseFloat(document.getElementById('price').value);
             const stock = parseInt(document.getElementById('stock_quantity').value);

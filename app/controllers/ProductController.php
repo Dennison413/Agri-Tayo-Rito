@@ -1,6 +1,5 @@
 <?php
 // app/controllers/ProductController.php
-// UPDATED: Removed rating system - reviews are comment-only
 require_once __DIR__ . '/../models/Product.php';
 require_once __DIR__ . '/../models/Category.php';
 require_once __DIR__ . '/../models/User.php'; 
@@ -225,7 +224,7 @@ class ProductController
         echo json_encode($result);
     }
 
-    // Review count only (no rating stats)
+    // review count only (no rating stats)
     public function reviewCount()
     {
         $productID = $_GET['productID'];

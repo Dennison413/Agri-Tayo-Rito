@@ -1,6 +1,5 @@
 <?php
 // app/controllers/OrderController.php
-// FIXED: Order Management with proper JSON responses
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
@@ -22,11 +21,9 @@ class OrderController
 
     public function handleCheckoutRequest()
     {
-        // Set JSON response headers FIRST
         header('Content-Type: application/json');
         header('Access-Control-Allow-Credentials: true');
 
-        // Check authentication
         if (!$this->isLoggedIn() || $_SESSION['user_role'] !== 'buyer') {
             $this->jsonResponse(false, 'Please login as a buyer', [
                 'redirect' => '/agri_system/public/auth/login'
@@ -58,7 +55,6 @@ class OrderController
                 return;
             }
 
-            // ✅ Store selected product IDs in session for later use
             $_SESSION['checkout_product_ids'] = $selectedProductIDs;
             error_log("Stored checkout product IDs in session: " . json_encode($selectedProductIDs));
             $allCartItems = $this->cartModel->getCartItemsGroupedByShop($buyerID);
@@ -162,7 +158,6 @@ class OrderController
             return;
         }
 
-        // ✅ FIX: More lenient CSRF validation with detailed logging
         $csrfToken = $data['csrf_token'] ?? '';
 
         if (empty($csrfToken)) {
@@ -194,6 +189,7 @@ class OrderController
         }
     }
 
+    // cancel order (for checkout page)
     private function cancelOrderAjax($data)
     {
         $buyerID = $_SESSION['user_id'];
@@ -205,7 +201,6 @@ class OrderController
         }
 
         try {
-            // Get order details
             $order = $this->ordersModel->getOrderById($orderID);
 
             if (!$order) {
@@ -213,13 +208,11 @@ class OrderController
                 return;
             }
 
-            // Verify order belongs to buyer
             if ($order['buyerID'] != $buyerID) {
                 $this->jsonResponse(false, 'Unauthorized action');
                 return;
             }
 
-            // Check if order can be cancelled
             if (!in_array($order['order_status'], ['pending', 'processing'])) {
                 $this->jsonResponse(false, 'This order cannot be cancelled');
                 return;
@@ -246,7 +239,6 @@ class OrderController
         $buyerID = $_SESSION['user_id'];
 
         try {
-            // ✅ FIX: Get selected product IDs from session
             $selectedProductIDs = isset($_SESSION['checkout_product_ids'])
                 ? $_SESSION['checkout_product_ids']
                 : [];
@@ -259,7 +251,6 @@ class OrderController
             error_log("=== PLACE ORDER DEBUG ===");
             error_log("Selected product IDs from session: " . json_encode($selectedProductIDs));
 
-            // ✅ Get ALL cart items first
             $allCartItems = $this->cartModel->getCartItemsGroupedByShop($buyerID);
 
             if (empty($allCartItems)) {
@@ -267,7 +258,6 @@ class OrderController
                 return;
             }
 
-            // ✅ Filter to ONLY selected items
             $selectedCartItems = [];
             foreach ($allCartItems as $shop) {
                 foreach ($shop['items'] as $item) {
@@ -285,7 +275,6 @@ class OrderController
 
             error_log("Total selected items for order: " . count($selectedCartItems));
 
-            // Validate selected items
             $validation = $this->cartModel->validateCartForCheckout($buyerID);
             if (!$validation['valid']) {
                 $this->jsonResponse(false, 'Some items are no longer available', [
@@ -294,7 +283,6 @@ class OrderController
                 return;
             }
 
-            // Validate required fields
             $required = ['address_id', 'payment_method'];
             foreach ($required as $field) {
                 if (empty($data[$field])) {
@@ -302,14 +290,10 @@ class OrderController
                     return;
                 }
             }
-
-            // Validate payment method
             if (!in_array($data['payment_method'], ['cod', 'gcash', 'paymaya'])) {
                 $this->jsonResponse(false, 'Invalid payment method');
                 return;
             }
-
-            // Get selected address
             require_once __DIR__ . '/../models/UserAddress.php';
             $addressModel = new UserAddress();
             $selectedAddress = $addressModel->getAddress($data['address_id'], $buyerID);
@@ -319,7 +303,6 @@ class OrderController
                 return;
             }
 
-            // Prepare order data
             $orderData = [
                 'delivery_address' => $selectedAddress['address'],
                 'delivery_municipality' => $selectedAddress['municipality'],
@@ -329,7 +312,7 @@ class OrderController
                 'notes' => filter_var($data['notes'] ?? '', FILTER_SANITIZE_STRING)
             ];
 
-            // ✅ Calculate total ONLY from selected items
+            // calculate total ONLY from selected items
             $totalAmount = 0;
             foreach ($selectedCartItems as $item) {
                 $totalAmount += ($item['price'] * $item['quantity']);
@@ -338,14 +321,11 @@ class OrderController
 
             error_log("Order total amount: ₱" . number_format($totalAmount, 2));
 
-            // ✅ Create order with ONLY selected items
+            // create order with ONLY selected items
             $result = $this->ordersModel->createOrder($buyerID, $orderData, $selectedCartItems);
 
             if ($result['success']) {
-                // ✅ Clear the selected product IDs from session
                 unset($_SESSION['checkout_product_ids']);
-
-                // Regenerate CSRF token
                 CSRF::regenerateToken();
 
                 $this->jsonResponse(true, 'Order placed successfully!', [
@@ -381,7 +361,7 @@ class OrderController
             $_SESSION['logged_in'] === true;
     }
 
-    // Other methods for non-AJAX requests...
+    // other methods for non-AJAX requests
     public function getBuyerOrders($buyerID, $limit = 10, $offset = 0)
     {
         return $this->ordersModel->getOrdersByBuyer($buyerID, $limit, $offset);
@@ -405,7 +385,7 @@ class OrderController
     }
 }
 
-// Handle API requests
+// handle API requests
 if ($_SERVER['REQUEST_METHOD'] === 'POST' || $_SERVER['REQUEST_METHOD'] === 'GET') {
     $controller = new OrderController();
     $controller->handleCheckoutRequest();

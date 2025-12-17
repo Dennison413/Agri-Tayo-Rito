@@ -1,21 +1,17 @@
-// Tab Switching
+// public/js/shop.js
 function switchTab(tabName) {
-    // Remove active class from all tabs and content
     document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
     document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
     
-    // Add active class to selected tab and content
     event.target.closest('.tab-btn').classList.add('active');
     document.getElementById(tabName + 'Tab').classList.add('active');
 }
 
-// Category Filter
+// category Filter
 function filterShopCategory(category) {
-    // Update active filter button
     document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
     event.target.classList.add('active');
-    
-    // Filter products
+
     const products = document.querySelectorAll('.product-card');
     products.forEach(product => {
         if (category === 'all' || product.dataset.category === category) {
@@ -26,7 +22,7 @@ function filterShopCategory(category) {
     });
 }
 
-// Toggle Follow
+// toggle Follow
 function toggleFollow(btn) {
     btn.classList.toggle('following');
     if (btn.classList.contains('following')) {
@@ -38,18 +34,16 @@ function toggleFollow(btn) {
     }
 }
 
-// Message Shop
+// message Shop
 function messageShop() {
     alert('Message feature - Coming soon! You will be able to chat directly with the seller.');
 }
 
-// View Product
+// view Product
 function viewProduct(productId) {
-    // Navigate to product detail page
     window.location.href = '../marketplace/product.php?id=' + productId;
 }
 
-// Toggle Wishlist
 function toggleWishlist(event, btn) {
     event.stopPropagation(); // Prevent card click
     btn.classList.toggle('active');

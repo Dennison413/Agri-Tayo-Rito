@@ -1,7 +1,5 @@
 <?php
 // app/models/Product.php
-// Category, Product, and Reviews Management, Images, and Stock Control
-// UPDATED: Removed rating system - reviews are now comment-only
 require_once __DIR__ . '/../../config/database.php';
 
 class Product 
@@ -10,7 +8,7 @@ class Product
     private $table = 'products';
     private $imagesTable = 'product_images';
     
-    // Image upload configuration
+    // image upload configuration
     private $uploadPath = '/uploads/products/';
     private $maxFileSize = 20971520; // 20MB
     private $allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
@@ -20,15 +18,11 @@ class Product
         $database = new Database();
         $this->conn = $database->connect();
     }
-
-    // ==================== PRODUCT CRUD ====================
     
-    // Create new product
-    // Used by: Sellers adding new products to their shop
+    // create new product (for a seller)
     public function createProduct($sellerID, $data) 
     {
         try {
-            // Verify seller owns the shop
             $shopCheck = "SELECT shopID FROM shops WHERE sellerID = ? AND is_active = 1";
             $stmt = $this->conn->prepare($shopCheck);
             $stmt->execute([$sellerID]);
@@ -72,7 +66,7 @@ class Product
         return ['success' => false, 'message' => 'Failed to create product'];
     }
 
-    // Update product details
+    // update product details
     public function updateProduct($productID, $sellerID, $data) 
     {
         // Verify ownership
@@ -114,7 +108,7 @@ class Product
         return ['success' => false, 'message' => 'Failed to update product'];
     }
 
-    // Delete product (soft delete)
+    // delete product (soft delete)
     public function deleteProduct($productID, $sellerID) 
     {
         if (!$this->verifyProductOwnership($productID, $sellerID)) {
@@ -137,9 +131,7 @@ class Product
         return ['success' => false, 'message' => 'Failed to delete product'];
     }
 
-    // ==================== PRODUCT RETRIEVAL ====================
-
-    // Get product by ID with all details
+    // get product by ID with all details
     public function getProductById($productID) 
     {
         $query = "SELECT p.*, 
@@ -158,10 +150,7 @@ class Product
         $product = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if ($product) {
-            // Get product images (main + gallery)
             $product['images'] = $this->getProductImages($productID);
-            
-            // Get main image separately for convenience
             $product['main_image'] = $this->getMainImage($productID);
             
             // Get reviews (comment-only, no ratings)
@@ -172,8 +161,7 @@ class Product
         return $product;
     }
 
-    // Get all products with filters, sorting, and pagination
-    // Used for: marketplace browsing, search, filtering
+    // get all products with filters, sorting, and pagination
     public function getAllProducts($filters = [], $limit = 20, $offset = 0) 
     {
         $query = "SELECT p.*, 
@@ -239,12 +227,10 @@ class Product
 
         $stmt = $this->conn->prepare($query);
         
-        // Bind all filter parameters first
         foreach ($params as $index => $value) {
             $stmt->bindValue($index + 1, $value);
         }
         
-        // Bind LIMIT and OFFSET as integers
         $stmt->bindValue(count($params) + 1, $limit, PDO::PARAM_INT);
         $stmt->bindValue(count($params) + 2, $offset, PDO::PARAM_INT);
         
@@ -253,7 +239,7 @@ class Product
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    // Get products by seller
+    // get products by seller
     public function getProductsBySeller($sellerID, $includeInactive = false) 
     {
         $query = "SELECT p.*, 
@@ -277,7 +263,7 @@ class Product
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    // Get products by shop
+    // get products by shop
     public function getProductsByShop($shopID, $includeInactive = false) 
     {
         $query = "SELECT p.*, 
@@ -301,10 +287,7 @@ class Product
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    // ==================== STOCK MANAGEMENT ====================
-
-    // Update stock quantity
-    // Used by: Sellers restocking products
+    // stock management - update stock quantity
     public function updateStock($productID, $sellerID, $newQuantity, $changeType = 'restock') 
     {
         if (!$this->verifyProductOwnership($productID, $sellerID)) {
@@ -314,16 +297,13 @@ class Product
         try {
             $this->conn->beginTransaction();
 
-            // Get current stock
             $currentStock = $this->getProductById($productID)['stock_quantity'];
             $change = $newQuantity - $currentStock;
 
-            // Update stock
             $query = "UPDATE {$this->table} SET stock_quantity = ? WHERE productID = ?";
             $stmt = $this->conn->prepare($query);
             $stmt->execute([$newQuantity, $productID]);
 
-            // Log inventory change
             $this->logInventoryChange($productID, $changeType, $change, $newQuantity, $sellerID);
 
             $this->conn->commit();
@@ -341,7 +321,7 @@ class Product
         }
     }
 
-    // Log inventory changes
+    // log inventory changes
     private function logInventoryChange($productID, $changeType, $quantityChange, $quantityAfter, $userID = null) 
     {
         $query = "INSERT INTO inventory_logs 
@@ -351,7 +331,7 @@ class Product
         return $stmt->execute([$productID, $changeType, $quantityChange, $quantityAfter, $userID]);
     }
 
-    // Get low stock products for a seller
+    // get low stock products for a seller
     public function getLowStockProducts($sellerID) 
     {
         $query = "SELECT p.*, 
@@ -368,9 +348,7 @@ class Product
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    // ==================== IMAGE MANAGEMENT ====================
-
-    // Get main image for a product
+    // get main image for a product
     public function getMainImage($productID) 
     {
         $query = "SELECT image_path FROM {$this->imagesTable} 
@@ -383,7 +361,7 @@ class Product
         return $result ? $result['image_path'] : '/images/placeholder.jpg';
     }
 
-    // Get all product images (main + gallery)
+    // get all product images (main + gallery)
     public function getProductImages($productID) 
     {
         $query = "SELECT * FROM {$this->imagesTable} 
@@ -395,7 +373,7 @@ class Product
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    // Get only gallery images (excluding main)
+    // get only gallery images (excluding main)
     public function getGalleryImages($productID) 
     {
         $query = "SELECT * FROM {$this->imagesTable} 
@@ -407,7 +385,7 @@ class Product
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    // Add product image
+    // add product image
     public function addProductImage($productID, $sellerID, $imagePath, $isMain = false, $imageOrder = null) 
     {
         if (!$this->verifyProductOwnership($productID, $sellerID)) {
@@ -415,7 +393,6 @@ class Product
         }
 
         try {
-            // If no order specified, get next available order number
             if ($imageOrder === null) {
                 $orderQuery = "SELECT COALESCE(MAX(image_order), 0) + 1 as next_order 
                               FROM {$this->imagesTable} WHERE productID = ?";
@@ -451,7 +428,7 @@ class Product
         return ['success' => false, 'message' => 'Failed to add image'];
     }
 
-    // Update main image
+    // update main image
     public function updateMainImage($productID, $sellerID, $newMainImageID) 
     {
         if (!$this->verifyProductOwnership($productID, $sellerID)) {
@@ -484,7 +461,7 @@ class Product
         }
     }
 
-    // Delete product image
+    // delete product image
     public function deleteProductImage($imageID, $sellerID) 
     {
         $query = "SELECT pi.image_path, pi.is_main, p.productID 
@@ -534,9 +511,7 @@ class Product
         return ['success' => false, 'message' => 'Failed to delete image'];
     }
 
-    // ==================== REVIEWS (COMMENT-ONLY, NO RATINGS) ====================
-
-    // Get reviews for a product
+    // get reviews for a product
     public function getProductReviews($productID, $limit = 10, $offset = 0) 
     {
         $query = "SELECT r.*, u.full_name, u.avatar
@@ -555,7 +530,7 @@ class Product
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    // Get total review count for a product
+    // get total review count for a product
     public function getProductReviewCount($productID) 
     {
         $query = "SELECT COUNT(*) as count FROM reviews WHERE productID = ?";
@@ -566,9 +541,7 @@ class Product
         return $result['count'] ?? 0;
     }
 
-    // ==================== UTILITY METHODS ====================
-
-    // Verify product ownership by seller
+    // verify product ownership
     private function verifyProductOwnership($productID, $sellerID) 
     {
         $query = "SELECT productID FROM {$this->table} WHERE productID = ? AND sellerID = ?";
@@ -578,7 +551,7 @@ class Product
         return $stmt->fetch(PDO::FETCH_ASSOC) !== false;
     }
 
-    // Check product availability for requested quantity
+    // check product availability for order
     public function checkAvailability($productID, $requestedQuantity) 
     {
         $product = $this->getProductById($productID);
@@ -632,9 +605,7 @@ class Review
         $this->conn = $database->connect();
     }
 
-    // ==================== REVIEW CRUD (COMMENT-ONLY) ====================
-
-    // Create review (comment only, no rating)
+    // create review (comment only, no rating)
     public function createReview($buyerID, $data) 
     {
         try {
@@ -669,7 +640,6 @@ class Review
                 ];
             }
 
-            // Insert review (comment only)
             $query = "INSERT INTO {$this->table} 
                      (productID, buyerID, orderID, review_text, is_verified_purchase) 
                      VALUES (?, ?, ?, ?, 1)";
@@ -697,7 +667,7 @@ class Review
         return ['success' => false, 'message' => 'Failed to submit review'];
     }
 
-    // Update review
+    // update review
     public function updateReview($reviewID, $buyerID, $data) 
     {
         if (!$this->verifyReviewOwnership($reviewID, $buyerID)) {
@@ -724,7 +694,7 @@ class Review
         return ['success' => false, 'message' => 'Failed to update review'];
     }
 
-    // Delete review
+    // delete review
     public function deleteReview($reviewID, $buyerID) 
     {
         if (!$this->verifyReviewOwnership($reviewID, $buyerID)) {
@@ -747,9 +717,7 @@ class Review
         return ['success' => false, 'message' => 'Failed to delete review'];
     }
 
-    // ==================== REVIEW RETRIEVAL ====================
-
-    // Get review by ID
+    // get review by ID
     public function getReviewById($reviewID) 
     {
         $query = "SELECT r.*, 
@@ -766,7 +734,7 @@ class Review
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
-    // Get reviews for a product
+    // get reviews for a product
     public function getProductReviews($productID, $filters = [], $limit = 10, $offset = 0) 
     {
         $query = "SELECT r.*, 
@@ -777,12 +745,10 @@ class Review
         
         $params = [$productID];
 
-        // Filter by verified purchase
         if (isset($filters['verified_only']) && $filters['verified_only']) {
             $query .= " AND r.is_verified_purchase = 1";
         }
 
-        // Sorting (newest/oldest only, no rating sorting)
         $sortOptions = [
             'newest' => 'r.review_date DESC',
             'oldest' => 'r.review_date ASC'
@@ -801,7 +767,7 @@ class Review
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    // Get reviews by buyer
+    // get reviews by buyer
     public function getBuyerReviews($buyerID, $limit = 20, $offset = 0) 
     {
         $query = "SELECT r.*, 
@@ -825,7 +791,7 @@ class Review
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    // Get reviews for seller's products
+    // get reviews for seller's products
     public function getSellerReviews($sellerID, $limit = 20, $offset = 0) 
     {
         $query = "SELECT r.*, 
@@ -847,9 +813,7 @@ class Review
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    // ==================== REVIEW VALIDATION ====================
-
-    // Check if buyer can review a product for a specific order
+    // check if buyer can review a product for a specific order
     public function canReview($buyerID, $productID, $orderID) 
     {
         // Check if order is delivered
@@ -887,7 +851,7 @@ class Review
         return ['can_review' => true];
     }
 
-    // Get products awaiting review by buyer
+    // get products awaiting review by buyer
     public function getProductsAwaitingReview($buyerID) 
     {
         $query = "SELECT DISTINCT 
@@ -916,7 +880,7 @@ class Review
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    // Get total review count for a product
+    // get total review count for a product
     public function getProductReviewCount($productID) 
     {
         $query = "SELECT COUNT(*) as count FROM {$this->table} WHERE productID = ?";
@@ -927,7 +891,7 @@ class Review
         return $result['count'] ?? 0;
     }
 
-    // Get a buyer's review for a specific product and order
+    // get a buyer's review for a specific product and order
     public function getBuyerProductReview($buyerID, $productID, $orderID = null) 
     {
         $query = "SELECT r.*, p.product_name 
@@ -974,9 +938,7 @@ class Review
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    // ==================== HELPER METHODS ====================
-
-    // Verify review ownership by buyer
+    // verify review ownership by buyer
     private function verifyReviewOwnership($reviewID, $buyerID) 
     {
         $query = "SELECT reviewID FROM {$this->table} WHERE reviewID = ? AND buyerID = ?";
@@ -986,7 +948,7 @@ class Review
         return $stmt->fetch(PDO::FETCH_ASSOC) !== false;
     }
 
-    // Check if product has reviews
+    // check if product has reviews
     public function hasReviews($productID) 
     {
         $query = "SELECT COUNT(*) as count FROM {$this->table} WHERE productID = ?";

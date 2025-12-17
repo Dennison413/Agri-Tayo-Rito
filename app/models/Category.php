@@ -1,4 +1,5 @@
 <?php
+// app/models/Category.php
 class Category 
 {
     private $conn;
@@ -10,7 +11,7 @@ class Category
         $this->conn = $database->connect();
     }
 
-    // Get all categories
+    // get all categories
     public function getAllCategories() 
     {
         $query = "SELECT * FROM {$this->table} ORDER BY category ASC";
@@ -18,7 +19,7 @@ class Category
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    // Get category by ID
+    // get category by ID
     public function getCategoryById($categoryID) 
     {
         $query = "SELECT * FROM {$this->table} WHERE categoryID = ? LIMIT 1";
@@ -27,7 +28,7 @@ class Category
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
-    // Get category by name
+    // get category by name
     public function getCategoryByName($categoryName) 
     {
         $query = "SELECT * FROM {$this->table} WHERE category = ? LIMIT 1";
@@ -36,10 +37,9 @@ class Category
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
-    // Create new category
+    // create new category
     public function createCategory($categoryName) 
     {
-        // Check if category already exists
         if ($this->getCategoryByName($categoryName)) {
             return [
                 'success' => false,
@@ -70,7 +70,7 @@ class Category
         ];
     }
 
-    // Update category
+    // update category
     public function updateCategory($categoryID, $newName) 
     {
         $query = "UPDATE {$this->table} SET category = ? WHERE categoryID = ?";
@@ -95,10 +95,9 @@ class Category
         ];
     }
 
-    // Delete category
+    // delete category
     public function deleteCategory($categoryID) 
     {
-        // Check if category has products
         $checkQuery = "SELECT COUNT(*) as count FROM products WHERE categoryID = ?";
         $checkStmt = $this->conn->prepare($checkQuery);
         $checkStmt->execute([$categoryID]);
@@ -133,7 +132,7 @@ class Category
         ];
     }
 
-    // Get product count by category
+    // get product count by category
     public function getProductCountByCategory($categoryID) 
     {
         $query = "SELECT COUNT(*) as count FROM products 

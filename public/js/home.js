@@ -1,4 +1,4 @@
-// Hamburger Menu
+// public/js/home.js
 function toggleMenu() {
     const navwrap = document.getElementById('navlinks');
     const hamburger = document.querySelector('.hamburger');
@@ -6,7 +6,6 @@ function toggleMenu() {
     hamburger.classList.toggle('active');
 }
 
-// Close menu when clicking outside
 document.addEventListener('click', (e) => {
     const navwrap = document.getElementById('navlinks');
     const hamburger = document.querySelector('.hamburger');
@@ -18,7 +17,6 @@ document.addEventListener('click', (e) => {
     }
 });
 
-// Close menu when window is resized to desktop view
 window.addEventListener('resize', () => {
     if (window.innerWidth > 768) {
         const navwrap = document.getElementById('navlinks');
@@ -28,14 +26,14 @@ window.addEventListener('resize', () => {
     }
 });
 
-// Image slider
+// image slider
 let currentSlide = 0;
 const slider = document.getElementById('slider');
 const cards = document.querySelectorAll('.card');
 const totalSlides = cards.length;
 const dotsContainer = document.getElementById('dots');
 
-// Dots indicator ng slider
+// dots indicator ng slider
 for (let i = 0; i < totalSlides; i++) {
     const dot = document.createElement('span');
     dot.classList.add('dot');
@@ -66,7 +64,7 @@ function goToSlide(index) {
     updateSlider();
 }
 
-// Auto-play slider (optional)
+// auto-play slider (optional)
 let autoplayInterval;
 
 function startAutoplay() {
@@ -175,11 +173,9 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
     });
 });
 
-// Add scroll to top functionality
+// add scroll to top functionality
 window.addEventListener('scroll', () => {
     const scrollTop = document.documentElement.scrollTop;
-    
-    // Add shadow to navbar on scroll
     const navbar = document.querySelector('.main-nav');
     if (scrollTop > 50) {
         navbar.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.3)';
@@ -188,7 +184,6 @@ window.addEventListener('scroll', () => {
     }
 });
 
-// BOX ANIMATION ON SCROLL (Optional Enhancement)
 const observerOptions = {
     threshold: 0.1,
     rootMargin: '0px 0px -50px 0px'
@@ -203,7 +198,6 @@ const observer = new IntersectionObserver((entries) => {
     });
 }, observerOptions);
 
-// Observe all boxes
 document.querySelectorAll('.box').forEach(box => {
     box.style.opacity = '0';
     box.style.transform = 'translateY(20px)';

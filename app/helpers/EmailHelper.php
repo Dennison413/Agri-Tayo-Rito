@@ -89,6 +89,7 @@ class EmailHelper
         ];
     }
 
+    // email template for OTP
     private function getOTPEmailTemplate($name, $otp)
     {
         return '

@@ -1,8 +1,4 @@
-/** ============================
- * CART FUNCTIONS - FIXED VERSION
- * ============================*/
-
-// Get CSRF token from meta tag
+// public/js/cart.js
 function getCsrfToken() {
     const meta = document.querySelector('meta[name="csrf-token"]');
     if (!meta) {
@@ -276,7 +272,7 @@ async function removeItem(productID) {
     }
 }
 
-// ✅ FIXED: Proceed to checkout - BULLETPROOF VERSION
+// process checkout
 async function goToCheckout() {
     console.log('=== CHECKOUT PROCESS STARTED ===');
     
@@ -288,7 +284,6 @@ async function goToCheckout() {
         return;
     }
 
-    // ✅ Collect product IDs
     const selectedProductIDs = [];
     
     selectedCheckboxes.forEach((cb, index) => {
@@ -318,14 +313,12 @@ async function goToCheckout() {
         return;
     }
 
-    // ✅ TEST: Can we write to sessionStorage?
     if (!isSessionStorageAvailable()) {
         console.error('❌ SessionStorage is not available!');
         alert('Your browser settings are blocking storage. Please enable cookies/storage for this site.');
         return;
     }
 
-    // Disable checkout button
     const checkoutBtn = document.getElementById('checkoutBtn');
     if (!checkoutBtn) {
         console.error('❌ Checkout button not found');
@@ -336,12 +329,10 @@ async function goToCheckout() {
     checkoutBtn.disabled = true;
     checkoutBtn.innerHTML = 'Processing...';
 
-    // ✅ Save to sessionStorage
     try {
         const dataToSave = JSON.stringify(selectedProductIDs);
         sessionStorage.setItem('checkout_product_ids', dataToSave);
         
-        // Verify it was saved
         const verification = sessionStorage.getItem('checkout_product_ids');
         console.log('✅ Saved to sessionStorage:', verification);
         
@@ -356,23 +347,19 @@ async function goToCheckout() {
         return;
     }
 
-    // ✅ Build checkout URL with product IDs as backup
     const checkoutURL = BASE_URL + "item-handling/checkout?ids=" + selectedProductIDs.join(',');
     console.log('✅ Redirect URL:', checkoutURL);
 
-    // ✅ Redirect
     console.log('✅ Redirecting to checkout...');
     window.location.href = checkoutURL;
 }
 
-// Initialize on page load
 document.addEventListener("DOMContentLoaded", function() {
     console.log('=== Cart Page Initialization ===');
     console.log('BASE_URL:', BASE_URL);
     console.log('CART_CONTROLLER_URL:', CART_CONTROLLER_URL);
     console.log('CSRF Token:', getCsrfToken());
 
-    // Test sessionStorage
     if (!isSessionStorageAvailable()) {
         console.error('❌ SessionStorage is not available!');
         alert('Warning: Your browser settings may prevent checkout. Please enable cookies.');
@@ -400,7 +387,7 @@ document.addEventListener("DOMContentLoaded", function() {
     console.log('=== Cart page initialized successfully ===');
 });
 
-// Add CSS for toast notifications
+// CSS for toast notifications
 if (!document.querySelector('style[data-cart-toast]')) {
     const style = document.createElement('style');
     style.setAttribute('data-cart-toast', 'true');

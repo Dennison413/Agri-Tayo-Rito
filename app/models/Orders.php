@@ -1,6 +1,5 @@
 <?php
 // app/models/Orders.php
-// ✅ FINAL FIX: Only delete checked out items from cart
 require_once __DIR__ . '/../../config/database.php';
 
 class Orders 
@@ -14,11 +13,10 @@ class Orders
         $this->conn = $database->connect();
     }
 
-    // ✅ FINAL FIX: Create order and only remove ordered items from cart
+    // create new order
     public function createOrder($buyerID, $orderData, $cartItems) 
     {
         try {
-            // Validate cart BEFORE starting transaction
             require_once __DIR__ . '/Cart.php';
             $cartModel = new Cart();
             $validation = $cartModel->validateCartForCheckout($buyerID);
@@ -66,10 +64,8 @@ class Orders
             $orderID = $this->conn->lastInsertId();
             error_log("Order created with ID: $orderID");
 
-            // ✅ Collect product IDs that are being ordered
             $orderedProductIDs = [];
 
-            // Insert order items
             foreach ($cartItems as $item) {
                 $itemSubtotal = $item['quantity'] * $item['price'];
                 
@@ -90,13 +86,12 @@ class Orders
                     throw new Exception("Failed to add order item: " . $item['product_name']);
                 }
 
-                // ✅ Track this product ID
                 $orderedProductIDs[] = $item['productID'];
                 
                 error_log("Added item: {$item['product_name']} x {$item['quantity']}");
             }
 
-            // Handle online payment status
+            // handle online payment status
             if (in_array($orderData['payment_method'], ['gcash', 'paymaya'])) {
                 $updatePayment = "UPDATE {$this->table} 
                                  SET payment_status = 'paid' 
@@ -105,7 +100,6 @@ class Orders
                 error_log("Payment status set to 'paid' for online payment");
             }
 
-            // ✅ FIXED: Only delete the items that were ordered
             if (!empty($orderedProductIDs)) {
                 $placeholders = implode(',', array_fill(0, count($orderedProductIDs), '?'));
                 $clearCartQuery = "DELETE FROM cart 
@@ -114,7 +108,6 @@ class Orders
                 
                 $clearStmt = $this->conn->prepare($clearCartQuery);
                 
-                // Bind buyer ID first, then all product IDs
                 $params = array_merge([$buyerID], $orderedProductIDs);
                 $clearStmt->execute($params);
                 
@@ -122,7 +115,6 @@ class Orders
                 error_log("Product IDs removed: " . implode(', ', $orderedProductIDs));
             }
 
-            // Commit transaction
             $this->conn->commit();
             error_log("Transaction committed successfully");
 
@@ -133,7 +125,6 @@ class Orders
             ];
 
         } catch (Exception $e) {
-            // Rollback on any error
             if ($this->conn->inTransaction()) {
                 $this->conn->rollBack();
                 error_log("Transaction rolled back");
@@ -149,7 +140,7 @@ class Orders
         }
     }
 
-    // Reserve stock for order items
+    // reserve stock for order items
     private function reserveStock($productID, $quantity) 
     {
         $query = "UPDATE products 
@@ -159,7 +150,7 @@ class Orders
         return $stmt->execute([$quantity, $productID]);
     }
 
-    // Release reserved stock when order is cancelled
+    // release reserved stock when order is cancelled
     public function releaseReservedStock($orderID) 
     {
         $query = "UPDATE products p
@@ -170,7 +161,7 @@ class Orders
         return $stmt->execute([$orderID]);
     }
 
-    // Deduct actual stock when order is delivered
+    // deduct actual stock when order is delivered
     public function deductStock($orderID) 
     {
         $query = "UPDATE products p
@@ -182,7 +173,7 @@ class Orders
         return $stmt->execute([$orderID]);
     }
 
-    // Get order by ID with items
+    // get order by ID with items
     public function getOrderById($orderID) 
     {
         $query = "SELECT o.*, u.full_name as buyer_name, u.email as buyer_email, u.phone as buyer_phone
@@ -202,7 +193,7 @@ class Orders
         return $order;
     }
 
-    // Get orders by buyer
+    // get orders (buyer)
     public function getOrdersByBuyer($buyerID, $limit = 10, $offset = 0) 
     {
         $query = "SELECT * FROM {$this->table} 
@@ -219,7 +210,7 @@ class Orders
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    // Get orders by seller
+    // get orders (seller)
     public function getOrdersBySeller($sellerID, $limit = 10, $offset = 0) 
     {
         $query = "SELECT DISTINCT o.*, u.full_name as buyer_name
@@ -240,7 +231,7 @@ class Orders
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    // Get all orders (admin)
+    // get all orders (admin)
     public function getAllOrders($status = null, $limit = 50, $offset = 0) 
     {
         $query = "SELECT o.*, u.full_name as buyer_name, u.phone as buyer_phone,
@@ -270,7 +261,7 @@ class Orders
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    // Update order status
+    // update order status
     public function updateOrderStatus($orderID, $status) 
     {
         $query = "UPDATE {$this->table} SET order_status = ? WHERE orderID = ?";
@@ -278,7 +269,7 @@ class Orders
         return $stmt->execute([$status, $orderID]);
     }
 
-    // Update payment status
+    // update payment status
     public function updatePaymentStatus($orderID, $status) 
     {
         $query = "UPDATE {$this->table} SET payment_status = ? WHERE orderID = ?";
@@ -286,7 +277,7 @@ class Orders
         return $stmt->execute([$status, $orderID]);
     }
 
-    // Update delivery status
+    // update delivery status
     public function updateDeliveryStatus($orderID, $status, $adminID = null) 
     {
         try {
@@ -326,7 +317,7 @@ class Orders
         }
     }
 
-    // Mark payment as received by LGU
+    // mark payment as received by LGU
     public function markPaymentReceivedByLGU($orderID) 
     {
         $query = "UPDATE {$this->table} 
@@ -336,7 +327,7 @@ class Orders
         return $stmt->execute([$orderID]);
     }
 
-    // Assign rider to order
+    // assign rider to order
     public function assignRider($orderID, $riderID) 
     {
         $query = "UPDATE {$this->table} 
@@ -346,7 +337,7 @@ class Orders
         return $stmt->execute([$riderID, $orderID]);
     }
 
-    // Cancel order
+    // cancel order
     public function cancelOrder($orderID, $reason = null) 
     {
         try {
@@ -371,7 +362,7 @@ class Orders
         }
     }
 
-    // Get order statistics
+    // get order statistics
     public function getOrderStats($userID = null, $role = 'buyer') 
     {
         if ($role === 'buyer') {
@@ -427,6 +418,7 @@ class OrderItems
         $this->conn = $database->connect();
     }
 
+    // add order item
     public function addOrderItem($orderID, $productID, $quantity, $unitPrice) 
     {
         $subtotal = $quantity * $unitPrice;
@@ -439,6 +431,7 @@ class OrderItems
         return $stmt->execute([$orderID, $productID, $quantity, $unitPrice, $subtotal]);
     }
 
+    // uses is_main to get primary image
     public function getOrderItems($orderID) 
 {
     $query = "SELECT oi.*, 
@@ -446,7 +439,6 @@ class OrderItems
                     p.unit, 
                     s.shop_name, 
                     s.shopID,
-                    -- ✅ FIXED: Use is_main instead of image_order
                     (SELECT pi.image_path 
                      FROM product_images pi 
                      WHERE pi.productID = p.productID 
@@ -463,7 +455,6 @@ class OrderItems
     
     $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
-    // Debug log to verify image paths
     foreach ($results as $item) {
         error_log("Order Item: {$item['product_name']}, Image: " . ($item['primary_image'] ?? 'NULL'));
     }
@@ -483,6 +474,7 @@ class DeliveryRiders
         $this->conn = $database->connect();
     }
 
+    // get active riders
     public function getActiveRiders() 
     {
         $query = "SELECT * FROM {$this->table} 

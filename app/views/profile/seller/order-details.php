@@ -8,7 +8,6 @@ require_once __DIR__ . '/../../../../config/config.php';
 require_once __DIR__ . '/../../../../config/database.php';
 require_once __DIR__ . '/../../../models/Orders.php';
 
-// Check authentication
 $isLoggedIn = isset($_SESSION['logged_in']) && $_SESSION['logged_in'];
 $userRole = $_SESSION['user_role'] ?? null;
 $userID = $_SESSION['user_id'] ?? null;
@@ -18,7 +17,6 @@ if (!$isLoggedIn || $userRole !== 'seller') {
     exit;
 }
 
-// Get order ID from URL
 $orderID = $_GET['id'] ?? null;
 
 if (!$orderID) {
@@ -29,7 +27,6 @@ if (!$orderID) {
 $db = new Database();
 $conn = $db->connect();
 
-// Get seller profile
 $stmt = $conn->prepare("SELECT sellerID FROM seller_profiles WHERE userID = ?");
 $stmt->execute([$userID]);
 $sellerProfile = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -40,7 +37,6 @@ if (!$sellerProfile) {
 
 $sellerID = $sellerProfile['sellerID'];
 
-// Get order details with items
 $ordersModel = new Orders();
 $order = $ordersModel->getOrderById($orderID);
 
@@ -49,7 +45,6 @@ if (!$order) {
     exit;
 }
 
-// Verify this order contains seller's products
 $stmt = $conn->prepare("SELECT COUNT(*) as count FROM order_items oi 
                         JOIN products p ON oi.productID = p.productID 
                         WHERE oi.orderID = ? AND p.sellerID = ?");
@@ -61,7 +56,6 @@ if ($verification['count'] == 0) {
     exit;
 }
 
-// Get only seller's items from this order
 $stmt = $conn->prepare("SELECT oi.*, p.product_name, p.unit, pi.image_path
                         FROM order_items oi
                         JOIN products p ON oi.productID = p.productID
@@ -70,7 +64,6 @@ $stmt = $conn->prepare("SELECT oi.*, p.product_name, p.unit, pi.image_path
 $stmt->execute([$orderID, $sellerID]);
 $sellerItems = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// Calculate seller's total from this order
 $sellerTotal = array_sum(array_column($sellerItems, 'subtotal'));
 ?>
 <!DOCTYPE html>
@@ -78,7 +71,8 @@ $sellerTotal = array_sum(array_column($sellerItems, 'subtotal'));
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Order #<?php echo $orderID; ?> - Agri Tayo Rito</title>
+    <link rel="icon" type="image/jpg" href="/agri_system/public/images/agri-icon.jpg">
+    <title>Agri Tayo Rito</title>
     <link rel="stylesheet" href="<?php echo BASE_URL; ?>css/responsive.css">
     <link rel="stylesheet" href="<?php echo BASE_URL; ?>css/seller/dashboard.css">
 </head>
@@ -87,7 +81,6 @@ $sellerTotal = array_sum(array_column($sellerItems, 'subtotal'));
 
     <!-- Main Content -->
     <main class="main-content">
-        <!-- Back Button -->
         <div class="page-header">
             <button class="btn-back" onclick="window.history.back()">
                 ← Back to Orders
@@ -95,7 +88,6 @@ $sellerTotal = array_sum(array_column($sellerItems, 'subtotal'));
             <h1 class="page-title">Order #<?php echo $orderID; ?></h1>
         </div>
 
-        <!-- Order Status Header -->
         <section class="order-status-header">
             <div class="status-info">
                 <span class="status-badge status-<?php echo $order['order_status']; ?>">
@@ -108,7 +100,6 @@ $sellerTotal = array_sum(array_column($sellerItems, 'subtotal'));
         </section>
 
         <div class="content-grid-2">
-            <!-- Order Items -->
             <section class="content-section">
                 <div class="section-header">
                     <h2 class="section-title">Your Items in This Order</h2>
@@ -134,7 +125,6 @@ $sellerTotal = array_sum(array_column($sellerItems, 'subtotal'));
                     <?php endforeach; ?>
                 </div>
 
-                <!-- Seller's Total -->
                 <div class="order-summary">
                     <div class="summary-row">
                         <span>Your Items Total:</span>
@@ -145,7 +135,6 @@ $sellerTotal = array_sum(array_column($sellerItems, 'subtotal'));
 
             <!-- Order Information Sidebar -->
             <aside class="order-sidebar">
-                <!-- Customer Information -->
                 <div class="info-card">
                     <h3 class="info-title">👤 Customer Information</h3>
                     <div class="info-content">

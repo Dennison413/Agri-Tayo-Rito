@@ -1,6 +1,5 @@
 <?php
 // app/models/Withdrawal.php
-// FIXED: Added processed_by_name to withdrawal history query
 require_once __DIR__ . '/../../config/config.php';
 require_once __DIR__ . '/../../config/database.php';
 
@@ -16,7 +15,7 @@ class Withdrawal
         $this->conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     }
 
-    // ==================== CREATE WITHDRAWAL REQUEST ====================
+    // create new withdrawal request
     public function createRequest($shopID, $amount, $method = 'cash', $atmCard = null)
     {
         try {
@@ -98,7 +97,7 @@ class Withdrawal
         }
     }
 
-    // ==================== APPROVE WITHDRAWAL ====================
+    // approve
     public function approveWithdrawal($withdrawalID, $adminID, $notes = null)
     {
         try {
@@ -135,7 +134,7 @@ class Withdrawal
 
             $newBalance = $currentBalance - $amount;
 
-            // Update shop balance MANUALLY
+            // update shop balance MANUALLY
             $updateShop = $this->conn->prepare("
                 UPDATE shops
                 SET balance = ?, total_withdrawn = total_withdrawn + ?
@@ -143,7 +142,7 @@ class Withdrawal
             ");
             $updateShop->execute([$newBalance, $amount, $shopID]);
 
-            // Insert transaction ledger
+            // insert transaction ledger
             $txType = ($withdrawal['withdrawal_method'] === 'atm') ? 'withdrawal_atm' : 'withdrawal_cash';
             $insertTx = $this->conn->prepare("
                 INSERT INTO seller_transactions
@@ -162,7 +161,7 @@ class Withdrawal
             ]);
             $transactionID = $this->conn->lastInsertId();
 
-            // Update withdrawal status to 'completed'
+            // update withdrawal status to 'completed'
             $updateWithdrawal = $this->conn->prepare("
                 UPDATE withdrawal_requests
                 SET status = 'completed',
@@ -193,7 +192,7 @@ class Withdrawal
         }
     }
 
-    // ==================== REJECT WITHDRAWAL ====================
+    // reject
     public function rejectWithdrawal($withdrawalID, $adminID, $reason)
     {
         try {
@@ -228,17 +227,15 @@ class Withdrawal
         }
     }
 
-    // ==================== GET WITHDRAWAL HISTORY ====================
+    // get withdrawal hitory
     public function getWithdrawalsByShop($shopID, $limit = 20)
     {
         try {
-            // Convert to integers to prevent SQL injection
             $shopID = intval($shopID);
             $limit = intval($limit);
 
             error_log("DEBUG: Fetching withdrawals for shopID: " . $shopID);
 
-            // ✅ Use direct integer in LIMIT clause (safe because we used intval)
             $stmt = $this->conn->prepare("
             SELECT 
                 wr.withdrawalID,
@@ -272,6 +269,7 @@ class Withdrawal
         }
     }
 
+    // get pending withdrawals for admin view
     public function getPendingWithdrawals()
     {
         try {
@@ -299,6 +297,7 @@ class Withdrawal
         }
     }
 
+    // get all withdrawals for admin view
     public function getAllWithdrawals($limit = 50)
     {
         try {
@@ -324,7 +323,7 @@ class Withdrawal
         }
     }
 
-    // ==================== HELPER METHODS ====================
+    // helpers
     private function getMinWithdrawalAmount()
     {
         try {
