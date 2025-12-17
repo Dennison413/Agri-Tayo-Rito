@@ -343,6 +343,133 @@ class OrderController
         }
     }
 
+    // NEW METHOD: Handle delivery status updates from admin
+    public function handleDeliveryStatusRequest()
+    {
+        // Check if user is admin
+        if (!$this->isLoggedIn() || $_SESSION['user_role'] !== 'admin') {
+            $_SESSION['error'] = 'Unauthorized access. Admin privileges required.';
+            header('Location: /agri_system/public/auth/login');
+            exit;
+        }
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            $_SESSION['error'] = 'Invalid request method';
+            header('Location: ' . $_SERVER['HTTP_REFERER']);
+            exit;
+        }
+
+        $action = $_POST['action'] ?? '';
+
+        if ($action === 'update_delivery_status') {
+            $this->updateDeliveryStatus();
+        } elseif ($action === 'confirm_payment_received') {
+            $this->confirmPaymentReceived();
+        } else {
+            $_SESSION['error'] = 'Invalid action';
+            header('Location: ' . $_SERVER['HTTP_REFERER']);
+            exit;
+        }
+    }
+
+    // Update delivery status (admin only)
+    private function updateDeliveryStatus()
+    {
+        try {
+            $orderID = intval($_POST['order_id']);
+            $status = $_POST['delivery_status'] ?? '';
+            $riderID = !empty($_POST['rider_id']) ? intval($_POST['rider_id']) : null;
+            $adminID = $_SESSION['user_id'];
+
+            $validStatuses = ['pending_pickup', 'picked_up', 'in_transit', 'delivered', 'failed'];
+            if (!in_array($status, $validStatuses)) {
+                $_SESSION['error'] = 'Invalid delivery status';
+                header('Location: /agri_system/public/profile/admin/deliveries');
+                exit;
+            }
+
+            // Update delivery status
+            $result = $this->ordersModel->updateDeliveryStatus($orderID, $status, $adminID);
+
+            // Assign rider if provided
+            if ($result && $riderID) {
+                $this->ordersModel->assignRider($orderID, $riderID);
+            }
+
+            if ($result) {
+                if ($status === 'delivered') {
+                    $order = $this->ordersModel->getOrderById($orderID);
+                    // For COD orders, automatically mark payment as received
+                    if ($order['payment_method_new'] === 'cod' && !$order['payment_received_by_lgu_at']) {
+                        $this->ordersModel->markPaymentReceivedByLGU($orderID);
+                        $_SESSION['success'] = 'Delivery completed and payment received from buyer. Seller balance credited.';
+                    } else {
+                        $_SESSION['success'] = 'Delivery status updated successfully';
+                    }
+                } else {
+                    $_SESSION['success'] = 'Delivery status updated successfully';
+                }
+            } else {
+                $_SESSION['error'] = 'Failed to update delivery status';
+            }
+
+            header('Location: /agri_system/public/profile/admin/deliveries');
+            exit;
+
+        } catch (Exception $e) {
+            error_log("Update delivery status error: " . $e->getMessage());
+            $_SESSION['error'] = 'Failed to update delivery status';
+            header('Location: /agri_system/public/profile/admin/deliveries');
+            exit;
+        }
+    }
+
+    // Confirm payment received by LGU (admin only)
+    private function confirmPaymentReceived()
+    {
+        try {
+            $orderID = intval($_POST['order_id']);
+
+            $order = $this->ordersModel->getOrderById($orderID);
+
+            if (!$order) {
+                $_SESSION['error'] = 'Order not found';
+                header('Location: /agri_system/public/profile/admin/deliveries');
+                exit;
+            }
+
+            if ($order['lgu_delivery_status'] !== 'delivered') {
+                $_SESSION['error'] = 'Order must be delivered before confirming payment';
+                header('Location: /agri_system/public/profile/admin/deliveries');
+                exit;
+            }
+
+            if ($order['payment_received_by_lgu_at']) {
+                $_SESSION['error'] = 'Payment already confirmed for this order';
+                header('Location: /agri_system/public/profile/admin/deliveries');
+                exit;
+            }
+
+            // Mark payment as received and credit seller
+            $result = $this->ordersModel->markPaymentReceivedByLGU($orderID);
+
+            if ($result) {
+                $_SESSION['success'] = 'Payment confirmed. Seller balance has been credited.';
+            } else {
+                $_SESSION['error'] = 'Failed to confirm payment';
+            }
+
+            header('Location: /agri_system/public/profile/admin/deliveries');
+            exit;
+
+        } catch (Exception $e) {
+            error_log("Confirm payment error: " . $e->getMessage());
+            $_SESSION['error'] = 'Failed to confirm payment';
+            header('Location: /agri_system/public/profile/admin/deliveries');
+            exit;
+        }
+    }
+
     private function jsonResponse($success, $message, $data = [])
     {
         $response = array_merge([
@@ -385,8 +512,30 @@ class OrderController
     }
 }
 
-// handle API requests
-if ($_SERVER['REQUEST_METHOD'] === 'POST' || $_SERVER['REQUEST_METHOD'] === 'GET') {
+// Route handling based on the calling script
+$requestUri = $_SERVER['REQUEST_URI'] ?? '';
+
+if (strpos($requestUri, 'api/delivery-status') !== false) {
+    // This is a delivery status update request from admin
+    $controller = new OrderController();
+    $controller->handleDeliveryStatusRequest();
+} elseif (strpos($requestUri, 'api/checkout') !== false) {
+    // This is a checkout request from buyer
     $controller = new OrderController();
     $controller->handleCheckoutRequest();
+} elseif ($_SERVER['REQUEST_METHOD'] === 'POST' || $_SERVER['REQUEST_METHOD'] === 'GET') {
+    // Default handler - try to determine based on user role
+    $controller = new OrderController();
+    
+    // If it's a POST request with action in POST data
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
+        $action = $_POST['action'];
+        if ($action === 'update_delivery_status' || $action === 'confirm_payment_received') {
+            $controller->handleDeliveryStatusRequest();
+        } else {
+            $controller->handleCheckoutRequest();
+        }
+    } else {
+        $controller->handleCheckoutRequest();
+    }
 }
