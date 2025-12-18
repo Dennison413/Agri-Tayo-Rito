@@ -85,17 +85,7 @@ foreach ($categories as $cat) {
 
     <div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
     
-    <nav class="top-navbar">
-        <div class="logo-wrapper">
-            <img src="<?php echo BASE_URL; ?>images/logo.jpg" alt="Logo">
-            <span class="logo">Admin Panel</span>
-        </div>
-        <div class="navbar-actions">
-            <button class="nav-btn" onclick="toggleSidebar()">
-                <span class="menu-icon">☰</span>
-            </button>
-        </div>
-    </nav>
+    <?php require_once __DIR__ . '/admin-nav.php'; ?>
 
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-header">
