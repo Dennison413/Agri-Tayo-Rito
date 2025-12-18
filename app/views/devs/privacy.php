@@ -325,7 +325,7 @@
 <body>
     <nav class="main-nav">
         <div class="logo-section">
-            <img src="/agri_system/public/images/logo.jpg" alt="Logo">
+            <img src="/agri_system/public/images/main-logo.jpg" alt="Logo">
             <h1>Agri Tayo Rito</h1>
         </div>
         <div class="nav-links">
