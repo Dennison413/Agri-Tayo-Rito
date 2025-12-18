@@ -57,6 +57,7 @@ $routes = [
     'profile/admin/cards' => BASE_PATH . '/app/views/profile/admin/cards.php',
     'profile/admin/riders' => BASE_PATH . '/app/views/profile/admin/riders.php',
     'profile/admin/users' => BASE_PATH . '/app/views/profile/admin/manage-users.php',
+    'profile/admin/products' => BASE_PATH . '/app/views/profile/admin/orders-management.php',
 
     // User Profile (general)
     'profile/user' => BASE_PATH . '/app/views/marketplace/profile.php',
@@ -80,9 +81,7 @@ $routes = [
     'devs/contacts' => BASE_PATH . '/app/views/devs/contacts.php',
 
     // Settings
-    'settings/account' => BASE_PATH . '/app/views/settings/custom.php',
-    'settings/language-settings' => BASE_PATH . '/app/views/settings/language.php',
-    'settings' => BASE_PATH . '/app/views/settings/settings.php',
+    'settings' => BASE_PATH . '/app/views/settings.php',
 ];
 
 if (isset($routes[$url])) {
