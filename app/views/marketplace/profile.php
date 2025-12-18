@@ -1332,6 +1332,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_profile'])) {
         </div>
     </main>
 
+    <!-- Hidden Cover Photo Input -->
+    <input type="file" 
+        id="coverInput" 
+        accept="image/jpeg,image/jpg,image/png" 
+        onchange="handleCoverUpload(event)" 
+        style="display: none;">
+
     <!-- Avatar Selection Modal -->
     <div id="avatarModal" class="modal" style="display: none;">
         <div class="modal-content">

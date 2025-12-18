@@ -109,7 +109,7 @@ function handleCoverUpload(event) {
     formData.append('cover', file);
     
     showNotification('Uploading cover photo...', 'info');
-    const uploadUrl = window.API_BASE_PATH + 'profile/upload-cover.php';
+    const uploadUrl = window.API_BASE_PATH + 'api/upload-cover';
     console.log('🔗 Upload URL:', uploadUrl);
     
     fetch(uploadUrl, {
@@ -249,7 +249,7 @@ function saveAvatar() {
 function savePresetAvatar(avatarPath, saveBtn, originalText) {
     console.log('💾 Saving preset avatar:', avatarPath);
     
-    const url = window.API_BASE_PATH + 'profile/update-avatar.php';
+    const url = window.API_BASE_PATH + 'api/update-avatar';
     console.log('🔗 Update URL:', url);
     
     fetch(url, {
@@ -292,7 +292,7 @@ function uploadCustomAvatar(file, saveBtn, originalText) {
     const formData = new FormData();
     formData.append('avatar', file);
     
-    const url = window.API_BASE_PATH + 'profile/upload-avatar.php';
+    const url = window.API_BASE_PATH + 'api/upload-avatar';
     console.log('🔗 Upload URL:', url);
     
     fetch(url, {
